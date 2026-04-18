@@ -14,14 +14,38 @@ import { useToast } from "@/hooks/use-toast";
 import { Upload, X, MapPin, Loader2, Fish, Camera } from "lucide-react";
 
 const COMMON_SPECIES = [
-  { name: "Kapr", emoji: "🐟" },
-  { name: "Amur", emoji: "🐠" },
-  { name: "Sumec", emoji: "🦈" },
-  { name: "Štika", emoji: "🐊" },
-  { name: "Candát", emoji: "🦎" },
-  { name: "Pstruh", emoji: "🌈" },
-  { name: "Úhoř", emoji: "🐍" },
-  { name: "Lín", emoji: "🟢" },
+  { 
+    name: "Kapr", 
+    image: "https://images.unsplash.com/photo-1535591273668-578e31182c4f?w=100&h=100&fit=crop"
+  },
+  { 
+    name: "Amur", 
+    image: "https://images.unsplash.com/photo-1524704654690-b56c05c78a00?w=100&h=100&fit=crop"
+  },
+  { 
+    name: "Sumec", 
+    image: "https://images.unsplash.com/photo-1590923188069-70d0c8f2d765?w=100&h=100&fit=crop"
+  },
+  { 
+    name: "Štika", 
+    image: "https://images.unsplash.com/photo-1571752726703-5e7d1f6a986d?w=100&h=100&fit=crop"
+  },
+  { 
+    name: "Candát", 
+    image: "https://images.unsplash.com/photo-1534043464124-3be32fe000c9?w=100&h=100&fit=crop"
+  },
+  { 
+    name: "Pstruh", 
+    image: "https://images.unsplash.com/photo-1566127992631-137a642a90f4?w=100&h=100&fit=crop"
+  },
+  { 
+    name: "Úhoř", 
+    image: "https://images.unsplash.com/photo-1560114928-40f1f1eb26a0?w=100&h=100&fit=crop"
+  },
+  { 
+    name: "Lín", 
+    image: "https://images.unsplash.com/photo-1524704654690-b56c05c78a00?w=100&h=100&fit=crop"
+  },
 ];
 
 export function UploadCatchForm() {
@@ -407,7 +431,11 @@ export function UploadCatchForm() {
                   onClick={() => handleSpeciesSelect(species.name)}
                   className="gap-2"
                 >
-                  <span className="text-base">{species.emoji}</span>
+                  <img 
+                    src={species.image} 
+                    alt={species.name}
+                    className="w-5 h-5 rounded-full object-cover"
+                  />
                   {species.name}
                 </Button>
               ))}

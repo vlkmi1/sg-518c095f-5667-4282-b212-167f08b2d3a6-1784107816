@@ -24,6 +24,65 @@ interface TopCatch {
   };
 }
 
+const SPECIES_DATA: Record<string, { image: string; color: string }> = {
+  "Kapr": { 
+    image: "https://images.unsplash.com/photo-1535591273668-578e31182c4f?w=100&h=100&fit=crop", 
+    color: "hsl(35, 50%, 50%)" 
+  },
+  "Amur": { 
+    image: "https://images.unsplash.com/photo-1524704654690-b56c05c78a00?w=100&h=100&fit=crop", 
+    color: "hsl(150, 45%, 45%)" 
+  },
+  "Sumec": { 
+    image: "https://images.unsplash.com/photo-1590923188069-70d0c8f2d765?w=100&h=100&fit=crop", 
+    color: "hsl(220, 40%, 35%)" 
+  },
+  "Štika": { 
+    image: "https://images.unsplash.com/photo-1571752726703-5e7d1f6a986d?w=100&h=100&fit=crop", 
+    color: "hsl(140, 45%, 40%)" 
+  },
+  "Candát": { 
+    image: "https://images.unsplash.com/photo-1534043464124-3be32fe000c9?w=100&h=100&fit=crop", 
+    color: "hsl(200, 50%, 45%)" 
+  },
+  "Pstruh": { 
+    image: "https://images.unsplash.com/photo-1566127992631-137a642a90f4?w=100&h=100&fit=crop", 
+    color: "hsl(280, 50%, 55%)" 
+  },
+  "Úhoř": { 
+    image: "https://images.unsplash.com/photo-1560114928-40f1f1eb26a0?w=100&h=100&fit=crop", 
+    color: "hsl(40, 30%, 40%)" 
+  },
+  "Lín": { 
+    image: "https://images.unsplash.com/photo-1524704654690-b56c05c78a00?w=100&h=100&fit=crop", 
+    color: "hsl(110, 45%, 40%)" 
+  },
+  "Plotice": { 
+    image: "https://images.unsplash.com/photo-1535591273668-578e31182c4f?w=100&h=100&fit=crop", 
+    color: "hsl(0, 0%, 60%)" 
+  },
+  "Cejn": { 
+    image: "https://images.unsplash.com/photo-1571752726703-5e7d1f6a986d?w=100&h=100&fit=crop", 
+    color: "hsl(210, 50%, 50%)" 
+  },
+  "Jelec": { 
+    image: "https://images.unsplash.com/photo-1566127992631-137a642a90f4?w=100&h=100&fit=crop", 
+    color: "hsl(45, 70%, 55%)" 
+  },
+  "Ostroretka": { 
+    image: "https://images.unsplash.com/photo-1534043464124-3be32fe000c9?w=100&h=100&fit=crop", 
+    color: "hsl(30, 60%, 50%)" 
+  },
+  "Bolen": { 
+    image: "https://images.unsplash.com/photo-1524704654690-b56c05c78a00?w=100&h=100&fit=crop", 
+    color: "hsl(50, 60%, 55%)" 
+  },
+  "Mník": { 
+    image: "https://images.unsplash.com/photo-1590923188069-70d0c8f2d765?w=100&h=100&fit=crop", 
+    color: "hsl(5, 60%, 50%)" 
+  },
+};
+
 const FISH_SPECIES = [
   { value: "Kapr", label: "Kapr", image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=64&h=64&fit=crop" },
   { value: "Amur", label: "Amur", image: "https://images.unsplash.com/photo-1524316027663-d1f8931165ea?w=64&h=64&fit=crop" },
