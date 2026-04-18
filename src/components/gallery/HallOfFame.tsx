@@ -1,11 +1,29 @@
 import { useState, useEffect } from "react";
 import { catchService } from "@/services/catchService";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trophy, MapPin, Calendar, Ruler, Weight } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Trophy, MapPin, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
+
+const SPECIES_DATA: Record<string, { emoji: string; color: string }> = {
+  "Kapr": { emoji: "🐟", color: "hsl(35, 50%, 50%)" },
+  "Amur": { emoji: "🐠", color: "hsl(150, 45%, 45%)" },
+  "Sumec": { emoji: "🦈", color: "hsl(220, 40%, 35%)" },
+  "Štika": { emoji: "🐊", color: "hsl(140, 45%, 40%)" },
+  "Candát": { emoji: "🦎", color: "hsl(200, 50%, 45%)" },
+  "Pstruh": { emoji: "🌈", color: "hsl(280, 50%, 55%)" },
+  "Úhoř": { emoji: "🐍", color: "hsl(40, 30%, 40%)" },
+  "Lín": { emoji: "🟢", color: "hsl(110, 45%, 40%)" },
+  "Plotice": { emoji: "⚪", color: "hsl(0, 0%, 60%)" },
+  "Cejn": { emoji: "🔵", color: "hsl(210, 50%, 50%)" },
+  "Jelec": { emoji: "⚡", color: "hsl(45, 70%, 55%)" },
+  "Ostroretka": { emoji: "🔶", color: "hsl(30, 60%, 50%)" },
+  "Bolen": { emoji: "🟡", color: "hsl(50, 60%, 55%)" },
+  "Mník": { emoji: "🔴", color: "hsl(5, 60%, 50%)" },
+};
 
 interface TopCatch {
   id: string;
@@ -199,21 +217,37 @@ export function HallOfFame() {
         </p>
       </div>
 
-      {/* Species tabs */}
-      <Tabs value={selectedSpecies} onValueChange={setSelectedSpecies} className="w-full">
-        <TabsList className="grid grid-cols-3 sm:grid-cols-6 w-full max-w-3xl mx-auto h-auto gap-2 bg-transparent">
-          {FISH_SPECIES.map((species) => (
-            <TabsTrigger
-              key={species.value}
-              value={species.value}
-              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex-col gap-1 py-2 px-3"
+      {/* Species Filter */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <Button
+          variant={selectedSpecies === null ? "default" : "outline"}
+          size="sm"
+          onClick={() => setSelectedSpecies(null)}
+          className="gap-2"
+        >
+          🏆 Všechny druhy
+        </Button>
+        {availableSpecies.map((species) => {
+          const speciesData = SPECIES_DATA[species] || { emoji: "🐟", color: "hsl(186, 78%, 22%)" };
+          return (
+            <Button
+              key={species}
+              variant={selectedSpecies === species ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSelectedSpecies(species)}
+              className="gap-2"
+              style={
+                selectedSpecies === species
+                  ? { backgroundColor: speciesData.color, borderColor: speciesData.color }
+                  : {}
+              }
             >
-              <span className="text-xl">{species.emoji}</span>
-              <span className="text-xs sm:text-sm font-medium">{species.label}</span>
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
+              <span className="text-lg">{speciesData.emoji}</span>
+              {species}
+            </Button>
+          );
+        })}
+      </div>
 
       {/* Podium */}
       <div className="bg-muted/30 rounded-lg p-4 sm:p-8">
