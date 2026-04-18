@@ -90,20 +90,24 @@ export function HallOfFame() {
       );
     }
 
-    // Prepare podium positions: [2nd, 1st, 3rd]
-    const podiumOrder = [
-      catches[1], // 2nd place (left)
-      catches[0], // 1st place (center)
-      catches[2], // 3rd place (right)
-    ].filter(Boolean);
+    // Build podium based on number of catches
+    // Always show catches in their actual ranking order (1st, 2nd, 3rd)
+    const podiumData: Array<{ catch: TopCatch; position: 1 | 2 | 3; order: number }> = [];
+    
+    if (catches.length >= 1) {
+      podiumData.push({ catch: catches[0], position: 1, order: 2 }); // 1st place center
+    }
+    if (catches.length >= 2) {
+      podiumData.push({ catch: catches[1], position: 2, order: 1 }); // 2nd place left
+    }
+    if (catches.length >= 3) {
+      podiumData.push({ catch: catches[2], position: 3, order: 3 }); // 3rd place right
+    }
 
     return (
       <div className="flex items-end justify-center gap-4 sm:gap-8 max-w-4xl mx-auto py-8">
-        {podiumOrder.map((catchData, idx) => {
-          if (!catchData) return null;
-          
-          const position = idx === 0 ? 2 : idx === 1 ? 1 : 3;
-          const config = MEDAL_CONFIG[position as keyof typeof MEDAL_CONFIG];
+        {podiumData.map(({ catch: catchData, position, order }) => {
+          const config = MEDAL_CONFIG[position];
 
           return (
             <div
@@ -111,7 +115,7 @@ export function HallOfFame() {
               className="flex-1 flex flex-col items-center animate-in fade-in slide-in-from-bottom-8"
               style={{ 
                 animationDelay: `${position * 100}ms`,
-                order: config.order 
+                order: order
               }}
             >
               {/* Fish photo on top of podium */}
@@ -138,13 +142,13 @@ export function HallOfFame() {
                   <div className="flex items-center justify-center gap-2 text-xs sm:text-sm text-muted-foreground">
                     {catchData.length_cm && (
                       <Badge variant="secondary" className="gap-1">
-                        <Ruler className="h-3 w-3" />
+                        <span className="text-xs">📏</span>
                         {catchData.length_cm} cm
                       </Badge>
                     )}
                     {catchData.weight_kg && (
                       <Badge variant="secondary" className="gap-1">
-                        <Weight className="h-3 w-3" />
+                        <span className="text-xs">⚖️</span>
                         {catchData.weight_kg} kg
                       </Badge>
                     )}
@@ -173,7 +177,7 @@ export function HallOfFame() {
                 <div className="relative z-10 text-center">
                   <div className="text-3xl sm:text-4xl mb-1">{config.medal}</div>
                   <div className={`text-xl sm:text-2xl font-bold ${config.textColor}`}>
-                    {position === 1 ? "1." : position === 2 ? "2." : "3."}
+                    {position}.
                   </div>
                   <div className={`text-xs sm:text-sm font-medium ${config.textColor} opacity-80`}>
                     místo
