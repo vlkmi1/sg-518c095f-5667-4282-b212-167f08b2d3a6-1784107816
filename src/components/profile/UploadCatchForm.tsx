@@ -140,6 +140,8 @@ export function UploadCatchForm() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showAnalysisPrompt, setShowAnalysisPrompt] = useState(false);
   const [userCompetitions, setUserCompetitions] = useState<any[]>([]);
   const [showDetails, setShowDetails] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -215,13 +217,14 @@ export function UploadCatchForm() {
     }
   }
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
+        setShowAnalysisPrompt(true);
       };
       reader.readAsDataURL(file);
     }
@@ -229,12 +232,13 @@ export function UploadCatchForm() {
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    const file = e.dataTransfer.files?.[0];
+    const file = e.dataTransfer.files[0];
     if (file && file.type.startsWith("image/")) {
       setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
+        setShowAnalysisPrompt(true);
       };
       reader.readAsDataURL(file);
     }
@@ -280,6 +284,63 @@ export function UploadCatchForm() {
       setIsGettingLocation(false);
     }
   };
+
+  async function handleAnalyzeFish() {
+    if (!imagePreview) return;
+
+    setIsAnalyzing(true);
+    setShowAnalysisPrompt(false);
+
+    try {
+      const response = await fetch("/api/analyze-fish", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ imageUrl: imagePreview }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Analýza selhala");
+      }
+
+      const analysis = await response.json();
+
+      // Pre-fill form with AI analysis
+      if (analysis.species) {
+        setFormData((prev) => ({
+          ...prev,
+          species: analysis.species,
+          length_cm: analysis.length_cm || prev.length_cm,
+          weight_kg: analysis.weight_kg || prev.weight_kg,
+        }));
+      }
+
+      toast({
+        title: "✅ Analýza dokončena",
+        description: `Druh: ${analysis.species || "Neznámý"} | Spolehlivost: ${analysis.confidence === "high" ? "vysoká" : analysis.confidence === "medium" ? "střední" : "nízká"}`,
+      });
+
+      // Auto-expand details if AI found the species
+      if (analysis.species && !showDetails) {
+        setShowDetails(true);
+      }
+    } catch (error: any) {
+      console.error("Fish analysis error:", error);
+      toast({
+        title: "Chyba při analýze",
+        description: error.message || "Nepodařilo se analyzovat rybu. Zkuste to prosím znovu.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }
+
+  function handleSkipAnalysis() {
+    setShowAnalysisPrompt(false);
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -414,7 +475,7 @@ export function UploadCatchForm() {
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
-                  onChange={handleImageSelect}
+                  onChange={handleImageChange}
                   className="hidden"
                 />
               </div>
