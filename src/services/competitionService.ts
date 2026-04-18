@@ -7,37 +7,19 @@ export type CompetitionCatch = Tables<"competition_catches">;
 
 export const competitionService = {
   // Create a new competition
-  async createCompetition(competitionData: {
-    creator_id: string;
-    name: string;
-    prize_type: string;
-    start_date: string;
-    end_date: string;
-    scoring_type: string;
-    top_catches_count: number | null;
-    auto_approve: boolean;
-  }): Promise<{ data: Competition | null; error: any }> {
-    // Generate a random 8-character invite code
-    const invite_code = Math.random().toString(36).substring(2, 10).toUpperCase();
+  async createCompetition(competitionData: any): Promise<{ data: any; error: any }> {
+    const joinCode = this.generateJoinCode();
 
     const { data, error } = await supabase
       .from("competitions")
-      .insert([
-        {
-          ...competitionData,
-          invite_code,
-        },
-      ])
+      .insert({
+        ...competitionData,
+        join_code: joinCode,
+      })
       .select()
       .single();
 
     console.log("createCompetition:", { data, error });
-    
-    // Auto-join the creator to their own competition
-    if (data) {
-      await this.joinCompetition(data.id, competitionData.creator_id);
-    }
-    
     return { data, error };
   },
 

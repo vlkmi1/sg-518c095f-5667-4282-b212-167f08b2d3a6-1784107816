@@ -168,6 +168,7 @@ export type Database = {
           invite_code: string
           name: string
           prize_type: string
+          scoring_table: Json | null
           scoring_type: string
           start_date: string
           top_catches_count: number | null
@@ -182,6 +183,7 @@ export type Database = {
           invite_code: string
           name: string
           prize_type: string
+          scoring_table?: Json | null
           scoring_type: string
           start_date: string
           top_catches_count?: number | null
@@ -196,6 +198,7 @@ export type Database = {
           invite_code?: string
           name?: string
           prize_type?: string
+          scoring_table?: Json | null
           scoring_type?: string
           start_date?: string
           top_catches_count?: number | null
