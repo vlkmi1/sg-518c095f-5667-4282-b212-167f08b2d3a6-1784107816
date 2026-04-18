@@ -503,13 +503,69 @@ export function UploadCatchForm() {
                   variant="destructive"
                   size="icon"
                   className="absolute top-2 right-2"
-                  onClick={removeImage}
+                  onClick={handleRemoveImage}
                 >
                   <X className="h-4 w-4" />
                 </Button>
               </div>
             )}
           </div>
+
+          {/* AI Analysis Prompt */}
+          {imagePreview && showAnalysisPrompt && !isAnalyzing && (
+            <Card className="border-accent/50 bg-accent/5">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-accent/10 flex items-center justify-center">
+                      <Fish className="h-5 w-5 text-accent" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">Analyzovat rybu pomocí AI?</p>
+                      <p className="text-xs text-muted-foreground">
+                        Automaticky rozpozná druh, délku a váhu
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleSkipAnalysis}
+                    >
+                      Ne
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleAnalyzeFish}
+                      className="gap-2"
+                    >
+                      Ano
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* AI Analysis Loading */}
+          {imagePreview && isAnalyzing && (
+            <Card className="border-primary/50 bg-primary/5">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                  <div>
+                    <p className="font-medium text-sm">Analyzuji rybu...</p>
+                    <p className="text-xs text-muted-foreground">
+                      AI rozpoznává druh a odhaduje rozměry
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Public/Private Toggle */}
           <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">

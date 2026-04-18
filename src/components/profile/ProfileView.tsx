@@ -69,7 +69,7 @@ export function ProfileView() {
         return;
       }
 
-      const profileData = await profileService.getProfile(user.id);
+      const { data: profileData } = await profileService.getProfileById(user.id);
       setProfile(profileData as any);
 
       const userCatches = await catchService.getUserCatches(user.id);
