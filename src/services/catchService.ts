@@ -143,20 +143,47 @@ export const catchService = {
     districts: string[];
     species: string[];
   }> {
-    try {
-      const { data: catches } = await supabase
-        .from("catches")
-        .select("country, region, district, species");
+    const { data: catches } = await supabase
+      .from("catches")
+      .select("country, region, district, species")
+      .eq("is_public", true);
 
-      const countries = [...new Set(catches?.map(c => c.country).filter(Boolean))].sort() as string[];
-      const regions = [...new Set(catches?.map(c => c.region).filter(Boolean))].sort() as string[];
-      const districts = [...new Set(catches?.map(c => c.district).filter(Boolean))].sort() as string[];
-      const species = [...new Set(catches?.map(c => c.species).filter(Boolean))].sort() as string[];
-
-      return { countries, regions, districts, species };
-    } catch (error) {
-      console.error("getFilterOptions error:", error);
+    if (!catches) {
       return { countries: [], regions: [], districts: [], species: [] };
     }
+
+    const countries = [...new Set(catches.map((c: any) => c.country).filter(Boolean))].sort();
+    const regions = [...new Set(catches.map((c: any) => c.region).filter(Boolean))].sort();
+    const districts = [...new Set(catches.map((c: any) => c.district).filter(Boolean))].sort();
+    const species = [...new Set(catches.map((c: any) => c.species).filter(Boolean))].sort();
+
+    return { countries, regions, districts, species };
+  },
+
+  // Get top catches by species for Hall of Fame
+  async getTopCatchesBySpecies(species: string, limit: number = 3): Promise<any[]> {
+    const { data, error } = await supabase
+      .from("catches")
+      .select(`
+        *,
+        profiles (
+          nickname
+        )
+      `)
+      .eq("species", species)
+      .eq("is_public", true)
+      .not("length_cm", "is", null)
+      .not("weight_kg", "is", null)
+      .order("length_cm", { ascending: false })
+      .limit(limit);
+
+    console.log("getTopCatchesBySpecies:", { species, data, error });
+    
+    if (error) {
+      console.error("getTopCatchesBySpecies error:", error);
+      return [];
+    }
+
+    return Array.isArray(data) ? data : [];
   },
 };
