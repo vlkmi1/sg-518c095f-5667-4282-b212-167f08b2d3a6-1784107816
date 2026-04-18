@@ -77,6 +77,134 @@ export type Database = {
           },
         ]
       }
+      competition_catches: {
+        Row: {
+          approved: boolean
+          catch_id: string
+          competition_id: string
+          created_at: string | null
+          id: string
+        }
+        Insert: {
+          approved?: boolean
+          catch_id: string
+          competition_id: string
+          created_at?: string | null
+          id?: string
+        }
+        Update: {
+          approved?: boolean
+          catch_id?: string
+          competition_id?: string
+          created_at?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_catches_catch_id_fkey"
+            columns: ["catch_id"]
+            isOneToOne: false
+            referencedRelation: "catches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_catches_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competition_participants: {
+        Row: {
+          competition_id: string
+          id: string
+          joined_at: string | null
+          user_id: string
+        }
+        Insert: {
+          competition_id: string
+          id?: string
+          joined_at?: string | null
+          user_id: string
+        }
+        Update: {
+          competition_id?: string
+          id?: string
+          joined_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_participants_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competitions: {
+        Row: {
+          auto_approve: boolean
+          created_at: string | null
+          creator_id: string
+          end_date: string
+          id: string
+          invite_code: string
+          name: string
+          prize_type: string
+          scoring_type: string
+          start_date: string
+          top_catches_count: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          auto_approve?: boolean
+          created_at?: string | null
+          creator_id: string
+          end_date: string
+          id?: string
+          invite_code: string
+          name: string
+          prize_type: string
+          scoring_type: string
+          start_date: string
+          top_catches_count?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          auto_approve?: boolean
+          created_at?: string | null
+          creator_id?: string
+          end_date?: string
+          id?: string
+          invite_code?: string
+          name?: string
+          prize_type?: string
+          scoring_type?: string
+          start_date?: string
+          top_catches_count?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competitions_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
