@@ -18,7 +18,6 @@ import { authService } from "@/services/authService";
 import { profileService } from "@/services/profileService";
 import { catchService } from "@/services/catchService";
 import { competitionService } from "@/services/competitionService";
-import { storageService } from "@/services/storageService";
 import { useToast } from "@/hooks/use-toast";
 import { User, Fish, Trophy, LogOut, Plus, Users, Loader2 } from "lucide-react";
 import { format } from "date-fns";
@@ -30,7 +29,7 @@ export function ProfileView() {
 
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
-  const [catches, setCatches] = useState<any[]>([]);
+  const [catchCount, setCatchCount] = useState(0);
   const [competitions, setCompetitions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
@@ -55,7 +54,7 @@ export function ProfileView() {
       setProfile(profileData);
 
       const catchesData = await catchService.getUserCatches(currentUser.id);
-      setCatches(catchesData || []);
+      setCatchCount((catchesData || []).length);
 
       const comps = await competitionService.getUserCompetitions(currentUser.id);
       setCompetitions(comps || []);
@@ -92,7 +91,6 @@ export function ProfileView() {
         throw new Error("Závod s tímto kódem nebyl nalezen");
       }
 
-      // Join the competition
       await competitionService.joinCompetition(competition.id, user.id);
 
       toast({
@@ -103,7 +101,6 @@ export function ProfileView() {
       setJoinDialogOpen(false);
       setJoinCode("");
 
-      // Redirect to competition page
       router.push(`/competitions/${competition.id}`);
     } catch (error: any) {
       console.error("Join competition error:", error);
@@ -120,27 +117,6 @@ export function ProfileView() {
   async function handleLogout() {
     await authService.signOut();
     router.push("/");
-  }
-
-  async function handleDeleteCatch(catchId: string, photoPath: string) {
-    try {
-      await storageService.deleteCatchImage(photoPath);
-      await catchService.deleteCatch(catchId);
-
-      toast({
-        title: "✅ Úlovek odstraněn",
-        description: "Úlovek byl úspěšně smazán",
-      });
-
-      loadProfile();
-    } catch (error: any) {
-      console.error("Delete catch error:", error);
-      toast({
-        title: "Chyba",
-        description: "Nepodařilo se odstranit úlovek",
-        variant: "destructive",
-      });
-    }
   }
 
   if (isLoading) {
@@ -169,16 +145,21 @@ export function ProfileView() {
                 <p className="text-sm text-muted-foreground">{user?.email}</p>
               </div>
             </div>
-            <Button variant="outline" onClick={handleLogout} className="gap-2">
-              <LogOut className="h-4 w-4" />
-              Odhlásit se
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => router.push("/my-catches")}>
+                Moje úlovky
+              </Button>
+              <Button variant="outline" onClick={handleLogout} className="gap-2">
+                <LogOut className="h-4 w-4" />
+                Odhlásit se
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-4">
             <div className="text-center p-4 bg-muted/30 rounded-lg">
-              <p className="text-3xl font-bold text-primary">{catches.length}</p>
+              <p className="text-3xl font-bold text-primary">{catchCount}</p>
               <p className="text-sm text-muted-foreground">Úlovků celkem</p>
             </div>
             <div className="text-center p-4 bg-muted/30 rounded-lg">
@@ -186,84 +167,6 @@ export function ProfileView() {
               <p className="text-sm text-muted-foreground">Závodů</p>
             </div>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* My Catches */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="font-serif text-xl flex items-center gap-2">
-              <Fish className="h-5 w-5 text-primary" />
-              Moje úlovky
-            </CardTitle>
-            <Button onClick={() => router.push("/profile/add-catch")} className="gap-2">
-              <Plus className="h-4 w-4" />
-              Přidat úlovek
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {catches.length === 0 ? (
-            <div className="text-center py-8">
-              <Fish className="h-16 w-16 mx-auto mb-4 text-muted-foreground/30" />
-              <p className="text-muted-foreground mb-4">Zatím nemáte žádné úlovky</p>
-              <Button onClick={() => router.push("/profile/add-catch")}>
-                Přidat první úlovek
-              </Button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {catches.map((catchData) => (
-                <Card key={catchData.id} className="overflow-hidden">
-                  <div className="aspect-video relative">
-                    <img
-                      src={catchData.photo_url}
-                      alt={catchData.species}
-                      className="w-full h-full object-cover"
-                    />
-                    {!catchData.is_public && (
-                      <Badge
-                        variant="secondary"
-                        className="absolute top-2 right-2 bg-background/80 backdrop-blur"
-                      >
-                        Soukromé
-                      </Badge>
-                    )}
-                  </div>
-                  <CardContent className="p-4 space-y-2">
-                    <h3 className="font-serif font-semibold text-lg">{catchData.species}</h3>
-                    <div className="flex gap-2 text-sm">
-                      {catchData.length_cm && (
-                        <Badge variant="secondary">📏 {catchData.length_cm} cm</Badge>
-                      )}
-                      {catchData.weight_kg && (
-                        <Badge variant="secondary">⚖️ {catchData.weight_kg} kg</Badge>
-                      )}
-                    </div>
-                    {catchData.fishing_area && (
-                      <p className="text-sm text-muted-foreground">
-                        📍 {catchData.fishing_area}
-                      </p>
-                    )}
-                    <p className="text-xs text-muted-foreground">
-                      {format(new Date(catchData.caught_at), "d. MMMM yyyy HH:mm", {
-                        locale: cs,
-                      })}
-                    </p>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      className="w-full"
-                      onClick={() => handleDeleteCatch(catchData.id, catchData.photo_path)}
-                    >
-                      Odstranit
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
         </CardContent>
       </Card>
 

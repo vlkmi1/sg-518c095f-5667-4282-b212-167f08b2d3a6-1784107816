@@ -57,16 +57,16 @@ export function Header() {
           <>
             <nav className="hidden md:flex items-center gap-6">
               <Link
-                href="/"
+                href="/my-catches"
                 className={`text-sm font-medium transition-colors hover:text-primary ${
-                  isActive("/") && router.pathname === "/"
+                  isActive("/my-catches")
                     ? "text-primary"
                     : "text-muted-foreground"
                 }`}
               >
                 <div className="flex items-center gap-2">
                   <Fish className="h-4 w-4" />
-                  Úlovky
+                  Moje úlovky
                 </div>
               </Link>
               <Link
@@ -143,9 +143,9 @@ export function Header() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem onClick={() => router.push("/")}>
+                  <DropdownMenuItem onClick={() => router.push("/my-catches")}>
                     <Fish className="mr-2 h-4 w-4" />
-                    Úlovky
+                    Moje úlovky
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push("/competitions")}>
                     <Trophy className="mr-2 h-4 w-4" />
