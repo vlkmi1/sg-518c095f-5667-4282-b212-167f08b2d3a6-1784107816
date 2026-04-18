@@ -51,10 +51,10 @@ export function ProfileView() {
 
       setUser(currentUser);
 
-      const { data: profileData } = await profileService.getProfile(currentUser.id);
+      const { data: profileData } = await profileService.getProfileById(currentUser.id);
       setProfile(profileData);
 
-      const { data: catchesData } = await catchService.getUserCatches(currentUser.id);
+      const catchesData = await catchService.getUserCatches(currentUser.id);
       setCatches(catchesData || []);
 
       const comps = await competitionService.getUserCompetitions(currentUser.id);
@@ -118,13 +118,13 @@ export function ProfileView() {
   }
 
   async function handleLogout() {
-    await authService.logout();
+    await authService.signOut();
     router.push("/");
   }
 
   async function handleDeleteCatch(catchId: string, photoPath: string) {
     try {
-      await storageService.deleteCatchPhoto(photoPath);
+      await storageService.deleteCatchImage(photoPath);
       await catchService.deleteCatch(catchId);
 
       toast({

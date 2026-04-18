@@ -58,34 +58,21 @@ export default function JoinCompetitionPage() {
       const user = await authService.getCurrentUser();
       if (!user) {
         toast({
-          title: "Chyba",
-          description: "Musíte být přihlášeni.",
-          variant: "destructive",
+          title: "Přihlášení nutné",
+          description: "Pro připojení k závodu se musíte přihlásit",
         });
         router.push("/auth/login");
         return;
       }
 
-      const { error } = await competitionService.joinCompetition(competition.id, user.id);
-      
-      if (error) {
-        // Check if already joined
-        if (error.code === "23505") {
-          toast({
-            title: "Už jste v závodě",
-            description: "Již jste účastníkem tohoto závodu.",
-          });
-          setHasJoined(true);
-        } else {
-          throw error;
-        }
-      } else {
-        setHasJoined(true);
-        toast({
-          title: "Úspěch",
-          description: "Úspěšně jste se připojili k závodu!",
-        });
-      }
+      await competitionService.joinCompetition(competition.id, user.id);
+
+      toast({
+        title: "✅ Připojeno!",
+        description: "Úspěšně jste se připojili k závodu",
+      });
+
+      router.push(`/competitions/${competition.id}`);
     } catch (error: any) {
       console.error("Join competition error:", error);
       toast({
