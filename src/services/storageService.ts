@@ -139,4 +139,63 @@ export const storageService = {
       );
     });
   },
+
+  // Upload catch photo
+  async uploadCatchPhoto(file: File, userId: string): Promise<{ url: string; path: string }> {
+    try {
+      // Validate file
+      if (!file.type.startsWith("image/")) {
+        throw new Error("Soubor musí být obrázek");
+      }
+
+      // Check file size (max 10MB)
+      const maxSize = 10 * 1024 * 1024;
+      if (file.size > maxSize) {
+        throw new Error("Soubor je příliš velký (max 10MB)");
+      }
+
+      console.log("Upload starting:", {
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+        userId
+      });
+
+      // Generate unique filename
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${userId}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+      console.log("Generated path:", fileName);
+
+      // Upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from("catches")
+        .upload(fileName, file, {
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      console.log("Upload result:", { data, error });
+
+      if (error) {
+        console.error("Storage upload error:", error);
+        throw new Error(`Chyba při nahrávání: ${error.message}`);
+      }
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from("catches")
+        .getPublicUrl(fileName);
+
+      console.log("Public URL:", urlData.publicUrl);
+
+      return {
+        url: urlData.publicUrl,
+        path: fileName,
+      };
+    } catch (error: any) {
+      console.error("uploadCatchPhoto error:", error);
+      throw error;
+    }
+  },
 };
