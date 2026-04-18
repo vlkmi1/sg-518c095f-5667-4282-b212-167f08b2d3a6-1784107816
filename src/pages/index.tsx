@@ -7,8 +7,8 @@ export default function Home() {
   return (
     <>
       <SEO 
-        title="Úlovky - Rybářský portál pro sdílení úlovků"
-        description="Sdílejte své rybářské úlovky s komunitou. Galerie fotografií, statistiky a závody mezi rybáři."
+        title="Ukaž Rybu - Sdílej své rybářské úlovky"
+        description="Ukažte své úlovky komunitě rybářů! Fotogalerie, statistiky, závody a AI rozpoznávání druhů ryb."
       />
       <div className="min-h-screen bg-background">
         <Header />

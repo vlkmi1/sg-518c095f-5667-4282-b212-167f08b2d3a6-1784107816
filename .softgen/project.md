@@ -1,4 +1,4 @@
-# Rybářský portál - Úlovky
+# Ukaž Rybu
 
 ## Vize
 Platforma pro rybáře k přehlednému sdílení fotografií svých úlovků s komunitou. Kombinuje veřejnou galerii s privátním profilem a inteligentní analýzou úlovků.
@@ -10,7 +10,7 @@ Platforma pro rybáře k přehlednému sdílení fotografií svých úlovků s k
 - **Background:** 42 33% 98% (krémová)
 - **Muted:** 186 15% 92% (šedozelená)
 - **Fonts:** Crimson Pro (nadpisy), Work Sans (tělo)
-- **Styl:** Čistá fotogalerie, prostorné rozvržení, přírodní paleta, profesionální ale přístupný
+- **Styl:** Hravý, přístupný, čistá fotogalerie, prostorné rozvržení, přírodní paleta
 
 ## Funkce
 - Veřejná galerie úlovků s filtrováním (země, kraj, okres, druh ryby)
@@ -20,3 +20,6 @@ Platforma pro rybáře k přehlednému sdílení fotografií svých úlovků s k
 - Profil uživatele s přehledem vlastních úlovků
 - Nahrávání fotografií s automatickou úpravou velikosti a kompresí
 - Automatická geolokace, AI rozpoznání druhu a odhad rozměrů ryby
+- Síň slávy s olympijským podiem pro každý druh ryby
+- Možnost odstranění vlastních úlovků
+- Rybářské závody a soutěže
