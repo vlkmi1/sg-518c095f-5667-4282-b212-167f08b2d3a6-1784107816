@@ -126,7 +126,7 @@ export function UploadCatchForm() {
         region: formData.region || null,
         district: formData.district || null,
         bait_brand: formData.bait_brand || null,
-        image_url: uploadResult.url,
+        photo_url: uploadResult.url,
         caught_at: formData.caught_at ? new Date(formData.caught_at).toISOString() : new Date().toISOString(),
       });
 

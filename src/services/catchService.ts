@@ -101,7 +101,7 @@ export const catchService = {
     region: string | null;
     district: string | null;
     bait_brand: string | null;
-    image_url: string;
+    photo_url: string;
     caught_at: string;
   }): Promise<{ data: any; error: any }> {
     const { data, error } = await supabase

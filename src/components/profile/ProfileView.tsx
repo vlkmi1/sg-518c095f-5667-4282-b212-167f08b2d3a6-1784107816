@@ -26,7 +26,7 @@ export function ProfileView() {
       if (!user) return;
 
       // Load profile
-      const { data: profileData } = await profileService.getProfile(user.id);
+      const { data: profileData } = await profileService.getProfileById(user.id);
       if (profileData) {
         setProfile(profileData);
       }
@@ -146,9 +146,9 @@ export function ProfileView() {
                 >
                   <Card className="overflow-hidden hover:shadow-lg transition-shadow">
                     <div className="aspect-[4/3] relative bg-muted">
-                      {catchData.image_url && (
+                      {catchData.photo_url && (
                         <img
-                          src={catchData.image_url}
+                          src={catchData.photo_url}
                           alt={catchData.species || "Úlovek"}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
