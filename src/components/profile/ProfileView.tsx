@@ -2,19 +2,22 @@ import { useEffect, useState } from "react";
 import { authService } from "@/services/authService";
 import { profileService } from "@/services/profileService";
 import { catchService } from "@/services/catchService";
+import { competitionService } from "@/services/competitionService";
 import type { Tables } from "@/integrations/supabase/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { User, Fish, Ruler, Weight, Plus } from "lucide-react";
+import { User, Fish, Ruler, Weight, Plus, MapPin, Calendar, Trophy } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
 
 export function ProfileView() {
-  const [profile, setProfile] = useState<Tables<"profiles"> | null>(null);
-  const [catches, setCatches] = useState<Tables<"catches">[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<any>(null);
+  const [catches, setCatches] = useState<any[]>([]);
+  const [competitions, setCompetitions] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     loadProfile();
@@ -32,16 +35,20 @@ export function ProfileView() {
       }
 
       // Load user's catches
-      const userCatches = await catchService.getUserCatches(user.id);
-      setCatches(userCatches);
+      const catchesData = await catchService.getUserCatches(user.id);
+      setCatches(Array.isArray(catchesData) ? catchesData : []);
+      
+      // Load user's competitions
+      const competitionsData = await competitionService.getUserCompetitions(user.id);
+      setCompetitions(Array.isArray(competitionsData) ? competitionsData : []);
     } catch (error) {
       console.error("Error loading profile:", error);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="container py-8 space-y-6">
         <Skeleton className="h-48 w-full" />
@@ -173,6 +180,57 @@ export function ProfileView() {
                       )}
                     </CardContent>
                   </Card>
+                </Link>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/50 shadow-sm">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <CardTitle className="font-serif text-2xl text-primary flex items-center gap-2">
+              <Trophy className="h-6 w-6" />
+              Moje závody
+            </CardTitle>
+            <Link href="/competitions/create">
+              <Button size="sm" className="gap-2">
+                <Plus className="h-4 w-4" />
+                Nový závod
+              </Button>
+            </Link>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {competitions.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Trophy className="h-12 w-12 mx-auto mb-3 text-muted-foreground/30" />
+              <p className="text-sm">Zatím nemáte žádné závody</p>
+              <p className="text-xs mt-1">Založte si přátelský závod nebo se připojte k existujícímu</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {competitions.map((comp) => (
+                <Link
+                  key={comp.id}
+                  href={`/competitions/${comp.id}`}
+                  className="block p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <h3 className="font-medium">{comp.name}</h3>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <span>Kód: {comp.invite_code}</span>
+                        {comp.prize_type === "beer" && <span>🍺 O pivo</span>}
+                        {comp.prize_type === "bottle" && <span>🍾 O láhev</span>}
+                        {comp.prize_type === "none" && <span>O čest</span>}
+                      </div>
+                    </div>
+                    <Badge variant="secondary" className="text-xs">
+                      {new Date(comp.end_date) > new Date() ? "Probíhá" : "Ukončeno"}
+                    </Badge>
+                  </div>
                 </Link>
               ))}
             </div>

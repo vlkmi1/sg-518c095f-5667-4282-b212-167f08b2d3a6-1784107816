@@ -2,9 +2,9 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Fish, User, LogOut, Trophy } from "lucide-react";
 import { authService } from "@/services/authService";
 import { profileService } from "@/services/profileService";
-import { Fish, LogOut, User } from "lucide-react";
 
 export function Header() {
   const router = useRouter();
@@ -55,6 +55,12 @@ export function Header() {
         <nav className="flex items-center gap-2 sm:gap-4">
           {user ? (
             <>
+              <Link href="/competitions/create">
+                <Button variant="outline" size="sm" className="gap-1.5 sm:gap-2 h-8 sm:h-9 px-2 sm:px-3">
+                  <Trophy className="h-4 w-4" />
+                  <span className="hidden md:inline">Přidat závod</span>
+                </Button>
+              </Link>
               <Link href="/profile">
                 <Button variant="ghost" size="sm" className="gap-1.5 sm:gap-2 h-8 sm:h-9 px-2 sm:px-3">
                   <User className="h-4 w-4" />
