@@ -1,6 +1,6 @@
 ---
 title: Systém autentizace a profily
-status: in_progress
+status: done
 priority: urgent
 type: feature
 tags: [auth, supabase, profile]
@@ -15,8 +15,8 @@ Implementace registrace, přihlášení a správy profilů. Uživatelé se mohou
 ## Checklist
 - [x] Databázové tabulky (profiles, RLS polícy)
 - [x] Auto-create profile trigger
-- [ ] AuthService: registrace s nickem, přihlášení (nick/email), odhlášení
-- [ ] ProfileService: CRUD operace pro profily
-- [ ] Komponenty: LoginForm, RegisterForm, ProfileView
-- [ ] Stránka /auth/login a /auth/register
-- [ ] Protected route wrapper pro přihlášené oblasti
+- [x] AuthService: registrace s nickem, přihlášení (nick/email), odhlášení
+- [x] ProfileService: CRUD operace pro profily
+- [x] Komponenty: LoginForm, RegisterForm, ProfileView
+- [x] Stránka /auth/login a /auth/register
+- [x] Protected route wrapper pro přihlášené oblasti
