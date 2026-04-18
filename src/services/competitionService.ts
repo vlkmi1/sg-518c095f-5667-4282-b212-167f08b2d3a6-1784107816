@@ -61,9 +61,16 @@ export const competitionService = {
     return { error };
   },
 
-  // Get competitions user is part of
+  // Get competitions user is part of (created OR participating)
   async getUserCompetitions(userId: string): Promise<Competition[]> {
-    const { data, error } = await supabase
+    // Get competitions where user is creator/organizer
+    const { data: createdComps, error: createdError } = await supabase
+      .from("competitions")
+      .select("*")
+      .or(`creator_id.eq.${userId},organizer_id.eq.${userId}`);
+
+    // Get competitions where user is participant
+    const { data: participantData, error: participantError } = await supabase
       .from("competition_participants")
       .select(`
         competition_id,
@@ -71,12 +78,39 @@ export const competitionService = {
       `)
       .eq("user_id", userId);
 
-    console.log("getUserCompetitions:", { data, error });
-    if (error) return [];
+    console.log("getUserCompetitions:", { 
+      created: createdComps, 
+      createdError,
+      participants: participantData,
+      participantError
+    });
 
-    return data
-      .map((row: any) => row.competitions)
-      .filter(Boolean) as Competition[];
+    // Combine both lists and remove duplicates
+    const allCompetitions: Competition[] = [];
+    const seenIds = new Set<string>();
+
+    // Add created competitions
+    if (createdComps) {
+      createdComps.forEach((comp) => {
+        if (!seenIds.has(comp.id)) {
+          allCompetitions.push(comp);
+          seenIds.add(comp.id);
+        }
+      });
+    }
+
+    // Add participant competitions
+    if (participantData) {
+      participantData.forEach((row: any) => {
+        const comp = row.competitions;
+        if (comp && !seenIds.has(comp.id)) {
+          allCompetitions.push(comp);
+          seenIds.add(comp.id);
+        }
+      });
+    }
+
+    return allCompetitions;
   },
 
   // Submit a catch to a competition
