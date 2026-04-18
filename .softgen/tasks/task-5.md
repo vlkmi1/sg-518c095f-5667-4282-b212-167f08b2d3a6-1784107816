@@ -1,6 +1,6 @@
 ---
 title: Uživatelský profil
-status: todo
+status: done
 priority: medium
 type: feature
 tags: [profile, user-dashboard]
@@ -13,8 +13,8 @@ position: 5
 Privátní oblast uživatele s přehledem jeho úlovků, možností přidat nový úlovek a editací profilu. Zobrazení statistik (celkem úlovků, největší ryba, atd.).
 
 ## Checklist
-- [ ] Stránka /profile: dashboard s přehledem úlovků
-- [ ] Komponenta UserCatchesList: seznam vlastních úlovků
-- [ ] Komponenta ProfileStats: statistiky (počet, průměrná velikost, největší úlovek)
-- [ ] Editace profilu (nickname, avatar)
-- [ ] Tlačítko "Přidat úlovek" navigující na upload form
+- [x] Stránka /profile: dashboard s přehledem úlovků
+- [x] Komponenta UserCatchesList: seznam vlastních úlovků
+- [x] Komponenta ProfileStats: statistiky (počet, průměrná velikost, největší úlovek)
+- [x] Editace profilu (nickname, avatar)
+- [x] Tlačítko "Přidat úlovek" navigující na upload form

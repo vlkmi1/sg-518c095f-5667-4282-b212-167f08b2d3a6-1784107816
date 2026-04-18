@@ -91,6 +91,46 @@ export const catchService = {
     }
   },
 
+  // Create new catch
+  async createCatch(catchData: {
+    user_id: string;
+    species: string;
+    length_cm: number | null;
+    weight_kg: number | null;
+    country: string | null;
+    region: string | null;
+    district: string | null;
+    bait_brand: string | null;
+    image_url: string;
+    caught_at: string;
+  }): Promise<{ data: any; error: any }> {
+    const { data, error } = await supabase
+      .from("catches")
+      .insert([catchData])
+      .select()
+      .single();
+
+    console.log("createCatch:", { data, error });
+    return { data, error };
+  },
+
+  // Get user's catches
+  async getUserCatches(userId: string): Promise<Tables<"catches">[]> {
+    const { data, error } = await supabase
+      .from("catches")
+      .select("*")
+      .eq("user_id", userId)
+      .order("caught_at", { ascending: false });
+
+    console.log("getUserCatches:", { data, error });
+    if (error) {
+      console.error("getUserCatches error:", error);
+      return [];
+    }
+
+    return Array.isArray(data) ? data : [];
+  },
+
   // Get unique filter values for dropdown options
   async getFilterOptions(): Promise<{
     countries: string[];
