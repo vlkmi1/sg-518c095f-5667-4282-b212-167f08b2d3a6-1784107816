@@ -19,7 +19,7 @@ export type Database = {
         Row: {
           bait_brand: string | null
           caught_at: string
-          country: string
+          country: string | null
           created_at: string | null
           district: string | null
           fishing_area: string | null
@@ -38,7 +38,7 @@ export type Database = {
         Insert: {
           bait_brand?: string | null
           caught_at: string
-          country: string
+          country?: string | null
           created_at?: string | null
           district?: string | null
           fishing_area?: string | null
@@ -57,7 +57,7 @@ export type Database = {
         Update: {
           bait_brand?: string | null
           caught_at?: string
-          country?: string
+          country?: string | null
           created_at?: string | null
           district?: string | null
           fishing_area?: string | null

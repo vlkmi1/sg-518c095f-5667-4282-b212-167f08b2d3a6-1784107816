@@ -354,10 +354,13 @@ export function UploadCatchForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Hide analysis prompt when submitting
+    setShowAnalysisPrompt(false);
+
     if (!imageFile) {
       toast({
         title: "Chybí fotografie",
-        description: "Nahrajte prosím fotografii úlovku",
+        description: "Prosím nahrajte fotografii úlovku",
         variant: "destructive",
       });
       return;

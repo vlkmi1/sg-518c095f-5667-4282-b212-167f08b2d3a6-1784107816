@@ -160,6 +160,30 @@ export const catchService = {
     return { countries, regions, districts, species };
   },
 
+  // Update catch
+  async updateCatch(catchId: string, updates: Partial<any>): Promise<{ data: any; error: any }> {
+    const { data, error } = await supabase
+      .from("catches")
+      .update(updates)
+      .eq("id", catchId)
+      .select()
+      .single();
+
+    console.log("updateCatch:", { data, error });
+    return { data, error };
+  },
+
+  // Delete catch
+  async deleteCatch(catchId: string): Promise<{ error: any }> {
+    const { error } = await supabase
+      .from("catches")
+      .delete()
+      .eq("id", catchId);
+
+    console.log("deleteCatch:", { catchId, error });
+    return { error };
+  },
+
   // Get top catches by species for Hall of Fame
   async getTopCatchesBySpecies(species: string, limit: number = 3): Promise<any[]> {
     const { data, error } = await supabase

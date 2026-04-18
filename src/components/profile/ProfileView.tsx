@@ -1,23 +1,54 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import { authService } from "@/services/authService";
-import { profileService } from "@/services/profileService";
 import { catchService } from "@/services/catchService";
-import { competitionService } from "@/services/competitionService";
-import type { Tables } from "@/integrations/supabase/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { User, Fish, Ruler, Weight, Plus, MapPin, Calendar, Trophy } from "lucide-react";
-import Link from "next/link";
-import { format } from "date-fns";
-import { cs } from "date-fns/locale";
+import { Separator } from "@/components/ui/separator";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, Fish, MapPin, Calendar, Award, Ruler, Weight, Eye, EyeOff, Trash2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+interface Profile {
+  id: string;
+  nickname: string;
+  email: string;
+  avatar_url?: string;
+}
+
+interface Catch {
+  id: string;
+  species: string;
+  length_cm: number | null;
+  weight_kg: number | null;
+  photo_url: string;
+  caught_at: string;
+  country: string | null;
+  region: string | null;
+  district: string | null;
+  fishing_area: string | null;
+  bait_brand: string | null;
+  is_public: boolean;
+}
 
 export function ProfileView() {
-  const [profile, setProfile] = useState<any>(null);
-  const [catches, setCatches] = useState<any[]>([]);
-  const [competitions, setCompetitions] = useState<any[]>([]);
+  const router = useRouter();
+  const { toast } = useToast();
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [catches, setCatches] = useState<Catch[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [catchToDelete, setCatchToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     loadProfile();
@@ -26,26 +57,61 @@ export function ProfileView() {
   async function loadProfile() {
     try {
       const user = await authService.getCurrentUser();
-      if (!user) return;
-
-      // Load profile
-      const { data: profileData } = await profileService.getProfileById(user.id);
-      if (profileData) {
-        setProfile(profileData);
+      if (!user) {
+        router.push("/auth/login");
+        return;
       }
 
-      // Load user's catches
-      const catchesData = await catchService.getUserCatches(user.id);
-      setCatches(Array.isArray(catchesData) ? catchesData : []);
-      
-      // Load user's competitions
-      const competitionsData = await competitionService.getUserCompetitions(user.id);
-      setCompetitions(Array.isArray(competitionsData) ? competitionsData : []);
+      const profileData = await authService.getUserProfile(user.id);
+      setProfile(profileData);
+
+      const userCatches = await catchService.getUserCatches(user.id);
+      setCatches(userCatches);
     } catch (error) {
       console.error("Error loading profile:", error);
+      toast({
+        title: "Chyba",
+        description: "Nepodařilo se načíst profil",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
+  }
+
+  async function handleDeleteCatch() {
+    if (!catchToDelete) return;
+
+    try {
+      const { error } = await catchService.deleteCatch(catchToDelete);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      toast({
+        title: "✅ Úlovek odstraněn",
+        description: "Úlovek byl úspěšně smazán",
+      });
+
+      // Refresh catches list
+      setCatches(catches.filter(c => c.id !== catchToDelete));
+    } catch (error: any) {
+      console.error("Delete catch error:", error);
+      toast({
+        title: "Chyba",
+        description: error.message || "Nepodařilo se odstranit úlovek",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+      setCatchToDelete(null);
+    }
+  }
+
+  function openDeleteDialog(catchId: string) {
+    setCatchToDelete(catchId);
+    setDeleteDialogOpen(true);
   }
 
   if (isLoading) {
@@ -237,6 +303,27 @@ export function ProfileView() {
           )}
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Odstranit úlovek?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tato akce je nevratná. Úlovek a fotografie budou trvale odstraněny.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Zrušit</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteCatch}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Odstranit
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
