@@ -164,6 +164,7 @@ export function UploadCatchForm() {
 
   useEffect(() => {
     loadUserCompetitions();
+    loadLastCatch();
   }, []);
 
   async function loadUserCompetitions() {
@@ -180,6 +181,34 @@ export function UploadCatchForm() {
       setUserCompetitions(activeComps);
     } catch (error) {
       console.error("Error loading competitions:", error);
+    }
+  }
+
+  async function loadLastCatch() {
+    try {
+      const user = await authService.getCurrentUser();
+      if (!user) return;
+
+      const catches = await catchService.getUserCatches(user.id);
+      if (catches.length > 0) {
+        const lastCatch = catches[0]; // Already sorted by caught_at DESC
+        
+        // Pre-fill form data from last catch (except photo and caught_at)
+        setFormData((prev) => ({
+          ...prev,
+          species: lastCatch.species || "",
+          length_cm: lastCatch.length_cm || 50,
+          weight_kg: lastCatch.weight_kg || 2,
+          country: lastCatch.country || "",
+          region: lastCatch.region || "",
+          district: lastCatch.district || "",
+          bait_brand: lastCatch.bait_brand || "",
+          selectedRegion: lastCatch.region || "",
+          selectedDistrict: lastCatch.district || "",
+        }));
+      }
+    } catch (error) {
+      console.error("Error loading last catch:", error);
     }
   }
 
