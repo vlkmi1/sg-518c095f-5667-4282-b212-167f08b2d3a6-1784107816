@@ -1,4 +1,5 @@
 import { Header } from "@/components/layout/Header";
+import { CatchGallery } from "@/components/gallery/CatchGallery";
 import { Button } from "@/components/ui/button";
 import { Fish, MapPin, Calendar, Ruler } from "lucide-react";
 import Link from "next/link";
@@ -9,7 +10,7 @@ export default function Home() {
       <Header />
       
       {/* Hero Section */}
-      <section className="container py-12 md:py-24">
+      <section className="container py-12 md:py-20">
         <div className="text-center space-y-6 max-w-3xl mx-auto">
           <h1 className="font-serif text-4xl md:text-6xl font-bold text-foreground tracking-tight">
             Sdílejte své úlovky<br />s komunitou rybářů
@@ -23,17 +24,17 @@ export default function Home() {
                 Začít sdílet
               </Button>
             </Link>
-            <Link href="#gallery">
+            <a href="#gallery">
               <Button size="lg" variant="outline" className="w-full sm:w-auto">
                 Prohlédnout galerii
               </Button>
-            </Link>
+            </a>
           </div>
         </div>
       </section>
 
       {/* Features */}
-      <section className="bg-muted/30 py-16">
+      <section className="bg-muted/30 py-12">
         <div className="container">
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div className="text-center space-y-3">
@@ -76,19 +77,14 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Gallery Placeholder */}
-      <section id="gallery" className="container py-16">
-        <h2 className="font-serif text-3xl md:text-4xl font-bold text-center mb-12">
-          Nejnovější úlovky
-        </h2>
-        <div className="text-center text-muted-foreground space-y-4">
-          <Fish className="h-16 w-16 mx-auto text-muted-foreground/30" />
-          <p className="text-lg">Galerie bude brzy dostupná</p>
-          <p className="text-sm">Staňte se prvním, kdo přidá svůj úlovek!</p>
-          <Link href="/auth/register">
-            <Button className="mt-4">Registrovat se</Button>
-          </Link>
+      {/* Gallery */}
+      <section id="gallery" className="py-8">
+        <div className="container mb-6">
+          <h2 className="font-serif text-3xl md:text-4xl font-bold text-center">
+            Nejnovější úlovky
+          </h2>
         </div>
+        <CatchGallery />
       </section>
     </div>
   );
