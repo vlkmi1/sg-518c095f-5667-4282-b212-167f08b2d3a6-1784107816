@@ -253,42 +253,57 @@ export function CreateCompetitionForm() {
               <Label>Bodovací tabulka *</Label>
               
               {/* Add Species Form */}
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <Select
-                    value={newSpecies}
-                    onValueChange={setNewSpecies}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Vyberte druh ryby" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {COMMON_SPECIES.filter(s => !scoringTable[s]).map((species) => (
-                        <SelectItem key={species} value={species}>
-                          {species}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              <div className="space-y-3">
+                {/* Quick selection buttons */}
+                <div>
+                  <Label className="text-xs text-muted-foreground mb-2 block">
+                    Rychlý výběr:
+                  </Label>
+                  <div className="flex flex-wrap gap-2">
+                    {COMMON_SPECIES.filter(s => !scoringTable[s]).map((species) => (
+                      <Button
+                        key={species}
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setNewSpecies(species)}
+                        className={newSpecies === species ? "border-primary" : ""}
+                      >
+                        {species}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
-                <Input
-                  type="number"
-                  step="1"
-                  min="1"
-                  value={newPoints}
-                  onChange={(e) => setNewPoints(e.target.value)}
-                  placeholder="Body"
-                  className="w-24"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleAddSpecies}
-                  className="gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  Přidat
-                </Button>
+
+                {/* Custom species input */}
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <Input
+                      value={newSpecies}
+                      onChange={(e) => setNewSpecies(e.target.value)}
+                      placeholder="Druh ryby (např. Kapr nebo vlastní)"
+                    />
+                  </div>
+                  <Input
+                    type="number"
+                    step="1"
+                    min="1"
+                    value={newPoints}
+                    onChange={(e) => setNewPoints(e.target.value)}
+                    placeholder="Body"
+                    className="w-24"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleAddSpecies}
+                    disabled={!newSpecies || !newPoints}
+                    className="gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Přidat
+                  </Button>
+                </div>
               </div>
 
               {/* Species List */}
@@ -322,7 +337,7 @@ export function CreateCompetitionForm() {
                     Zatím nejsou přidány žádné druhy ryb
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Přidejte druhy ryb a přiřaďte jim body
+                    Vyberte druh nebo zadejte vlastní a přiřaďte mu body
                   </p>
                 </div>
               )}
