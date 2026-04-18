@@ -171,7 +171,7 @@ export type Database = {
           join_code: string | null
           name: string
           organizer_id: string | null
-          prize_type: string
+          prize_type: string | null
           scoring_metric: string | null
           scoring_table: Json | null
           scoring_type: string
@@ -191,7 +191,7 @@ export type Database = {
           join_code?: string | null
           name: string
           organizer_id?: string | null
-          prize_type: string
+          prize_type?: string | null
           scoring_metric?: string | null
           scoring_table?: Json | null
           scoring_type: string
@@ -211,7 +211,7 @@ export type Database = {
           join_code?: string | null
           name?: string
           organizer_id?: string | null
-          prize_type?: string
+          prize_type?: string | null
           scoring_metric?: string | null
           scoring_table?: Json | null
           scoring_type?: string
