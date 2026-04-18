@@ -1,163 +1,380 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { Header } from "@/components/layout/Header";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { SEO } from "@/components/SEO";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { competitionService } from "@/services/competitionService";
-import { Trophy, Medal, Copy, Users, Calendar, Loader2, Share2 } from "lucide-react";
+import { catchService } from "@/services/catchService";
+import { storageService } from "@/services/storageService";
+import { authService } from "@/services/authService";
+import { useToast } from "@/hooks/use-toast";
+import { Trophy, Calendar, Users, Award, Upload, Camera, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
-import Link from "next/link";
+import { useRef } from "react";
 
-export default function CompetitionDetailPage() {
+export default function CompetitionPage() {
   const router = useRouter();
   const { id } = router.query;
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [competition, setCompetition] = useState<any>(null);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [selectedSpecies, setSelectedSpecies] = useState<string>("");
 
   useEffect(() => {
-    if (id && typeof id === "string") {
-      loadCompetition(id);
+    if (id) {
+      loadCompetition();
     }
   }, [id]);
 
-  async function loadCompetition(competitionId: string) {
+  async function loadCompetition() {
     try {
-      const { data: comp } = await competitionService.getCompetition(competitionId);
-      if (!comp) {
-        toast({
-          title: "Chyba",
-          description: "Závod nebyl nalezen.",
-          variant: "destructive",
-        });
-        router.push("/profile");
-        return;
-      }
+      const { data: comp } = await competitionService.getCompetition(id as string);
       setCompetition(comp);
 
-      // Load leaderboard
-      const board = await competitionService.getLeaderboard(competitionId);
-      setLeaderboard(board);
+      const leaders = await competitionService.getLeaderboard(id as string);
+      setLeaderboard(leaders);
     } catch (error) {
-      console.error("Load competition error:", error);
+      console.error("Error loading competition:", error);
+      toast({
+        title: "Chyba",
+        description: "Nepodařilo se načíst závod",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
   }
 
-  function copyInviteLink() {
-    if (!competition) return;
-    const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : '';
-    const inviteLink = `${origin}/competitions/join/${competition.invite_code}`;
-    
-    navigator.clipboard.writeText(inviteLink).then(() => {
+  function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function handleSubmitCatch() {
+    if (!imageFile || !selectedSpecies) {
       toast({
-        title: "Zkopírováno",
-        description: "Odkaz byl zkopírován do schránky.",
+        title: "Chybí údaje",
+        description: "Vyberte fotografii a druh ryby",
+        variant: "destructive",
       });
-    });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const user = await authService.getCurrentUser();
+      if (!user) {
+        throw new Error("Uživatel není přihlášen");
+      }
+
+      // Upload photo
+      const { url: photoUrl, path: photoPath } = await storageService.uploadCatchPhoto(
+        imageFile,
+        user.id
+      );
+
+      // Get points for selected species (if points-based competition)
+      const points = competition.scoring_type === "points" && competition.scoring_table
+        ? competition.scoring_table[selectedSpecies]
+        : 0;
+
+      // Create catch record
+      const catchData = {
+        user_id: user.id,
+        species: selectedSpecies,
+        length_cm: null,
+        weight_kg: null,
+        photo_url: photoUrl,
+        photo_path: photoPath,
+        caught_at: new Date().toISOString(),
+        is_public: false,
+        latitude: null,
+        longitude: null,
+        country: null,
+        region: null,
+        district: null,
+        fishing_area: null,
+        bait_brand: null,
+      };
+
+      const { data: newCatch, error: catchError } = await catchService.createCatch(catchData);
+
+      if (catchError) {
+        throw new Error(catchError.message);
+      }
+
+      // Submit to competition
+      await competitionService.submitCatchToCompetition(
+        competition.id,
+        newCatch.id,
+        true // auto-approve for now
+      );
+
+      toast({
+        title: "✅ Úlovek přidán!",
+        description: competition.scoring_type === "points" 
+          ? `Získali jste ${points} bodů za ${selectedSpecies}`
+          : "Váš úlovek byl přidán do závodu",
+      });
+
+      // Reset form
+      setImageFile(null);
+      setImagePreview(null);
+      setSelectedSpecies("");
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+
+      // Reload leaderboard
+      loadCompetition();
+    } catch (error: any) {
+      console.error("Submit catch error:", error);
+      toast({
+        title: "Chyba",
+        description: error.message || "Nepodařilo se přidat úlovek",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   if (isLoading) {
     return (
-      <ProtectedRoute>
+      <>
+        <SEO title="Načítání závodu..." />
         <div className="min-h-screen bg-background">
           <Header />
-          <div className="container py-16 flex items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
+          <main className="container py-8">
+            <div className="space-y-4">
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-64 w-full" />
+            </div>
+          </main>
         </div>
-      </ProtectedRoute>
+      </>
     );
   }
 
   if (!competition) {
-    return null;
+    return (
+      <>
+        <SEO title="Závod nenalezen" />
+        <div className="min-h-screen bg-background">
+          <Header />
+          <main className="container py-8">
+            <Card>
+              <CardContent className="p-8 text-center">
+                <p className="text-muted-foreground">Závod nenalezen</p>
+              </CardContent>
+            </Card>
+          </main>
+        </div>
+      </>
+    );
   }
 
-  const isActive = new Date(competition.end_date) > new Date();
-  const hasStarted = new Date(competition.start_date) <= new Date();
-  const isFinished = !isActive && hasStarted;
+  const availableSpecies = competition.scoring_type === "points" && competition.scoring_table
+    ? Object.keys(competition.scoring_table)
+    : [];
 
   return (
-    <ProtectedRoute>
+    <>
+      <SEO title={`${competition.name} - Rybářský závod`} />
       <div className="min-h-screen bg-background">
         <Header />
-        <main className="container py-8 sm:py-12 space-y-6">
-          {/* Competition header */}
-          <Card className="border-primary/20 shadow-md">
+        <main className="container py-8 space-y-6">
+          {/* Competition Info */}
+          <Card>
             <CardHeader>
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3">
-                    <Trophy className="h-8 w-8 text-primary" />
-                    <CardTitle className="font-serif text-3xl text-primary">
-                      {competition.name}
-                    </CardTitle>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge variant={isActive ? "default" : "secondary"}>
-                      {!hasStarted ? "Připravuje se" : isActive ? "Probíhá" : "Ukončeno"}
-                    </Badge>
-                    {competition.prize_type === "beer" && <Badge variant="outline">🍺 O pivo</Badge>}
-                    {competition.prize_type === "bottle" && <Badge variant="outline">🍾 O láhev</Badge>}
-                    {competition.prize_type === "none" && <Badge variant="outline">O čest</Badge>}
-                  </div>
+              <div className="flex items-start justify-between">
+                <div>
+                  <CardTitle className="font-serif text-3xl mb-2">
+                    {competition.name}
+                  </CardTitle>
+                  {competition.description && (
+                    <p className="text-muted-foreground">{competition.description}</p>
+                  )}
                 </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={copyInviteLink} className="gap-2">
-                    <Share2 className="h-4 w-4" />
-                    Sdílet
-                  </Button>
-                </div>
+                <Badge variant="secondary" className="gap-2">
+                  <Trophy className="h-4 w-4" />
+                  {competition.scoring_type === "points" ? "Bodování" : "Míry ryby"}
+                </Badge>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid sm:grid-cols-2 gap-4 text-sm">
-                <div className="space-y-1">
-                  <p className="text-muted-foreground">Začátek:</p>
-                  <p className="font-medium flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    {format(new Date(competition.start_date), "d. MMMM yyyy, HH:mm", { locale: cs })}
-                  </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex items-center gap-2 text-sm">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">Začátek</p>
+                    <p className="text-muted-foreground">
+                      {format(new Date(competition.start_date), "d. MMMM yyyy HH:mm", { locale: cs })}
+                    </p>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-muted-foreground">Konec:</p>
-                  <p className="font-medium flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    {format(new Date(competition.end_date), "d. MMMM yyyy, HH:mm", { locale: cs })}
-                  </p>
+                <div className="flex items-center gap-2 text-sm">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">Konec</p>
+                    <p className="text-muted-foreground">
+                      {format(new Date(competition.end_date), "d. MMMM yyyy HH:mm", { locale: cs })}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">Účastníci</p>
+                    <p className="text-muted-foreground">{leaderboard.length}</p>
+                  </div>
                 </div>
               </div>
 
-              <div className="bg-muted p-4 rounded-lg space-y-2 text-sm">
-                <p className="font-medium">Pravidla:</p>
-                <ul className="space-y-1 text-muted-foreground">
-                  <li>• Hodnotí se: {
-                    competition.scoring_type === "length" ? "Délka ryby (cm)" :
-                    competition.scoring_type === "weight" ? "Váha ryby (kg)" :
-                    "Součet délky + váhy"
-                  }</li>
-                  <li>• Započítávají se: {
-                    competition.top_catches_count 
-                      ? `Jen ${competition.top_catches_count} nejlepších úlovků`
-                      : "Všechny úlovky"
-                  }</li>
-                  <li>• Schvalování: {
-                    competition.auto_approve ? "Automatické" : "Zakladatel schvaluje"
-                  }</li>
-                </ul>
+              <div className="flex items-center gap-2 p-3 bg-muted/30 rounded-lg">
+                <p className="text-sm font-medium">Kód pro připojení:</p>
+                <Badge variant="outline" className="font-mono text-lg">
+                  {competition.join_code || competition.invite_code}
+                </Badge>
               </div>
 
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Users className="h-4 w-4" />
-                <span>{leaderboard.length} {leaderboard.length === 1 ? "účastník" : leaderboard.length < 5 ? "účastníci" : "účastníků"}</span>
+              {/* Scoring Table (for points-based competitions) */}
+              {competition.scoring_type === "points" && competition.scoring_table && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Bodovací tabulka:</p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    {Object.entries(competition.scoring_table).map(([species, points]: [string, any]) => (
+                      <div
+                        key={species}
+                        className="flex items-center justify-between p-2 bg-muted/30 rounded"
+                      >
+                        <span className="text-sm">{species}</span>
+                        <Badge variant="secondary">{points} b.</Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Submit Catch Form */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-serif text-xl flex items-center gap-2">
+                <Camera className="h-5 w-5 text-primary" />
+                Přidat úlovek do závodu
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Image Upload */}
+              <div className="space-y-2">
+                <Label>Fotografie úlovku *</Label>
+                {!imagePreview ? (
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                  >
+                    <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">Klikněte pro výběr fotografie</p>
+                  </div>
+                ) : (
+                  <div className="relative rounded-lg overflow-hidden">
+                    <img
+                      src={imagePreview}
+                      alt="Náhled"
+                      className="w-full h-auto max-h-64 object-cover"
+                    />
+                  </div>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                  className="hidden"
+                />
               </div>
+
+              {/* Species Selection */}
+              {competition.scoring_type === "points" ? (
+                <div className="space-y-2">
+                  <Label htmlFor="species">Druh ryby *</Label>
+                  <Select value={selectedSpecies} onValueChange={setSelectedSpecies}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Vyberte druh ryby" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableSpecies.map((species) => (
+                        <SelectItem key={species} value={species}>
+                          {species} ({competition.scoring_table[species]} bodů)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {selectedSpecies && (
+                    <p className="text-sm text-muted-foreground">
+                      Za {selectedSpecies} získáte <strong>{competition.scoring_table[selectedSpecies]} bodů</strong>
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="species">Druh ryby *</Label>
+                  <Input
+                    id="species"
+                    value={selectedSpecies}
+                    onChange={(e) => setSelectedSpecies(e.target.value)}
+                    placeholder="např. Kapr"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Hodnotí se: {competition.scoring_metric === "weight" ? "Hmotnost" : "Délka"}
+                  </p>
+                </div>
+              )}
+
+              <Button
+                onClick={handleSubmitCatch}
+                disabled={isSubmitting || !imageFile || !selectedSpecies}
+                className="w-full"
+                size="lg"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Přidávám...
+                  </>
+                ) : (
+                  "Přidat úlovek do závodu"
+                )}
+              </Button>
             </CardContent>
           </Card>
 
@@ -165,48 +382,41 @@ export default function CompetitionDetailPage() {
           <Card>
             <CardHeader>
               <CardTitle className="font-serif text-2xl flex items-center gap-2">
-                <Medal className="h-6 w-6 text-primary" />
-                {isFinished ? "Konečné pořadí" : "Aktuální pořadí"}
+                <Trophy className="h-6 w-6 text-primary" />
+                Pořadí
               </CardTitle>
             </CardHeader>
             <CardContent>
               {leaderboard.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Trophy className="h-16 w-16 mx-auto mb-4 text-muted-foreground/30" />
-                  <p className="text-lg font-medium">Zatím žádné úlovky</p>
-                  <p className="text-sm mt-1">Buďte první, kdo přidá úlovek do závodu!</p>
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">Zatím žádné úlovky</p>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {leaderboard.map((entry, index) => (
+                  {leaderboard.map((user, index) => (
                     <div
-                      key={entry.user_id}
-                      className={`p-4 rounded-lg flex items-center justify-between ${
-                        index === 0 && isFinished ? 'bg-amber-500/10 border-2 border-amber-500/30' :
-                        index === 1 && isFinished ? 'bg-gray-300/10 border-2 border-gray-300/30' :
-                        index === 2 && isFinished ? 'bg-orange-600/10 border-2 border-orange-600/30' :
-                        'bg-muted/50'
-                      }`}
+                      key={user.user_id}
+                      className="flex items-center justify-between p-4 bg-muted/30 rounded-lg"
                     >
                       <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-lg">
-                          {index === 0 && isFinished ? '🥇' :
-                           index === 1 && isFinished ? '🥈' :
-                           index === 2 && isFinished ? '🥉' :
-                           index + 1}
+                        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 font-bold text-primary">
+                          {index + 1}
                         </div>
                         <div>
-                          <p className="font-medium">{entry.nickname || "Anonym"}</p>
+                          <p className="font-medium">{user.nickname}</p>
                           <p className="text-sm text-muted-foreground">
-                            {entry.catch_count} {entry.catch_count === 1 ? "úlovek" : entry.catch_count < 5 ? "úlovky" : "úlovků"}
+                            {user.catch_count} {user.catch_count === 1 ? "úlovek" : "úlovky"}
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-2xl font-bold font-serif text-primary">
-                          {entry.total_score.toFixed(1)}
+                        <p className="text-2xl font-bold text-primary">
+                          {user.total_score.toFixed(competition.scoring_type === "points" ? 0 : 2)}
                         </p>
-                        <p className="text-xs text-muted-foreground">bodů</p>
+                        <p className="text-xs text-muted-foreground">
+                          {competition.scoring_type === "points" ? "bodů" : 
+                           competition.scoring_metric === "weight" ? "kg" : "cm"}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -214,26 +424,8 @@ export default function CompetitionDetailPage() {
               )}
             </CardContent>
           </Card>
-
-          {/* Share card */}
-          <Card className="bg-muted/30">
-            <CardContent className="p-6 text-center space-y-3">
-              <h3 className="font-medium">Pozvěte přátele do závodu</h3>
-              <div className="flex gap-2 max-w-md mx-auto">
-                <code className="flex-1 p-3 bg-background rounded border text-sm font-mono">
-                  {competition.invite_code}
-                </code>
-                <Button onClick={copyInviteLink} variant="outline">
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Sdílejte kód nebo odkaz, aby se mohli přátelé připojit
-              </p>
-            </CardContent>
-          </Card>
         </main>
       </div>
-    </ProtectedRoute>
+    </>
   );
 }
