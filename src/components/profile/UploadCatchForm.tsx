@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 import { authService } from "@/services/authService";
 import { catchService } from "@/services/catchService";
 import { storageService } from "@/services/storageService";
-import { Upload, MapPin, Loader2 } from "lucide-react";
+import { competitionService } from "@/services/competitionService";
+import { Upload, MapPin, Calendar, Save, Loader2, Fish, X } from "lucide-react";
 
 // UPRAVITELNÉ SEZNAMY
 const FISH_SPECIES = [
@@ -164,6 +165,9 @@ export function UploadCatchForm() {
   const [uploading, setUploading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [userCompetitions, setUserCompetitions] = useState<any[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState<FormData>({
@@ -175,11 +179,35 @@ export function UploadCatchForm() {
     district: "",
     bait_brand: "",
     caught_at: new Date().toISOString().slice(0, 16),
+    selectedRegion: "",
+    selectedDistrict: "",
+    competition_id: "",
   });
 
   const availableDistricts = formData.region && CZECH_DISTRICTS[formData.region] 
     ? CZECH_DISTRICTS[formData.region] 
     : [];
+
+  useEffect(() => {
+    loadUserCompetitions();
+  }, []);
+
+  async function loadUserCompetitions() {
+    try {
+      const user = await authService.getCurrentUser();
+      if (!user) return;
+
+      const competitions = await competitionService.getUserCompetitions(user.id);
+      // Filter only active competitions
+      const activeComps = competitions.filter((comp: any) => {
+        const now = new Date();
+        return new Date(comp.start_date) <= now && new Date(comp.end_date) >= now;
+      });
+      setUserCompetitions(activeComps);
+    } catch (error) {
+      console.error("Error loading competitions:", error);
+    }
+  }
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -298,7 +326,19 @@ export function UploadCatchForm() {
       });
 
       if (error) {
-        throw new Error(error.message);
+        throw error;
+      }
+
+      // If competition selected, submit to competition
+      if (formData.competition_id && data?.id) {
+        const comp = userCompetitions.find((c: any) => c.id === formData.competition_id);
+        if (comp) {
+          await competitionService.submitCatchToCompetition(
+            formData.competition_id,
+            data.id,
+            comp.auto_approve
+          );
+        }
       }
 
       toast({
@@ -520,6 +560,34 @@ export function UploadCatchForm() {
                 </Select>
               </div>
             </div>
+
+            {/* Competition selection (optional) */}
+            {userCompetitions.length > 0 && (
+              <div className="space-y-2">
+                <Label htmlFor="competition_id">
+                  Přidat do závodu (volitelné)
+                </Label>
+                <Select 
+                  value={formData.competition_id} 
+                  onValueChange={(value) => handleSelectChange("competition_id", value)}
+                >
+                  <SelectTrigger id="competition_id">
+                    <SelectValue placeholder="Vyberte závod nebo nechte prázdné" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Žádný závod</SelectItem>
+                    {userCompetitions.map((comp) => (
+                      <SelectItem key={comp.id} value={comp.id}>
+                        {comp.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Pokud je úlovek z probíhajícího závodu, můžete ho automaticky započítat
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Bait Brand */}
