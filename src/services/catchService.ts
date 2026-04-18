@@ -103,10 +103,14 @@ export const catchService = {
     bait_brand: string | null;
     photo_url: string;
     caught_at: string;
+    is_public?: boolean;
   }): Promise<{ data: any; error: any }> {
     const { data, error } = await supabase
       .from("catches")
-      .insert([catchData])
+      .insert([{
+        ...catchData,
+        is_public: catchData.is_public ?? true,
+      }])
       .select()
       .single();
 
