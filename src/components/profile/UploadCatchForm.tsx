@@ -277,7 +277,10 @@ export function UploadCatchForm() {
       // Upload image
       const uploadResult = await storageService.uploadCatchImage(imageFile, user.id);
       if (uploadResult.error || !uploadResult.url) {
-        throw new Error(uploadResult.error || "Nepodařilo se nahrát obrázek");
+        const errorMsg = typeof uploadResult.error === 'string' 
+          ? uploadResult.error 
+          : (uploadResult.error?.message || "Nepodařilo se nahrát obrázek");
+        throw new Error(errorMsg);
       }
 
       // Create catch record
