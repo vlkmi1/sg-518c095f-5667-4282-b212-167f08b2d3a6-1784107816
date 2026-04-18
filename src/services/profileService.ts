@@ -19,12 +19,12 @@ export interface UpdateProfileData {
 
 export const profileService = {
   // Get profile by ID
-  async getProfileById(userId: string): Promise<{ data: Profile | null; error: any }> {
+  async getProfileById(userId: string): Promise<{ data: any; error: any }> {
     const { data, error } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", userId)
-      .maybeSingle();
+      .single();
 
     console.log("getProfileById:", { data, error });
     return { data, error };
@@ -73,19 +73,14 @@ export const profileService = {
   },
 
   // Update profile
-  async updateProfile(userId: string, updates: UpdateProfileData): Promise<{ data: Profile | null; error: any }> {
-    const { data, error } = await supabase
+  async updateProfile(userId: string, updates: { full_name?: string | null; location?: string | null }): Promise<{ error: any }> {
+    const { error } = await supabase
       .from("profiles")
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", userId)
-      .select()
-      .single();
+      .update(updates)
+      .eq("id", userId);
 
-    console.log("updateProfile:", { data, error });
-    return { data, error };
+    console.log("updateProfile:", { userId, updates, error });
+    return { error };
   },
 
   // Check if nickname is available

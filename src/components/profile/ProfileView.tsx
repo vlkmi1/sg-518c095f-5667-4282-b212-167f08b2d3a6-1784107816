@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EditProfileForm } from "@/components/profile/EditProfileForm";
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -22,13 +23,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Fish, MapPin, Calendar, Award, Ruler, Weight, Eye, EyeOff, Trash2, User, Trophy } from "lucide-react";
+import { Plus, Fish, MapPin, Calendar, Award, Ruler, Weight, Eye, EyeOff, Trash2, User, Trophy, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Profile {
   id: string;
   nickname: string;
   email: string;
+  full_name?: string | null;
+  location?: string | null;
   avatar_url?: string;
 }
 
@@ -56,6 +59,7 @@ export function ProfileView() {
   const [isLoading, setIsLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [catchToDelete, setCatchToDelete] = useState<string | null>(null);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -124,6 +128,11 @@ export function ProfileView() {
     setDeleteDialogOpen(true);
   }
 
+  function handleProfileSaved() {
+    setIsEditingProfile(false);
+    loadProfile();
+  }
+
   if (isLoading) {
     return (
       <div className="container py-8 space-y-6">
@@ -148,24 +157,40 @@ export function ProfileView() {
       {/* Profile Header */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
               <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
                 <User className="h-8 w-8 text-primary" />
               </div>
               <div>
                 <CardTitle className="font-serif text-2xl">
-                  {profile?.nickname || "Anonym"}
+                  {profile.nickname}
                 </CardTitle>
-                <p className="text-sm text-muted-foreground">{profile?.email}</p>
+                {profile.full_name && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {profile.full_name}
+                  </p>
+                )}
+                {profile.location && (
+                  <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
+                    <MapPin className="h-3 w-3" />
+                    {profile.location}
+                  </div>
+                )}
+                <p className="text-sm text-muted-foreground mt-1">
+                  {profile.email}
+                </p>
               </div>
             </div>
-            <Link href="/profile/add-catch">
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                Přidat úlovek
-              </Button>
-            </Link>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEditingProfile(true)}
+              className="gap-2"
+            >
+              <Edit className="h-4 w-4" />
+              Upravit profil
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -198,6 +223,15 @@ export function ProfileView() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit Profile Form */}
+      {isEditingProfile && profile && (
+        <EditProfileForm
+          profile={profile}
+          onSave={handleProfileSaved}
+          onCancel={() => setIsEditingProfile(false)}
+        />
+      )}
 
       {/* User's Catches */}
       <Card>
