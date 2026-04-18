@@ -31,27 +31,27 @@ export function CatchCard({ catch: catchData }: CatchCardProps) {
           )}
         </div>
 
-        <CardContent className="p-4 space-y-3">
+        <CardContent className="p-3 sm:p-4 space-y-2 sm:space-y-3">
           {/* Species & Angler */}
           <div className="space-y-1">
-            <h3 className="font-serif text-xl font-semibold text-foreground leading-tight">
+            <h3 className="font-serif text-lg sm:text-xl font-semibold text-foreground leading-tight">
               {catchData.species || "Neznámý druh"}
             </h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs sm:text-sm text-muted-foreground">
               {catchData.profiles?.nickname || "Anonym"}
             </p>
           </div>
 
           {/* Measurements */}
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5 sm:gap-2">
             {catchData.length_cm && (
-              <Badge variant="secondary" className="gap-1">
+              <Badge variant="secondary" className="gap-1 text-xs">
                 <Ruler className="h-3 w-3" />
                 {catchData.length_cm} cm
               </Badge>
             )}
             {catchData.weight_kg && (
-              <Badge variant="secondary" className="gap-1">
+              <Badge variant="secondary" className="gap-1 text-xs">
                 <Weight className="h-3 w-3" />
                 {catchData.weight_kg} kg
               </Badge>
@@ -59,11 +59,11 @@ export function CatchCard({ catch: catchData }: CatchCardProps) {
           </div>
 
           {/* Location & Date */}
-          <div className="space-y-1.5 text-sm text-muted-foreground">
+          <div className="space-y-1 sm:space-y-1.5 text-xs sm:text-sm text-muted-foreground">
             {catchData.country && (
-              <div className="flex items-start gap-2">
-                <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                <span>
+              <div className="flex items-start gap-1.5 sm:gap-2">
+                <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 mt-0.5 flex-shrink-0" />
+                <span className="line-clamp-2">
                   {[catchData.district, catchData.region, catchData.country]
                     .filter(Boolean)
                     .join(", ")}
@@ -71,9 +71,9 @@ export function CatchCard({ catch: catchData }: CatchCardProps) {
               </div>
             )}
             {caughtDate && (
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 flex-shrink-0" />
-                <span>
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                <span className="truncate">
                   {format(caughtDate, "d. MMMM yyyy, HH:mm", { locale: cs })}
                 </span>
               </div>
@@ -82,8 +82,8 @@ export function CatchCard({ catch: catchData }: CatchCardProps) {
 
           {/* Bait */}
           {catchData.bait_brand && (
-            <div className="pt-2 border-t border-border">
-              <p className="text-xs text-muted-foreground">
+            <div className="pt-1.5 sm:pt-2 border-t border-border">
+              <p className="text-xs text-muted-foreground truncate">
                 Nástraha: <span className="text-foreground font-medium">{catchData.bait_brand}</span>
               </p>
             </div>

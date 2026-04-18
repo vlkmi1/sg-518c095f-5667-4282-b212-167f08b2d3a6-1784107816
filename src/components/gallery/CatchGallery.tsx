@@ -33,13 +33,13 @@ export function CatchGallery() {
   }
 
   return (
-    <div className="container py-8 space-y-6">
+    <div className="container py-6 sm:py-8 space-y-4 sm:space-y-6">
       <FilterBar onFiltersChange={setFilters} />
 
       {catches.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground space-y-4">
-          <Fish className="h-16 w-16 mx-auto text-muted-foreground/30" />
-          <p className="text-lg">
+        <div className="text-center py-12 sm:py-16 px-4 text-muted-foreground space-y-3 sm:space-y-4">
+          <Fish className="h-12 w-12 sm:h-16 sm:w-16 mx-auto text-muted-foreground/30" />
+          <p className="text-base sm:text-lg">
             {Object.keys(filters).length > 0
               ? "Žádné úlovky pro zvolené filtry"
               : "Zatím zde nejsou žádné úlovky"}
@@ -48,13 +48,13 @@ export function CatchGallery() {
         </div>
       ) : (
         <>
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
+          <div className="flex items-center justify-between px-1">
+            <p className="text-xs sm:text-sm text-muted-foreground">
               Zobrazeno: {catches.length} {catches.length === 1 ? "úlovek" : catches.length < 5 ? "úlovky" : "úlovků"}
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {catches.map((catchData) => (
               <CatchCard key={catchData.id} catch={catchData} />
             ))}

@@ -59,7 +59,7 @@ export function FilterBar({ onFiltersChange }: FilterBarProps) {
         )}
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Select
           value={filters.species || "all"}
           onValueChange={(value) => handleFilterChange("species", value)}
