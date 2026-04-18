@@ -114,6 +114,7 @@ export const competitionService = {
       .select(`
         *,
         catches (
+          species,
           length_cm,
           weight_kg,
           user_id,
@@ -145,9 +146,21 @@ export const competitionService = {
       const userId = catchData.user_id;
       const nickname = catchData.profiles?.nickname || "Anonym";
       
-      const score = competition.scoring_type === "length" ? (catchData.length_cm || 0) :
-                    competition.scoring_type === "weight" ? (catchData.weight_kg || 0) :
-                    ((catchData.length_cm || 0) + (catchData.weight_kg || 0));
+      let score = 0;
+
+      // Calculate score based on competition type
+      if (competition.scoring_type === "points" && competition.scoring_table) {
+        // Points-based: use scoring table
+        const species = catchData.species;
+        score = competition.scoring_table[species] || 0;
+      } else {
+        // Measurement-based: use length or weight
+        score = competition.scoring_metric === "length" 
+          ? (catchData.length_cm || 0)
+          : competition.scoring_metric === "weight"
+          ? (catchData.weight_kg || 0)
+          : ((catchData.length_cm || 0) + (catchData.weight_kg || 0));
+      }
 
       if (!userStats.has(userId)) {
         userStats.set(userId, {
@@ -181,5 +194,15 @@ export const competitionService = {
 
     // Sort leaderboard by score descending
     return leaderboard.sort((a, b) => b.total_score - a.total_score);
+  },
+
+  // Generate random join code
+  generateJoinCode(): string {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let code = "";
+    for (let i = 0; i < 6; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
   }
 };

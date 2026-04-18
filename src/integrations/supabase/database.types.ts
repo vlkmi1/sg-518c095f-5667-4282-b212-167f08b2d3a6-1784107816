@@ -163,11 +163,16 @@ export type Database = {
           auto_approve: boolean
           created_at: string | null
           creator_id: string
+          description: string | null
           end_date: string
           id: string
-          invite_code: string
+          invite_code: string | null
+          is_public: boolean | null
+          join_code: string | null
           name: string
+          organizer_id: string | null
           prize_type: string
+          scoring_metric: string | null
           scoring_table: Json | null
           scoring_type: string
           start_date: string
@@ -178,11 +183,16 @@ export type Database = {
           auto_approve?: boolean
           created_at?: string | null
           creator_id: string
+          description?: string | null
           end_date: string
           id?: string
-          invite_code: string
+          invite_code?: string | null
+          is_public?: boolean | null
+          join_code?: string | null
           name: string
+          organizer_id?: string | null
           prize_type: string
+          scoring_metric?: string | null
           scoring_table?: Json | null
           scoring_type: string
           start_date: string
@@ -193,11 +203,16 @@ export type Database = {
           auto_approve?: boolean
           created_at?: string | null
           creator_id?: string
+          description?: string | null
           end_date?: string
           id?: string
-          invite_code?: string
+          invite_code?: string | null
+          is_public?: boolean | null
+          join_code?: string | null
           name?: string
+          organizer_id?: string | null
           prize_type?: string
+          scoring_metric?: string | null
           scoring_table?: Json | null
           scoring_type?: string
           start_date?: string
@@ -208,6 +223,13 @@ export type Database = {
           {
             foreignKeyName: "competitions_creator_id_fkey"
             columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competitions_organizer_id_fkey"
+            columns: ["organizer_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
