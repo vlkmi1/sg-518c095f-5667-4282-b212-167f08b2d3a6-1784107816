@@ -162,7 +162,7 @@ export type Database = {
         Row: {
           auto_approve: boolean
           created_at: string | null
-          creator_id: string
+          creator_id: string | null
           description: string | null
           end_date: string
           id: string
@@ -182,7 +182,7 @@ export type Database = {
         Insert: {
           auto_approve?: boolean
           created_at?: string | null
-          creator_id: string
+          creator_id?: string | null
           description?: string | null
           end_date: string
           id?: string
@@ -202,7 +202,7 @@ export type Database = {
         Update: {
           auto_approve?: boolean
           created_at?: string | null
-          creator_id?: string
+          creator_id?: string | null
           description?: string | null
           end_date?: string
           id?: string

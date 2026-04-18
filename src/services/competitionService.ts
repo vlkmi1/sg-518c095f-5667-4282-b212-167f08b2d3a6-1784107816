@@ -14,6 +14,7 @@ export const competitionService = {
       .from("competitions")
       .insert({
         ...competitionData,
+        creator_id: competitionData.organizer_id, // For backwards compatibility
         join_code: joinCode,
       })
       .select()
