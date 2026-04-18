@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -20,7 +21,7 @@ import { catchService } from "@/services/catchService";
 import { storageService } from "@/services/storageService";
 import { authService } from "@/services/authService";
 import { useToast } from "@/hooks/use-toast";
-import { Trophy, Calendar, Users, Award, Upload, Camera, Loader2 } from "lucide-react";
+import { Trophy, Calendar, Users, Award, Upload, Camera, Loader2, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
 import { useRef } from "react";
@@ -38,12 +39,25 @@ export default function CompetitionPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedSpecies, setSelectedSpecies] = useState<string>("");
+  const [saveToProfile, setSaveToProfile] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
-    if (id) {
-      loadCompetition();
-    }
+    loadData();
   }, [id]);
+
+  async function loadData() {
+    try {
+      const user = await authService.getCurrentUser();
+      setCurrentUser(user);
+
+      if (id) {
+        await loadCompetition();
+      }
+    } catch (error) {
+      console.error("Error loading data:", error);
+    }
+  }
 
   async function loadCompetition() {
     try {
@@ -76,11 +90,53 @@ export default function CompetitionPage() {
     reader.readAsDataURL(file);
   }
 
+  function canSubmitCatch(): { allowed: boolean; reason?: string } {
+    if (!currentUser) {
+      return { allowed: false, reason: "Musíte být přihlášeni" };
+    }
+
+    if (!competition) {
+      return { allowed: false, reason: "Závod nenalezen" };
+    }
+
+    const now = new Date();
+    const startDate = new Date(competition.start_date);
+    const endDate = new Date(competition.end_date);
+
+    const isOrganizer = currentUser.id === competition.organizer_id || 
+                       currentUser.id === competition.creator_id;
+
+    // Before competition starts
+    if (now < startDate) {
+      return { allowed: false, reason: "Závod ještě nezačal" };
+    }
+
+    // After competition ends - only organizer can submit
+    if (now > endDate && !isOrganizer) {
+      return { 
+        allowed: false, 
+        reason: "Závod již skončil. Pouze organizátor může dodatečně přidat úlovky." 
+      };
+    }
+
+    return { allowed: true };
+  }
+
   async function handleSubmitCatch() {
     if (!imageFile || !selectedSpecies) {
       toast({
         title: "Chybí údaje",
         description: "Vyberte fotografii a druh ryby",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const canSubmit = canSubmitCatch();
+    if (!canSubmit.allowed) {
+      toast({
+        title: "Nelze přidat úlovek",
+        description: canSubmit.reason,
         variant: "destructive",
       });
       return;
@@ -114,7 +170,7 @@ export default function CompetitionPage() {
         photo_url: photoUrl,
         photo_path: photoPath,
         caught_at: new Date().toISOString(),
-        is_public: false,
+        is_public: saveToProfile, // Save to profile if toggle is on
         latitude: null,
         longitude: null,
         country: null,
@@ -137,17 +193,24 @@ export default function CompetitionPage() {
         true // auto-approve for now
       );
 
+      const successMessage = competition.scoring_type === "points"
+        ? `Získali jste ${points} bodů za ${selectedSpecies}`
+        : "Váš úlovek byl přidán do závodu";
+
+      const profileNote = saveToProfile 
+        ? " + přidán do vašeho profilu a veřejné galerie"
+        : "";
+
       toast({
         title: "✅ Úlovek přidán!",
-        description: competition.scoring_type === "points" 
-          ? `Získali jste ${points} bodů za ${selectedSpecies}`
-          : "Váš úlovek byl přidán do závodu",
+        description: successMessage + profileNote,
       });
 
       // Reset form
       setImageFile(null);
       setImagePreview(null);
       setSelectedSpecies("");
+      setSaveToProfile(false);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -205,6 +268,13 @@ export default function CompetitionPage() {
     ? Object.keys(competition.scoring_table)
     : [];
 
+  const submissionStatus = canSubmitCatch();
+  const now = new Date();
+  const startDate = new Date(competition.start_date);
+  const endDate = new Date(competition.end_date);
+  const hasStarted = now >= startDate;
+  const hasEnded = now > endDate;
+
   return (
     <>
       <SEO title={`${competition.name} - Rybářský závod`} />
@@ -223,10 +293,30 @@ export default function CompetitionPage() {
                     <p className="text-muted-foreground">{competition.description}</p>
                   )}
                 </div>
-                <Badge variant="secondary" className="gap-2">
-                  <Trophy className="h-4 w-4" />
-                  {competition.scoring_type === "points" ? "Bodování" : "Míry ryby"}
-                </Badge>
+                <div className="flex flex-col gap-2 items-end">
+                  <Badge variant="secondary" className="gap-2">
+                    <Trophy className="h-4 w-4" />
+                    {competition.scoring_type === "points" ? "Bodování" : "Míry ryby"}
+                  </Badge>
+                  {!hasStarted && (
+                    <Badge variant="outline" className="gap-2">
+                      <Clock className="h-4 w-4" />
+                      Nezačal
+                    </Badge>
+                  )}
+                  {hasStarted && !hasEnded && (
+                    <Badge className="gap-2 bg-green-500">
+                      <Clock className="h-4 w-4" />
+                      Probíhá
+                    </Badge>
+                  )}
+                  {hasEnded && (
+                    <Badge variant="outline" className="gap-2 bg-muted">
+                      <Clock className="h-4 w-4" />
+                      Skončil
+                    </Badge>
+                  )}
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -294,87 +384,117 @@ export default function CompetitionPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Image Upload */}
-              <div className="space-y-2">
-                <Label>Fotografie úlovku *</Label>
-                {!imagePreview ? (
-                  <div
-                    onClick={() => fileInputRef.current?.click()}
-                    className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
-                  >
-                    <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">Klikněte pro výběr fotografie</p>
-                  </div>
-                ) : (
-                  <div className="relative rounded-lg overflow-hidden">
-                    <img
-                      src={imagePreview}
-                      alt="Náhled"
-                      className="w-full h-auto max-h-64 object-cover"
-                    />
-                  </div>
-                )}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageSelect}
-                  className="hidden"
-                />
-              </div>
-
-              {/* Species Selection */}
-              {competition.scoring_type === "points" ? (
-                <div className="space-y-2">
-                  <Label htmlFor="species">Druh ryby *</Label>
-                  <Select value={selectedSpecies} onValueChange={setSelectedSpecies}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Vyberte druh ryby" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableSpecies.map((species) => (
-                        <SelectItem key={species} value={species}>
-                          {species} ({competition.scoring_table[species]} bodů)
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {selectedSpecies && (
-                    <p className="text-sm text-muted-foreground">
-                      Za {selectedSpecies} získáte <strong>{competition.scoring_table[selectedSpecies]} bodů</strong>
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <Label htmlFor="species">Druh ryby *</Label>
-                  <Input
-                    id="species"
-                    value={selectedSpecies}
-                    onChange={(e) => setSelectedSpecies(e.target.value)}
-                    placeholder="např. Kapr"
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    Hodnotí se: {competition.scoring_metric === "weight" ? "Hmotnost" : "Délka"}
+              {!submissionStatus.allowed && (
+                <div className="p-4 bg-muted/50 rounded-lg border border-muted">
+                  <p className="text-sm text-muted-foreground flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    {submissionStatus.reason}
                   </p>
                 </div>
               )}
 
-              <Button
-                onClick={handleSubmitCatch}
-                disabled={isSubmitting || !imageFile || !selectedSpecies}
-                className="w-full"
-                size="lg"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Přidávám...
-                  </>
-                ) : (
-                  "Přidat úlovek do závodu"
-                )}
-              </Button>
+              {submissionStatus.allowed && (
+                <>
+                  {/* Image Upload */}
+                  <div className="space-y-2">
+                    <Label>Fotografie úlovku *</Label>
+                    {!imagePreview ? (
+                      <div
+                        onClick={() => fileInputRef.current?.click()}
+                        className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                      >
+                        <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">Klikněte pro výběr fotografie</p>
+                      </div>
+                    ) : (
+                      <div className="relative rounded-lg overflow-hidden">
+                        <img
+                          src={imagePreview}
+                          alt="Náhled"
+                          className="w-full h-auto max-h-64 object-cover"
+                        />
+                      </div>
+                    )}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageSelect}
+                      className="hidden"
+                    />
+                  </div>
+
+                  {/* Species Selection */}
+                  {competition.scoring_type === "points" ? (
+                    <div className="space-y-2">
+                      <Label htmlFor="species">Druh ryby *</Label>
+                      <Select value={selectedSpecies} onValueChange={setSelectedSpecies}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Vyberte druh ryby" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableSpecies.map((species) => (
+                            <SelectItem key={species} value={species}>
+                              {species} ({competition.scoring_table[species]} bodů)
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {selectedSpecies && (
+                        <p className="text-sm text-muted-foreground">
+                          Za {selectedSpecies} získáte <strong>{competition.scoring_table[selectedSpecies]} bodů</strong>
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Label htmlFor="species">Druh ryby *</Label>
+                      <Input
+                        id="species"
+                        value={selectedSpecies}
+                        onChange={(e) => setSelectedSpecies(e.target.value)}
+                        placeholder="např. Kapr"
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        Hodnotí se: {competition.scoring_metric === "weight" ? "Hmotnost" : "Délka"}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Save to Profile Toggle */}
+                  <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+                    <div>
+                      <Label htmlFor="save_to_profile" className="cursor-pointer font-medium">
+                        Přidat i mezi moje úlovky
+                      </Label>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Úlovek se zobrazí ve vašem profilu a veřejné galerii
+                      </p>
+                    </div>
+                    <Switch
+                      id="save_to_profile"
+                      checked={saveToProfile}
+                      onCheckedChange={setSaveToProfile}
+                    />
+                  </div>
+
+                  <Button
+                    onClick={handleSubmitCatch}
+                    disabled={isSubmitting || !imageFile || !selectedSpecies}
+                    className="w-full"
+                    size="lg"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Přidávám...
+                      </>
+                    ) : (
+                      "Přidat úlovek do závodu"
+                    )}
+                  </Button>
+                </>
+              )}
             </CardContent>
           </Card>
 
