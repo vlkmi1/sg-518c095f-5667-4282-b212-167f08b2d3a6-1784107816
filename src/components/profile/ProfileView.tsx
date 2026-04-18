@@ -1,11 +1,17 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import Link from "next/link";
+import { format } from "date-fns";
+import { cs } from "date-fns/locale";
 import { authService } from "@/services/authService";
+import { profileService } from "@/services/profileService";
 import { catchService } from "@/services/catchService";
+import { competitionService } from "@/services/competitionService";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -16,7 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Fish, MapPin, Calendar, Award, Ruler, Weight, Eye, EyeOff, Trash2 } from "lucide-react";
+import { Plus, Fish, MapPin, Calendar, Award, Ruler, Weight, Eye, EyeOff, Trash2, User, Trophy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Profile {
@@ -46,6 +52,7 @@ export function ProfileView() {
   const { toast } = useToast();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [catches, setCatches] = useState<Catch[]>([]);
+  const [competitions, setCompetitions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [catchToDelete, setCatchToDelete] = useState<string | null>(null);
@@ -62,11 +69,14 @@ export function ProfileView() {
         return;
       }
 
-      const profileData = await authService.getUserProfile(user.id);
-      setProfile(profileData);
+      const profileData = await profileService.getProfile(user.id);
+      setProfile(profileData as any);
 
       const userCatches = await catchService.getUserCatches(user.id);
       setCatches(userCatches);
+
+      const userComps = await competitionService.getUserCompetitions(user.id);
+      setCompetitions(userComps);
     } catch (error) {
       console.error("Error loading profile:", error);
       toast({
@@ -217,7 +227,7 @@ export function ProfileView() {
                   href={`/catches/${catchData.id}`}
                   className="group block"
                 >
-                  <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+                  <Card className="overflow-hidden hover:shadow-lg transition-shadow relative">
                     <div className="aspect-[4/3] relative bg-muted">
                       {catchData.photo_url && (
                         <img
@@ -226,11 +236,27 @@ export function ProfileView() {
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                       )}
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          openDeleteDialog(catchData.id);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                     <CardContent className="p-4 space-y-2">
-                      <h3 className="font-serif text-lg font-semibold">
-                        {catchData.species || "Neznámý druh"}
-                      </h3>
+                      <div className="flex justify-between items-start">
+                        <h3 className="font-serif text-lg font-semibold">
+                          {catchData.species || "Neznámý druh"}
+                        </h3>
+                        <Badge variant="outline" className="flex gap-1 items-center">
+                          {catchData.is_public ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+                        </Badge>
+                      </div>
                       <div className="flex gap-2 text-sm text-muted-foreground">
                         {catchData.length_cm && (
                           <span>{catchData.length_cm} cm</span>

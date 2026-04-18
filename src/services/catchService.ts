@@ -161,7 +161,7 @@ export const catchService = {
   },
 
   // Update catch
-  async updateCatch(catchId: string, updates: Partial<any>): Promise<{ data: any; error: any }> {
+  async updateCatch(catchId: string, updates: any): Promise<{ data: any; error: any }> {
     const { data, error } = await supabase
       .from("catches")
       .update(updates)
