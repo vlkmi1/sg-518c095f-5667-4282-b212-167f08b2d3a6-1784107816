@@ -124,6 +124,7 @@ interface FormData {
   country: string;
   region: string;
   district: string;
+  fishing_area: string;
   bait_brand: string;
   caught_at: string;
   selectedRegion?: string;
@@ -150,10 +151,11 @@ export function UploadCatchForm() {
   const [formData, setFormData] = useState<FormData>({
     species: "",
     length_cm: 50,
-    weight_kg: 5,
+    weight_kg: 2,
     country: "",
     region: "",
     district: "",
+    fishing_area: "",
     bait_brand: "",
     caught_at: new Date().toISOString().slice(0, 16),
     selectedRegion: "",
@@ -202,6 +204,7 @@ export function UploadCatchForm() {
           country: lastCatch.country || "",
           region: lastCatch.region || "",
           district: lastCatch.district || "",
+          fishing_area: lastCatch.fishing_area || "",
           bait_brand: lastCatch.bait_brand || "",
           selectedRegion: lastCatch.region || "",
           selectedDistrict: lastCatch.district || "",
@@ -309,12 +312,13 @@ export function UploadCatchForm() {
       // Create catch record
       const { data, error } = await catchService.createCatch({
         user_id: user.id,
-        species: formData.species || "Neuvedeno",
+        species: formData.species,
         length_cm: formData.length_cm ? parseFloat(formData.length_cm.toString()) : null,
         weight_kg: formData.weight_kg ? parseFloat(formData.weight_kg.toString()) : null,
         country: formData.country || null,
         region: formData.region || null,
         district: formData.district || null,
+        fishing_area: formData.fishing_area || null,
         bait_brand: formData.bait_brand || null,
         photo_url: uploadResult.url,
         caught_at: formData.caught_at ? new Date(formData.caught_at).toISOString() : new Date().toISOString(),
@@ -630,11 +634,16 @@ export function UploadCatchForm() {
                   {formData.country === "Česko" && formData.selectedRegion && availableDistricts.length > 0 && (
                     <div className="space-y-2">
                       <Label htmlFor="district">Okres</Label>
-                      <Select value={formData.selectedDistrict} onValueChange={handleDistrictChange}>
+                      <Select 
+                        value={formData.district} 
+                        onValueChange={(value) => handleSelectChange("district", value)}
+                        disabled={!formData.region || formData.region === "" || availableDistricts.length === 0}
+                      >
                         <SelectTrigger id="district">
-                          <SelectValue placeholder="Vyberte okres" />
+                          <SelectValue placeholder={formData.region ? "Vyberte okres" : "Nejdříve vyberte kraj"} />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="">-- Žádný --</SelectItem>
                           {availableDistricts.map((district) => (
                             <SelectItem key={district} value={district}>
                               {district}
@@ -644,6 +653,22 @@ export function UploadCatchForm() {
                       </Select>
                     </div>
                   )}
+
+                  {/* Fishing area */}
+                  <div className="space-y-2">
+                    <Label htmlFor="fishing_area">Název revíru (volitelné)</Label>
+                    <Input
+                      id="fishing_area"
+                      name="fishing_area"
+                      type="text"
+                      placeholder="např. Labe - Mělník"
+                      value={formData.fishing_area}
+                      onChange={(e) => setFormData({ ...formData, fishing_area: e.target.value })}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Název vodní plochy nebo revíru
+                    </p>
+                  </div>
                 </div>
               </div>
 

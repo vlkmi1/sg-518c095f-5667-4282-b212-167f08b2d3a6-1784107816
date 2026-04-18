@@ -22,6 +22,7 @@ export type Database = {
           country: string
           created_at: string | null
           district: string | null
+          fishing_area: string | null
           id: string
           is_public: boolean | null
           latitude: number | null
@@ -40,6 +41,7 @@ export type Database = {
           country: string
           created_at?: string | null
           district?: string | null
+          fishing_area?: string | null
           id?: string
           is_public?: boolean | null
           latitude?: number | null
@@ -58,6 +60,7 @@ export type Database = {
           country?: string
           created_at?: string | null
           district?: string | null
+          fishing_area?: string | null
           id?: string
           is_public?: boolean | null
           latitude?: number | null

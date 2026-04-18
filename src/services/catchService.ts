@@ -100,6 +100,7 @@ export const catchService = {
     country: string | null;
     region: string | null;
     district: string | null;
+    fishing_area: string | null;
     bait_brand: string | null;
     photo_url: string;
     caught_at: string;
