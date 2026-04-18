@@ -123,5 +123,81 @@ export const competitionService = {
       .eq("id", competitionCatchId);
 
     return { error };
+  },
+
+  // Get competition leaderboard
+  async getLeaderboard(competitionId: string): Promise<any[]> {
+    const { data: catches, error } = await supabase
+      .from("competition_catches")
+      .select(`
+        *,
+        catches (
+          length_cm,
+          weight_kg,
+          user_id,
+          profiles (
+            nickname
+          )
+        )
+      `)
+      .eq("competition_id", competitionId)
+      .eq("approved", true);
+
+    if (error || !catches) return [];
+
+    const { data: competition } = await supabase
+      .from("competitions")
+      .select("*")
+      .eq("id", competitionId)
+      .single();
+
+    if (!competition) return [];
+
+    // Group by user
+    const userStats = new Map();
+
+    catches.forEach((c: any) => {
+      const catchData = c.catches;
+      if (!catchData) return;
+      
+      const userId = catchData.user_id;
+      const nickname = catchData.profiles?.nickname || "Anonym";
+      
+      const score = competition.scoring_type === "length" ? (catchData.length_cm || 0) :
+                    competition.scoring_type === "weight" ? (catchData.weight_kg || 0) :
+                    ((catchData.length_cm || 0) + (catchData.weight_kg || 0));
+
+      if (!userStats.has(userId)) {
+        userStats.set(userId, {
+          user_id: userId,
+          nickname,
+          catch_count: 0,
+          catches: [],
+          total_score: 0
+        });
+      }
+
+      const stats = userStats.get(userId);
+      stats.catch_count += 1;
+      stats.catches.push(score);
+    });
+
+    // Calculate final scores based on top_catches_count
+    const leaderboard = Array.from(userStats.values()).map((stats: any) => {
+      // Sort catches descending
+      stats.catches.sort((a: number, b: number) => b - a);
+      
+      // Take top X if specified
+      const catchesToCount = competition.top_catches_count 
+        ? stats.catches.slice(0, competition.top_catches_count)
+        : stats.catches;
+        
+      stats.total_score = catchesToCount.reduce((sum: number, val: number) => sum + val, 0);
+      
+      return stats;
+    });
+
+    // Sort leaderboard by score descending
+    return leaderboard.sort((a, b) => b.total_score - a.total_score);
   }
 };

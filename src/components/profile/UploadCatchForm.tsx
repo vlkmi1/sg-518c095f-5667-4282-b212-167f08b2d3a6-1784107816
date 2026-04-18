@@ -157,6 +157,9 @@ interface FormData {
   district: string;
   bait_brand: string;
   caught_at: string;
+  selectedRegion?: string;
+  selectedDistrict?: string;
+  competition_id?: string;
 }
 
 export function UploadCatchForm() {
@@ -169,6 +172,10 @@ export function UploadCatchForm() {
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [userCompetitions, setUserCompetitions] = useState<any[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const [formData, setFormData] = useState<FormData>({
     species: "",
