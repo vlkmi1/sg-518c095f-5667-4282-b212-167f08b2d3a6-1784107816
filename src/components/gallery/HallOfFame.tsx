@@ -4,26 +4,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Trophy, MapPin, Calendar } from "lucide-react";
+import { Trophy, MapPin, Calendar, Ruler, Weight } from "lucide-react";
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
-
-const SPECIES_DATA: Record<string, { emoji: string; color: string }> = {
-  "Kapr": { emoji: "🐟", color: "hsl(35, 50%, 50%)" },
-  "Amur": { emoji: "🐠", color: "hsl(150, 45%, 45%)" },
-  "Sumec": { emoji: "🦈", color: "hsl(220, 40%, 35%)" },
-  "Štika": { emoji: "🐊", color: "hsl(140, 45%, 40%)" },
-  "Candát": { emoji: "🦎", color: "hsl(200, 50%, 45%)" },
-  "Pstruh": { emoji: "🌈", color: "hsl(280, 50%, 55%)" },
-  "Úhoř": { emoji: "🐍", color: "hsl(40, 30%, 40%)" },
-  "Lín": { emoji: "🟢", color: "hsl(110, 45%, 40%)" },
-  "Plotice": { emoji: "⚪", color: "hsl(0, 0%, 60%)" },
-  "Cejn": { emoji: "🔵", color: "hsl(210, 50%, 50%)" },
-  "Jelec": { emoji: "⚡", color: "hsl(45, 70%, 55%)" },
-  "Ostroretka": { emoji: "🔶", color: "hsl(30, 60%, 50%)" },
-  "Bolen": { emoji: "🟡", color: "hsl(50, 60%, 55%)" },
-  "Mník": { emoji: "🔴", color: "hsl(5, 60%, 50%)" },
-};
 
 interface TopCatch {
   id: string;
@@ -42,12 +25,12 @@ interface TopCatch {
 }
 
 const FISH_SPECIES = [
-  { value: "Kapr", label: "Kapr", emoji: "🐟" },
-  { value: "Amur", label: "Amur", emoji: "🐠" },
-  { value: "Sumec", label: "Sumec", emoji: "🐡" },
-  { value: "Štika", label: "Štika", emoji: "🦈" },
-  { value: "Candát", label: "Candát", emoji: "🐟" },
-  { value: "Pstruh", label: "Pstruh", emoji: "🐠" },
+  { value: "Kapr", label: "Kapr", image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=64&h=64&fit=crop" },
+  { value: "Amur", label: "Amur", image: "https://images.unsplash.com/photo-1524316027663-d1f8931165ea?w=64&h=64&fit=crop" },
+  { value: "Sumec", label: "Sumec", image: "https://images.unsplash.com/photo-1534431189445-5645e999c086?w=64&h=64&fit=crop" },
+  { value: "Štika", label: "Štika", image: "https://images.unsplash.com/photo-1601334691456-e910ce422115?w=64&h=64&fit=crop" },
+  { value: "Candát", label: "Candát", image: "https://images.unsplash.com/photo-1555952494-efd681c7e3f5?w=64&h=64&fit=crop" },
+  { value: "Pstruh", label: "Pstruh", image: "https://images.unsplash.com/photo-1512413914529-6725a39dc6c8?w=64&h=64&fit=crop" },
 ];
 
 const MEDAL_CONFIG = {
@@ -75,7 +58,7 @@ const MEDAL_CONFIG = {
 };
 
 export function HallOfFame() {
-  const [selectedSpecies, setSelectedSpecies] = useState("Kapr");
+  const [selectedSpecies, setSelectedSpecies] = useState<string | null>("Kapr");
   const [topCatches, setTopCatches] = useState<TopCatch[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -86,7 +69,7 @@ export function HallOfFame() {
   async function loadTopCatches() {
     setIsLoading(true);
     try {
-      const catches = await catchService.getTopCatchesBySpecies(selectedSpecies, 3);
+      const catches = await catchService.getTopCatchesBySpecies(selectedSpecies || "Kapr", 3);
       setTopCatches(catches as TopCatch[]);
     } catch (error) {
       console.error("Error loading top catches:", error);
@@ -101,7 +84,7 @@ export function HallOfFame() {
         <div className="text-center py-16">
           <Trophy className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
           <p className="text-muted-foreground">
-            Zatím žádné úlovky druhu {selectedSpecies}
+            Zatím žádné úlovky druhu {selectedSpecies || "Všechny druhy"}
           </p>
         </div>
       );
@@ -218,35 +201,25 @@ export function HallOfFame() {
       </div>
 
       {/* Species Filter */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <Button
-          variant={selectedSpecies === null ? "default" : "outline"}
-          size="sm"
-          onClick={() => setSelectedSpecies(null)}
-          className="gap-2"
-        >
-          🏆 Všechny druhy
-        </Button>
-        {availableSpecies.map((species) => {
-          const speciesData = SPECIES_DATA[species] || { emoji: "🐟", color: "hsl(186, 78%, 22%)" };
-          return (
-            <Button
-              key={species}
-              variant={selectedSpecies === species ? "default" : "outline"}
-              size="sm"
-              onClick={() => setSelectedSpecies(species)}
-              className="gap-2"
-              style={
-                selectedSpecies === species
-                  ? { backgroundColor: speciesData.color, borderColor: speciesData.color }
-                  : {}
-              }
-            >
-              <span className="text-lg">{speciesData.emoji}</span>
-              {species}
-            </Button>
-          );
-        })}
+      <div className="flex items-center gap-2 flex-wrap justify-center">
+        {FISH_SPECIES.map((species) => (
+          <Button
+            key={species.value}
+            variant={selectedSpecies === species.value ? "default" : "outline"}
+            size="sm"
+            onClick={() => setSelectedSpecies(species.value)}
+            className="gap-2 h-10 px-4 rounded-full transition-all"
+          >
+            <div className="w-6 h-6 rounded-full overflow-hidden shrink-0 border border-muted">
+              <img 
+                src={species.image} 
+                alt={species.label}
+                className="w-full h-full object-cover"
+              />
+            </div>
+            {species.label}
+          </Button>
+        ))}
       </div>
 
       {/* Podium */}
