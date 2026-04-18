@@ -1,11 +1,27 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { catchService } from "@/services/catchService";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { catchService } from "@/services/catchService";
-import { Trophy, Ruler, Weight, MapPin, Calendar } from "lucide-react";
+import { Trophy, MapPin, Calendar, Ruler, Weight } from "lucide-react";
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
+
+interface TopCatch {
+  id: string;
+  species: string;
+  length_cm: number;
+  weight_kg: number;
+  photo_url: string;
+  caught_at: string;
+  country: string | null;
+  region: string | null;
+  district: string | null;
+  fishing_area: string | null;
+  profiles: {
+    nickname: string;
+  };
+}
 
 const FISH_SPECIES = [
   { value: "Kapr", label: "Kapr", emoji: "🐟" },
@@ -16,22 +32,34 @@ const FISH_SPECIES = [
   { value: "Pstruh", label: "Pstruh", emoji: "🐠" },
 ];
 
-const PODIUM_COLORS = {
-  1: "bg-gradient-to-br from-yellow-400 to-yellow-600 text-yellow-950",
-  2: "bg-gradient-to-br from-gray-300 to-gray-500 text-gray-950",
-  3: "bg-gradient-to-br from-amber-600 to-amber-800 text-amber-950",
-};
-
-const PODIUM_ICONS = {
-  1: "🥇",
-  2: "🥈",
-  3: "🥉",
+const MEDAL_CONFIG = {
+  1: {
+    medal: "🥇",
+    color: "bg-gradient-to-b from-yellow-400 via-yellow-500 to-yellow-600",
+    textColor: "text-yellow-900",
+    height: "h-48",
+    order: 2,
+  },
+  2: {
+    medal: "🥈",
+    color: "bg-gradient-to-b from-gray-300 via-gray-400 to-gray-500",
+    textColor: "text-gray-900",
+    height: "h-36",
+    order: 1,
+  },
+  3: {
+    medal: "🥉",
+    color: "bg-gradient-to-b from-orange-400 via-orange-500 to-orange-600",
+    textColor: "text-orange-900",
+    height: "h-28",
+    order: 3,
+  },
 };
 
 export function HallOfFame() {
   const [selectedSpecies, setSelectedSpecies] = useState("Kapr");
-  const [topCatches, setTopCatches] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [topCatches, setTopCatches] = useState<TopCatch[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     loadTopCatches();
@@ -41,7 +69,7 @@ export function HallOfFame() {
     setIsLoading(true);
     try {
       const catches = await catchService.getTopCatchesBySpecies(selectedSpecies, 3);
-      setTopCatches(catches);
+      setTopCatches(catches as TopCatch[]);
     } catch (error) {
       console.error("Error loading top catches:", error);
     } finally {
@@ -49,83 +77,64 @@ export function HallOfFame() {
     }
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="text-center space-y-2">
-        <div className="flex items-center justify-center gap-2">
-          <Trophy className="h-8 w-8 text-primary" />
-          <h2 className="font-serif text-3xl font-bold text-primary">Síň slávy</h2>
+  function renderPodium(catches: TopCatch[]) {
+    if (catches.length === 0) {
+      return (
+        <div className="text-center py-16">
+          <Trophy className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
+          <p className="text-muted-foreground">
+            Zatím žádné úlovky druhu {selectedSpecies}
+          </p>
         </div>
-        <p className="text-muted-foreground">Největší úlovky v jednotlivých kategoriích</p>
-      </div>
+      );
+    }
 
-      <Tabs value={selectedSpecies} onValueChange={setSelectedSpecies} className="w-full">
-        <TabsList className="grid grid-cols-3 lg:grid-cols-6 w-full">
-          {FISH_SPECIES.map((species) => (
-            <TabsTrigger key={species.value} value={species.value} className="gap-1.5">
-              <span className="text-base">{species.emoji}</span>
-              <span className="hidden sm:inline">{species.label}</span>
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
+    // Prepare podium positions: [2nd, 1st, 3rd]
+    const podiumOrder = [
+      catches[1], // 2nd place (left)
+      catches[0], // 1st place (center)
+      catches[2], // 3rd place (right)
+    ].filter(Boolean);
 
-      {isLoading ? (
-        <div className="text-center py-12 text-muted-foreground">
-          <Trophy className="h-12 w-12 mx-auto mb-3 animate-pulse text-muted-foreground/30" />
-          <p>Načítání nejlepších úlovků...</p>
-        </div>
-      ) : topCatches.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground">
-          <Trophy className="h-12 w-12 mx-auto mb-3 text-muted-foreground/30" />
-          <p>Zatím zde nejsou žádné úlovky druhu {selectedSpecies}</p>
-          <p className="text-sm mt-1">Buďte první, kdo přidá tento druh!</p>
-        </div>
-      ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {topCatches.map((catchData, index) => {
-            const position = (index + 1) as 1 | 2 | 3;
-            const caughtDate = catchData.caught_at ? new Date(catchData.caught_at) : null;
+    return (
+      <div className="flex items-end justify-center gap-4 sm:gap-8 max-w-4xl mx-auto py-8">
+        {podiumOrder.map((catchData, idx) => {
+          if (!catchData) return null;
+          
+          const position = idx === 0 ? 2 : idx === 1 ? 1 : 3;
+          const config = MEDAL_CONFIG[position as keyof typeof MEDAL_CONFIG];
 
-            return (
-              <Card 
-                key={catchData.id} 
-                className={`overflow-hidden border-2 ${
-                  position === 1 ? "border-yellow-400 shadow-lg" :
-                  position === 2 ? "border-gray-400" :
-                  "border-amber-600"
-                }`}
-              >
-                <CardHeader className={`pb-3 ${PODIUM_COLORS[position]}`}>
-                  <CardTitle className="flex items-center justify-between text-lg">
-                    <span className="flex items-center gap-2">
-                      <span className="text-2xl">{PODIUM_ICONS[position]}</span>
-                      <span>{position}. místo</span>
-                    </span>
-                  </CardTitle>
-                </CardHeader>
-                
-                <div className="aspect-[4/3] relative bg-muted">
-                  {catchData.photo_url && (
-                    <img
-                      src={catchData.photo_url}
-                      alt={catchData.species || "Úlovek"}
-                      className="w-full h-full object-cover"
-                    />
-                  )}
+          return (
+            <div
+              key={catchData.id}
+              className="flex-1 flex flex-col items-center animate-in fade-in slide-in-from-bottom-8"
+              style={{ 
+                animationDelay: `${position * 100}ms`,
+                order: config.order 
+              }}
+            >
+              {/* Fish photo on top of podium */}
+              <div className="relative mb-4">
+                <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden border-4 border-background shadow-xl relative">
+                  <img
+                    src={catchData.photo_url}
+                    alt={catchData.species}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
+                {/* Medal badge */}
+                <div className="absolute -top-2 -right-2 text-4xl sm:text-5xl drop-shadow-lg">
+                  {config.medal}
+                </div>
+              </div>
 
-                <CardContent className="p-4 space-y-3">
-                  <div className="space-y-1">
-                    <h3 className="font-serif text-xl font-semibold text-foreground">
-                      {catchData.species}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {catchData.profiles?.nickname || "Anonym"}
-                    </p>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
+              {/* Catch info */}
+              <Card className="w-full mb-2 bg-background/80 backdrop-blur">
+                <CardContent className="p-3 text-center space-y-1">
+                  <p className="font-serif font-semibold text-sm sm:text-base">
+                    {catchData.profiles?.nickname || "Anonym"}
+                  </p>
+                  <div className="flex items-center justify-center gap-2 text-xs sm:text-sm text-muted-foreground">
                     {catchData.length_cm && (
                       <Badge variant="secondary" className="gap-1">
                         <Ruler className="h-3 w-3" />
@@ -139,33 +148,83 @@ export function HallOfFame() {
                       </Badge>
                     )}
                   </div>
-
-                  <div className="space-y-1.5 text-sm text-muted-foreground">
-                    {catchData.country && (
-                      <div className="flex items-start gap-2">
-                        <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                        <span className="line-clamp-2">
-                          {[catchData.fishing_area, catchData.district, catchData.region, catchData.country]
-                            .filter(Boolean)
-                            .join(", ")}
-                        </span>
-                      </div>
-                    )}
-                    {caughtDate && (
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 flex-shrink-0" />
-                        <span className="truncate">
-                          {format(caughtDate, "d. MMMM yyyy", { locale: cs })}
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                  {catchData.fishing_area && (
+                    <p className="text-xs text-muted-foreground truncate">
+                      📍 {catchData.fishing_area}
+                    </p>
+                  )}
+                  {catchData.caught_at && (
+                    <p className="text-xs text-muted-foreground">
+                      {format(new Date(catchData.caught_at), "d. MMM yyyy", { locale: cs })}
+                    </p>
+                  )}
                 </CardContent>
               </Card>
-            );
-          })}
+
+              {/* Podium block */}
+              <div
+                className={`w-full ${config.height} ${config.color} rounded-t-lg shadow-lg flex flex-col items-center justify-center p-4 relative overflow-hidden`}
+              >
+                {/* Podium number */}
+                <div className={`text-6xl sm:text-8xl font-bold ${config.textColor} opacity-20 absolute`}>
+                  {position}
+                </div>
+                <div className="relative z-10 text-center">
+                  <div className="text-3xl sm:text-4xl mb-1">{config.medal}</div>
+                  <div className={`text-xl sm:text-2xl font-bold ${config.textColor}`}>
+                    {position === 1 ? "1." : position === 2 ? "2." : "3."}
+                  </div>
+                  <div className={`text-xs sm:text-sm font-medium ${config.textColor} opacity-80`}>
+                    místo
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="text-center space-y-2">
+        <div className="flex items-center justify-center gap-2">
+          <Trophy className="h-8 w-8 text-primary" />
+          <h2 className="font-serif text-3xl sm:text-4xl font-bold">Síň slávy</h2>
         </div>
-      )}
+        <p className="text-muted-foreground max-w-2xl mx-auto">
+          Nejlepší úlovky podle druhu ryby
+        </p>
+      </div>
+
+      {/* Species tabs */}
+      <Tabs value={selectedSpecies} onValueChange={setSelectedSpecies} className="w-full">
+        <TabsList className="grid grid-cols-3 sm:grid-cols-6 w-full max-w-3xl mx-auto h-auto gap-2 bg-transparent">
+          {FISH_SPECIES.map((species) => (
+            <TabsTrigger
+              key={species.value}
+              value={species.value}
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex-col gap-1 py-2 px-3"
+            >
+              <span className="text-xl">{species.emoji}</span>
+              <span className="text-xs sm:text-sm font-medium">{species.label}</span>
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
+
+      {/* Podium */}
+      <div className="bg-muted/30 rounded-lg p-4 sm:p-8">
+        {isLoading ? (
+          <div className="text-center py-16">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent motion-reduce:animate-[spin_1.5s_linear_infinite]" />
+          </div>
+        ) : (
+          renderPodium(topCatches)
+        )}
+      </div>
     </div>
   );
 }
