@@ -46,19 +46,33 @@ export const competitionService = {
     return { data, error };
   },
 
+  // Get competition by join code
+  async getCompetitionByCode(code: string): Promise<{ data: any; error: any }> {
+    const { data, error } = await supabase
+      .from("competitions")
+      .select("*")
+      .eq("join_code", code)
+      .single();
+
+    console.log("getCompetitionByCode:", { code, data, error });
+    return { data, error };
+  },
+
   // Join a competition
-  async joinCompetition(competitionId: string, userId: string): Promise<{ error: any }> {
+  async joinCompetition(competitionId: string, userId: string): Promise<void> {
     const { error } = await supabase
       .from("competition_participants")
-      .insert([
-        {
-          competition_id: competitionId,
-          user_id: userId,
-        },
-      ]);
+      .insert({
+        competition_id: competitionId,
+        user_id: userId,
+      });
 
-    console.log("joinCompetition:", { error });
-    return { error };
+    if (error) {
+      console.error("joinCompetition error:", error);
+      throw error;
+    }
+
+    console.log("joinCompetition success:", { competitionId, userId });
   },
 
   // Get competitions user is part of (created OR participating)

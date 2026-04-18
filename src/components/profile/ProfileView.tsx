@@ -1,65 +1,41 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import Link from "next/link";
-import { format } from "date-fns";
-import { cs } from "date-fns/locale";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { authService } from "@/services/authService";
 import { profileService } from "@/services/profileService";
 import { catchService } from "@/services/catchService";
 import { competitionService } from "@/services/competitionService";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
-import { EditProfileForm } from "@/components/profile/EditProfileForm";
-import { 
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Plus, Fish, MapPin, Calendar, Award, Ruler, Weight, Eye, EyeOff, Trash2, User, Trophy, Edit } from "lucide-react";
+import { storageService } from "@/services/storageService";
 import { useToast } from "@/hooks/use-toast";
-
-interface Profile {
-  id: string;
-  nickname: string;
-  email: string;
-  full_name?: string | null;
-  location?: string | null;
-  avatar_url?: string;
-}
-
-interface Catch {
-  id: string;
-  species: string;
-  length_cm: number | null;
-  weight_kg: number | null;
-  photo_url: string;
-  caught_at: string;
-  country: string | null;
-  region: string | null;
-  district: string | null;
-  fishing_area: string | null;
-  bait_brand: string | null;
-  is_public: boolean;
-}
+import { User, Fish, Trophy, LogOut, Plus, Users, Loader2 } from "lucide-react";
+import { format } from "date-fns";
+import { cs } from "date-fns/locale";
 
 export function ProfileView() {
   const router = useRouter();
   const { toast } = useToast();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [catches, setCatches] = useState<Catch[]>([]);
+
+  const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [catches, setCatches] = useState<any[]>([]);
   const [competitions, setCompetitions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [catchToDelete, setCatchToDelete] = useState<string | null>(null);
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [joinDialogOpen, setJoinDialogOpen] = useState(false);
+  const [joinCode, setJoinCode] = useState("");
+  const [isJoining, setIsJoining] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -67,20 +43,22 @@ export function ProfileView() {
 
   async function loadProfile() {
     try {
-      const user = await authService.getCurrentUser();
-      if (!user) {
+      const currentUser = await authService.getCurrentUser();
+      if (!currentUser) {
         router.push("/auth/login");
         return;
       }
 
-      const { data: profileData } = await profileService.getProfileById(user.id);
-      setProfile(profileData as any);
+      setUser(currentUser);
 
-      const userCatches = await catchService.getUserCatches(user.id);
-      setCatches(userCatches);
+      const { data: profileData } = await profileService.getProfile(currentUser.id);
+      setProfile(profileData);
 
-      const userComps = await competitionService.getUserCompetitions(user.id);
-      setCompetitions(userComps);
+      const { data: catchesData } = await catchService.getUserCatches(currentUser.id);
+      setCatches(catchesData || []);
+
+      const comps = await competitionService.getUserCompetitions(currentUser.id);
+      setCompetitions(comps || []);
     } catch (error) {
       console.error("Error loading profile:", error);
       toast({
@@ -93,64 +71,86 @@ export function ProfileView() {
     }
   }
 
-  async function handleDeleteCatch() {
-    if (!catchToDelete) return;
+  async function handleJoinCompetition() {
+    if (!joinCode.trim()) {
+      toast({
+        title: "Chybí kód",
+        description: "Zadejte kód závodu",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsJoining(true);
 
     try {
-      const { error } = await catchService.deleteCatch(catchToDelete);
+      const { data: competition, error } = await competitionService.getCompetitionByCode(
+        joinCode.toUpperCase().trim()
+      );
 
-      if (error) {
-        throw new Error(error.message);
+      if (error || !competition) {
+        throw new Error("Závod s tímto kódem nebyl nalezen");
       }
+
+      // Join the competition
+      await competitionService.joinCompetition(competition.id, user.id);
+
+      toast({
+        title: "✅ Přidán do závodu!",
+        description: `Úspěšně jste se přidali do závodu "${competition.name}"`,
+      });
+
+      setJoinDialogOpen(false);
+      setJoinCode("");
+
+      // Redirect to competition page
+      router.push(`/competitions/${competition.id}`);
+    } catch (error: any) {
+      console.error("Join competition error:", error);
+      toast({
+        title: "Chyba",
+        description: error.message || "Nepodařilo se připojit k závodu",
+        variant: "destructive",
+      });
+    } finally {
+      setIsJoining(false);
+    }
+  }
+
+  async function handleLogout() {
+    await authService.logout();
+    router.push("/");
+  }
+
+  async function handleDeleteCatch(catchId: string, photoPath: string) {
+    try {
+      await storageService.deleteCatchPhoto(photoPath);
+      await catchService.deleteCatch(catchId);
 
       toast({
         title: "✅ Úlovek odstraněn",
         description: "Úlovek byl úspěšně smazán",
       });
 
-      // Refresh catches list
-      setCatches(catches.filter(c => c.id !== catchToDelete));
+      loadProfile();
     } catch (error: any) {
       console.error("Delete catch error:", error);
       toast({
         title: "Chyba",
-        description: error.message || "Nepodařilo se odstranit úlovek",
+        description: "Nepodařilo se odstranit úlovek",
         variant: "destructive",
       });
-    } finally {
-      setDeleteDialogOpen(false);
-      setCatchToDelete(null);
     }
-  }
-
-  function openDeleteDialog(catchId: string) {
-    setCatchToDelete(catchId);
-    setDeleteDialogOpen(true);
-  }
-
-  function handleProfileSaved() {
-    setIsEditingProfile(false);
-    loadProfile();
   }
 
   if (isLoading) {
     return (
       <div className="container py-8 space-y-6">
-        <Skeleton className="h-48 w-full" />
-        <Skeleton className="h-96 w-full" />
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-64 w-full" />
       </div>
     );
   }
-
-  const totalCatches = catches.length;
-  const avgLength = catches.length > 0
-    ? catches.filter(c => c.length_cm).reduce((sum, c) => sum + (c.length_cm || 0), 0) / catches.filter(c => c.length_cm).length
-    : 0;
-  const biggestCatch = catches.reduce((max, c) => {
-    const currentWeight = c.weight_kg || c.length_cm || 0;
-    const maxWeight = max.weight_kg || max.length_cm || 0;
-    return currentWeight > maxWeight ? c : max;
-  }, catches[0]);
 
   return (
     <div className="container py-8 space-y-6">
@@ -163,227 +163,222 @@ export function ProfileView() {
                 <User className="h-8 w-8 text-primary" />
               </div>
               <div>
-                <CardTitle className="font-serif text-2xl">
-                  {profile.nickname}
+                <CardTitle className="font-serif text-2xl mb-1">
+                  {profile?.nickname || "Rybář"}
                 </CardTitle>
-                {profile.full_name && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {profile.full_name}
-                  </p>
-                )}
-                {profile.location && (
-                  <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
-                    <MapPin className="h-3 w-3" />
-                    {profile.location}
-                  </div>
-                )}
-                <p className="text-sm text-muted-foreground mt-1">
-                  {profile.email}
-                </p>
+                <p className="text-sm text-muted-foreground">{user?.email}</p>
               </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsEditingProfile(true)}
-              className="gap-2"
-            >
-              <Edit className="h-4 w-4" />
-              Upravit profil
+            <Button variant="outline" onClick={handleLogout} className="gap-2">
+              <LogOut className="h-4 w-4" />
+              Odhlásit se
             </Button>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid sm:grid-cols-3 gap-4">
-            <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
-              <Fish className="h-8 w-8 text-primary" />
-              <div>
-                <p className="text-2xl font-bold font-serif">{totalCatches}</p>
-                <p className="text-sm text-muted-foreground">Úlovků celkem</p>
-              </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center p-4 bg-muted/30 rounded-lg">
+              <p className="text-3xl font-bold text-primary">{catches.length}</p>
+              <p className="text-sm text-muted-foreground">Úlovků celkem</p>
             </div>
-            <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
-              <Ruler className="h-8 w-8 text-primary" />
-              <div>
-                <p className="text-2xl font-bold font-serif">
-                  {avgLength > 0 ? avgLength.toFixed(1) : "—"}
-                </p>
-                <p className="text-sm text-muted-foreground">Průměrná délka (cm)</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
-              <Weight className="h-8 w-8 text-primary" />
-              <div>
-                <p className="text-2xl font-bold font-serif">
-                  {biggestCatch?.weight_kg ? `${biggestCatch.weight_kg} kg` : biggestCatch?.length_cm ? `${biggestCatch.length_cm} cm` : "—"}
-                </p>
-                <p className="text-sm text-muted-foreground">Největší úlovek</p>
-              </div>
+            <div className="text-center p-4 bg-muted/30 rounded-lg">
+              <p className="text-3xl font-bold text-primary">{competitions.length}</p>
+              <p className="text-sm text-muted-foreground">Závodů</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Edit Profile Form */}
-      {isEditingProfile && profile && (
-        <EditProfileForm
-          profile={profile}
-          onSave={handleProfileSaved}
-          onCancel={() => setIsEditingProfile(false)}
-        />
-      )}
-
-      {/* User's Catches */}
+      {/* My Catches */}
       <Card>
         <CardHeader>
-          <CardTitle className="font-serif">Moje úlovky</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="font-serif text-xl flex items-center gap-2">
+              <Fish className="h-5 w-5 text-primary" />
+              Moje úlovky
+            </CardTitle>
+            <Button onClick={() => router.push("/profile/add-catch")} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Přidat úlovek
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {catches.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground space-y-4">
-              <Fish className="h-16 w-16 mx-auto text-muted-foreground/30" />
-              <div>
-                <p className="text-lg font-medium">Zatím žádné úlovky</p>
-                <p className="text-sm">Přidejte svůj první úlovek!</p>
-              </div>
-              <Link href="/profile/add-catch">
-                <Button className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  Přidat úlovek
-                </Button>
-              </Link>
+            <div className="text-center py-8">
+              <Fish className="h-16 w-16 mx-auto mb-4 text-muted-foreground/30" />
+              <p className="text-muted-foreground mb-4">Zatím nemáte žádné úlovky</p>
+              <Button onClick={() => router.push("/profile/add-catch")}>
+                Přidat první úlovek
+              </Button>
             </div>
           ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {catches.map((catchData) => (
-                <Link
-                  key={catchData.id}
-                  href={`/catches/${catchData.id}`}
-                  className="group block"
-                >
-                  <Card className="overflow-hidden hover:shadow-lg transition-shadow relative">
-                    <div className="aspect-[4/3] relative bg-muted">
-                      {catchData.photo_url && (
-                        <img
-                          src={catchData.photo_url}
-                          alt={catchData.species || "Úlovek"}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      )}
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          openDeleteDialog(catchData.id);
-                        }}
+                <Card key={catchData.id} className="overflow-hidden">
+                  <div className="aspect-video relative">
+                    <img
+                      src={catchData.photo_url}
+                      alt={catchData.species}
+                      className="w-full h-full object-cover"
+                    />
+                    {!catchData.is_public && (
+                      <Badge
+                        variant="secondary"
+                        className="absolute top-2 right-2 bg-background/80 backdrop-blur"
                       >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <CardContent className="p-4 space-y-2">
-                      <div className="flex justify-between items-start">
-                        <h3 className="font-serif text-lg font-semibold">
-                          {catchData.species || "Neznámý druh"}
-                        </h3>
-                        <Badge variant="outline" className="flex gap-1 items-center">
-                          {catchData.is_public ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
-                        </Badge>
-                      </div>
-                      <div className="flex gap-2 text-sm text-muted-foreground">
-                        {catchData.length_cm && (
-                          <span>{catchData.length_cm} cm</span>
-                        )}
-                        {catchData.weight_kg && (
-                          <span>• {catchData.weight_kg} kg</span>
-                        )}
-                      </div>
-                      {catchData.caught_at && (
-                        <p className="text-xs text-muted-foreground">
-                          {format(new Date(catchData.caught_at), "d. MMMM yyyy", { locale: cs })}
-                        </p>
+                        Soukromé
+                      </Badge>
+                    )}
+                  </div>
+                  <CardContent className="p-4 space-y-2">
+                    <h3 className="font-serif font-semibold text-lg">{catchData.species}</h3>
+                    <div className="flex gap-2 text-sm">
+                      {catchData.length_cm && (
+                        <Badge variant="secondary">📏 {catchData.length_cm} cm</Badge>
                       )}
-                    </CardContent>
-                  </Card>
-                </Link>
+                      {catchData.weight_kg && (
+                        <Badge variant="secondary">⚖️ {catchData.weight_kg} kg</Badge>
+                      )}
+                    </div>
+                    {catchData.fishing_area && (
+                      <p className="text-sm text-muted-foreground">
+                        📍 {catchData.fishing_area}
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      {format(new Date(catchData.caught_at), "d. MMMM yyyy HH:mm", {
+                        locale: cs,
+                      })}
+                    </p>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => handleDeleteCatch(catchData.id, catchData.photo_path)}
+                    >
+                      Odstranit
+                    </Button>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           )}
         </CardContent>
       </Card>
 
-      <Card className="border-border/50 shadow-sm">
-        <CardHeader className="pb-4">
+      {/* My Competitions */}
+      <Card>
+        <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="font-serif text-2xl text-primary flex items-center gap-2">
-              <Trophy className="h-6 w-6" />
+            <CardTitle className="font-serif text-xl flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-primary" />
               Moje závody
             </CardTitle>
-            <Link href="/competitions/create">
-              <Button size="sm" className="gap-2">
+            <div className="flex gap-2">
+              <Dialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <Users className="h-4 w-4" />
+                    Přidat se k závodu
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle className="font-serif">Připojit se k závodu</DialogTitle>
+                    <DialogDescription>
+                      Zadejte 6místný kód závodu, ke kterému se chcete připojit
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 pt-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="join-code">Kód závodu</Label>
+                      <Input
+                        id="join-code"
+                        value={joinCode}
+                        onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                        placeholder="např. ABC123"
+                        maxLength={6}
+                        className="font-mono text-lg text-center tracking-widest"
+                      />
+                    </div>
+                    <Button
+                      onClick={handleJoinCompetition}
+                      disabled={isJoining || !joinCode.trim()}
+                      className="w-full"
+                    >
+                      {isJoining ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Připojuji se...
+                        </>
+                      ) : (
+                        "Připojit se"
+                      )}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+              <Button onClick={() => router.push("/competitions/create")} className="gap-2">
                 <Plus className="h-4 w-4" />
                 Nový závod
               </Button>
-            </Link>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
           {competitions.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Trophy className="h-12 w-12 mx-auto mb-3 text-muted-foreground/30" />
-              <p className="text-sm">Zatím nemáte žádné závody</p>
-              <p className="text-xs mt-1">Založte si přátelský závod nebo se připojte k existujícímu</p>
+            <div className="text-center py-8">
+              <Trophy className="h-16 w-16 mx-auto mb-4 text-muted-foreground/30" />
+              <p className="text-muted-foreground mb-4">Zatím nejste v žádném závodu</p>
+              <div className="flex gap-2 justify-center">
+                <Button
+                  variant="outline"
+                  onClick={() => setJoinDialogOpen(true)}
+                  className="gap-2"
+                >
+                  <Users className="h-4 w-4" />
+                  Přidat se k závodu
+                </Button>
+                <Button onClick={() => router.push("/competitions/create")}>
+                  Vytvořit závod
+                </Button>
+              </div>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {competitions.map((comp) => (
-                <Link
+                <Card
                   key={comp.id}
-                  href={`/competitions/${comp.id}`}
-                  className="block p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                  className="cursor-pointer hover:shadow-lg transition-shadow"
+                  onClick={() => router.push(`/competitions/${comp.id}`)}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <h3 className="font-medium">{comp.name}</h3>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <span>Kód: {comp.invite_code}</span>
-                        {comp.prize_type === "beer" && <span>🍺 O pivo</span>}
-                        {comp.prize_type === "bottle" && <span>🍾 O láhev</span>}
-                        {comp.prize_type === "none" && <span>O čest</span>}
-                      </div>
+                  <CardHeader>
+                    <CardTitle className="font-serif text-lg">{comp.name}</CardTitle>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span>Kód:</span>
+                      <Badge variant="outline" className="font-mono">
+                        {comp.join_code || comp.invite_code || "N/A"}
+                      </Badge>
                     </div>
-                    <Badge variant="secondary" className="text-xs">
-                      {new Date(comp.end_date) > new Date() ? "Probíhá" : "Ukončeno"}
-                    </Badge>
-                  </div>
-                </Link>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Badge variant="secondary">
+                        {comp.scoring_type === "points" ? "🏆 Bodování" : "📏 Míry"}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {format(new Date(comp.start_date), "d. MMM", { locale: cs })} -{" "}
+                      {format(new Date(comp.end_date), "d. MMM yyyy", { locale: cs })}
+                    </p>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           )}
         </CardContent>
       </Card>
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Odstranit úlovek?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tato akce je nevratná. Úlovek a fotografie budou trvale odstraněny.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Zrušit</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDeleteCatch}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Odstranit
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
