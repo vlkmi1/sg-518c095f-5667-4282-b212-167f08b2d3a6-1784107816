@@ -73,7 +73,7 @@ export const profileService = {
   },
 
   // Update profile
-  async updateProfile(userId: string, updates: { full_name?: string | null; location?: string | null }): Promise<{ error: any }> {
+  async updateProfile(userId: string, updates: { full_name?: string | null; location?: string | null; avatar_path?: string | null }): Promise<{ error: any }> {
     const { error } = await supabase
       .from("profiles")
       .update(updates)
