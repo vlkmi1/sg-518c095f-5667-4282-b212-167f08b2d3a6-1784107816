@@ -168,10 +168,12 @@ export type Database = {
           creator_id: string | null
           description: string | null
           end_date: string
+          fish_points: Json | null
           id: string
           invite_code: string | null
           is_public: boolean | null
           join_code: string | null
+          measurement_type: string | null
           name: string
           organizer_id: string | null
           prize_type: string | null
@@ -188,10 +190,12 @@ export type Database = {
           creator_id?: string | null
           description?: string | null
           end_date: string
+          fish_points?: Json | null
           id?: string
           invite_code?: string | null
           is_public?: boolean | null
           join_code?: string | null
+          measurement_type?: string | null
           name: string
           organizer_id?: string | null
           prize_type?: string | null
@@ -208,10 +212,12 @@ export type Database = {
           creator_id?: string | null
           description?: string | null
           end_date?: string
+          fish_points?: Json | null
           id?: string
           invite_code?: string | null
           is_public?: boolean | null
           join_code?: string | null
+          measurement_type?: string | null
           name?: string
           organizer_id?: string | null
           prize_type?: string | null

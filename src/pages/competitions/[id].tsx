@@ -145,13 +145,44 @@ export default function CompetitionDetailPage() {
       let score = 0;
 
       if (competition.scoring_type === "points") {
-        score = participantCatches.length;
-      } else {
+        // Use fish points configuration
+        const fishPointsConfig = competition.fish_points || {};
         score = participantCatches.reduce((sum, c) => {
-          const lengthScore = c.length_cm || 0;
-          const weightScore = (c.weight_kg || 0) * 10;
-          return sum + lengthScore + weightScore;
+          const points = fishPointsConfig[c.species] || 1; // Default to 1 if species not configured
+          return sum + points;
         }, 0);
+      } else {
+        // Measurements scoring
+        const measurementType = competition.measurement_type || "both";
+        
+        // Calculate score for each catch
+        const catchScores = participantCatches.map((c) => {
+          let catchScore = 0;
+          
+          if (measurementType === "weight") {
+            catchScore = c.weight_kg || 0;
+          } else if (measurementType === "length") {
+            catchScore = c.length_cm || 0;
+          } else {
+            // both
+            const lengthScore = c.length_cm || 0;
+            const weightScore = (c.weight_kg || 0) * 10;
+            catchScore = lengthScore + weightScore;
+          }
+          
+          return catchScore;
+        });
+
+        // Sort scores descending
+        catchScores.sort((a, b) => b - a);
+
+        // Take top N if configured
+        const topCount = competition.top_catches_count;
+        const scoresToCount = topCount && topCount > 0 
+          ? catchScores.slice(0, topCount)
+          : catchScores;
+
+        score = scoresToCount.reduce((sum, s) => sum + s, 0);
       }
 
       return {
@@ -318,11 +349,38 @@ export default function CompetitionDetailPage() {
                   <span className="text-sm">
                     {catches.length} {catches.length === 1 ? "úlovek" : "úlovků"}
                   </span>
-                  <Badge variant="secondary" className="ml-1">
-                    {competition.scoring_type === "points" ? "🏆 Bodování" : "📏 Míry"}
-                  </Badge>
+                </div>
+                <div>
+                  {competition.scoring_type === "points" ? (
+                    <Badge variant="secondary" className="gap-1">
+                      🏆 Bodování podle druhu
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary" className="gap-1">
+                      📏 {
+                        competition.measurement_type === "weight" ? "Váha" :
+                        competition.measurement_type === "length" ? "Délka" :
+                        "Délka + váha"
+                      }
+                      {competition.top_catches_count && ` (top ${competition.top_catches_count})`}
+                    </Badge>
+                  )}
                 </div>
               </div>
+
+              {/* Show scoring rules */}
+              {competition.scoring_type === "points" && competition.fish_points && (
+                <div className="pt-2 border-t">
+                  <p className="text-sm font-medium mb-2">Bodování druhů:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(competition.fish_points).map(([species, points]) => (
+                      <Badge key={species} variant="outline" className="text-xs">
+                        {species}: {points as number} {(points as number) === 1 ? "bod" : "body"}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
