@@ -12,40 +12,26 @@ import { storageService } from "@/services/storageService";
 import { authService } from "@/services/authService";
 import { useToast } from "@/hooks/use-toast";
 import { Upload, X, MapPin, Loader2, Fish, Camera } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-const COMMON_SPECIES = [
-  { 
-    name: "Kapr", 
-    image: "https://images.unsplash.com/photo-1535591273668-578e31182c4f?w=100&h=100&fit=crop"
-  },
-  { 
-    name: "Amur", 
-    image: "https://images.unsplash.com/photo-1524704654690-b56c05c78a00?w=100&h=100&fit=crop"
-  },
-  { 
-    name: "Sumec", 
-    image: "https://images.unsplash.com/photo-1590923188069-70d0c8f2d765?w=100&h=100&fit=crop"
-  },
-  { 
-    name: "Štika", 
-    image: "https://images.unsplash.com/photo-1571752726703-5e7d1f6a986d?w=100&h=100&fit=crop"
-  },
-  { 
-    name: "Candát", 
-    image: "https://images.unsplash.com/photo-1534043464124-3be32fe000c9?w=100&h=100&fit=crop"
-  },
-  { 
-    name: "Pstruh", 
-    image: "https://images.unsplash.com/photo-1566127992631-137a642a90f4?w=100&h=100&fit=crop"
-  },
-  { 
-    name: "Úhoř", 
-    image: "https://images.unsplash.com/photo-1560114928-40f1f1eb26a0?w=100&h=100&fit=crop"
-  },
-  { 
-    name: "Lín", 
-    image: "https://images.unsplash.com/photo-1524704654690-b56c05c78a00?w=100&h=100&fit=crop"
-  },
+const FISH_SPECIES = [
+  { value: "Kapr", label: "Kapr", image: "/Kapr.webp" },
+  { value: "Amur", label: "Amur", image: "/amur.webp" },
+  { value: "Sumec", label: "Sumec", image: "/Sumec.webp" },
+  { value: "Štika", label: "Štika", image: "/Stika.webp" },
+  { value: "Candát", label: "Candát", image: "/candat.webp" },
+  { value: "Pstruh", label: "Pstruh", image: "/Pstruh.webp" },
+  { value: "Úhoř", label: "Úhoř", image: "/Uhor.webp" },
+  { value: "Lín", label: "Lín", image: "/lin.webp" },
+  { value: "Plotice", label: "Plotice", image: "/plotice.webp" },
+  { value: "Cejn", label: "Cejn", image: "/Cejn.webp" },
+  { value: "Jelec", label: "Jelec", image: "/Jelec.webp" },
+  { value: "Okoun", label: "Okoun", image: "/okoun.webp" },
+  { value: "Bolen", label: "Bolen", image: "/Bolen.webp" },
+  { value: "Mník", label: "Mník", image: "/Mnik.webp" },
+  { value: "Perlin", label: "Perlin", image: "/Perlin.webp" },
+  { value: "Síven", label: "Síven", image: "/Siven.webp" },
+  { value: "Jeseter", label: "Jeseter", image: "/Jeseter.webp" },
 ];
 
 export function UploadCatchForm() {
@@ -418,35 +404,30 @@ export function UploadCatchForm() {
             </Card>
           )}
 
-          {/* Quick Species Selection */}
+          {/* Fish Species */}
           <div className="space-y-2">
-            <Label htmlFor="species">Druh ryby *</Label>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {COMMON_SPECIES.map((species) => (
-                <Button
-                  key={species.name}
-                  type="button"
-                  variant={formData.species === species.name ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handleSpeciesSelect(species.name)}
-                  className="gap-2"
-                >
-                  <img 
-                    src={species.image} 
-                    alt={species.name}
-                    className="w-5 h-5 rounded-full object-cover"
-                  />
-                  {species.name}
-                </Button>
-              ))}
-            </div>
-            <Input
-              id="species"
-              value={formData.species}
-              onChange={(e) => setFormData({ ...formData, species: e.target.value })}
-              placeholder="Nebo zadejte vlastní druh"
-              required
-            />
+            <Label htmlFor="species">
+              Druh ryby <span className="text-destructive">*</span>
+            </Label>
+            <Select value={formData.species} onValueChange={(value) => handleSpeciesSelect(value)} required>
+              <SelectTrigger id="species">
+                <SelectValue placeholder="Vyberte druh" />
+              </SelectTrigger>
+              <SelectContent>
+                {FISH_SPECIES.map((fish) => (
+                  <SelectItem key={fish.value} value={fish.value}>
+                    <div className="flex items-center gap-2">
+                      <img 
+                        src={fish.image} 
+                        alt={fish.label}
+                        className="h-5 w-5 object-contain"
+                      />
+                      {fish.label}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Measurements */}

@@ -90,6 +90,17 @@ const FISH_SPECIES = [
   { value: "Štika", label: "Štika", image: "/Stika.webp" },
   { value: "Candát", label: "Candát", image: "/candat.webp" },
   { value: "Pstruh", label: "Pstruh", image: "/Pstruh.webp" },
+  { value: "Úhoř", label: "Úhoř", image: "/Uhor.webp" },
+  { value: "Lín", label: "Lín", image: "/lin.webp" },
+  { value: "Plotice", label: "Plotice", image: "/plotice.webp" },
+  { value: "Cejn", label: "Cejn", image: "/Cejn.webp" },
+  { value: "Jelec", label: "Jelec", image: "/Jelec.webp" },
+  { value: "Okoun", label: "Okoun", image: "/okoun.webp" },
+  { value: "Bolen", label: "Bolen", image: "/Bolen.webp" },
+  { value: "Mník", label: "Mník", image: "/Mnik.webp" },
+  { value: "Perlin", label: "Perlin", image: "/Perlin.webp" },
+  { value: "Síven", label: "Síven", image: "/Siven.webp" },
+  { value: "Jeseter", label: "Jeseter", image: "/Jeseter.webp" },
 ];
 
 const MEDAL_CONFIG = {
