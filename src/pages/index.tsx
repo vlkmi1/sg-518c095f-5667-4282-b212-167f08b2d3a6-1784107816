@@ -1,6 +1,7 @@
 import { SEO } from "@/components/SEO";
 import { Header } from "@/components/layout/Header";
 import { CatchGallery } from "@/components/gallery/CatchGallery";
+import { HallOfFame } from "@/components/gallery/HallOfFame";
 import { ContactForm } from "@/components/ContactForm";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Trophy, Camera, Users } from "lucide-react";
@@ -105,6 +106,11 @@ export default function Home() {
           </div>
           <CatchGallery />
         </main>
+
+        {/* Hall of Fame */}
+        <section className="container py-12">
+          <HallOfFame />
+        </section>
 
         {/* Contact Form */}
         <ContactForm />
