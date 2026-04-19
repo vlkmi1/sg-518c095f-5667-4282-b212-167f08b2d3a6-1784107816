@@ -287,7 +287,7 @@ export function HallOfFame() {
             <img 
               src={species.image} 
               alt={species.label}
-              className="h-5 w-5 object-contain"
+              className="h-5 w-5 object-cover rounded-full"
             />
             {species.label}
           </Button>
