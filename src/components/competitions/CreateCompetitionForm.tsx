@@ -145,45 +145,47 @@ export function CreateCompetitionForm() {
             />
           </div>
 
-          {/* Start Date & Time */}
-          <div className="space-y-2">
-            <Label>
-              Začátek <span className="text-destructive">*</span>
-            </Label>
-            <div className="grid grid-cols-2 gap-2">
-              <Input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                required
-              />
-              <Input
-                type="time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                required
-              />
+          {/* Date Range - Začátek */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>
+                Začátek <span className="text-destructive">*</span>
+              </Label>
+              <div className="grid grid-cols-2 gap-2">
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  required
+                />
+                <Input
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  required
+                />
+              </div>
             </div>
-          </div>
 
-          {/* End Date & Time */}
-          <div className="space-y-2">
-            <Label>
-              Konec <span className="text-destructive">*</span>
-            </Label>
-            <div className="grid grid-cols-2 gap-2">
-              <Input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                required
-              />
-              <Input
-                type="time"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                required
-              />
+            {/* Date Range - Konec */}
+            <div className="space-y-2">
+              <Label>
+                Konec <span className="text-destructive">*</span>
+              </Label>
+              <div className="grid grid-cols-2 gap-2">
+                <Input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  required
+                />
+                <Input
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  required
+                />
+              </div>
             </div>
           </div>
 
