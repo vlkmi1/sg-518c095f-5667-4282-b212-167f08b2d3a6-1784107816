@@ -6,71 +6,77 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { authService } from "@/services/authService";
+import { adminService } from "@/services/adminService";
 import { competitionService } from "@/services/competitionService";
 import { catchService } from "@/services/catchService";
-import { storageService } from "@/services/storageService";
-import { authService } from "@/services/authService";
 import { useToast } from "@/hooks/use-toast";
-import { Trophy, Calendar, Users, Award, Upload, Camera, Loader2, Clock } from "lucide-react";
-import { format } from "date-fns";
+import { Trophy, Users, Calendar, Share2, Fish, User, Trash2, Loader2 } from "lucide-react";
+import { format, isBefore, startOfDay } from "date-fns";
 import { cs } from "date-fns/locale";
-import { useRef } from "react";
 
-export default function CompetitionPage() {
+export default function CompetitionDetailPage() {
   const router = useRouter();
   const { id } = router.query;
   const { toast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [competition, setCompetition] = useState<any>(null);
-  const [leaderboard, setLeaderboard] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [selectedSpecies, setSelectedSpecies] = useState<string>("");
-  const [saveToProfile, setSaveToProfile] = useState(false);
+  const [participants, setParticipants] = useState<any[]>([]);
+  const [catches, setCatches] = useState<any[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    loadData();
+    if (id) {
+      loadCompetitionData();
+    }
   }, [id]);
 
-  async function loadData() {
+  async function loadCompetitionData() {
     try {
       const user = await authService.getCurrentUser();
       setCurrentUser(user);
 
-      if (id) {
-        await loadCompetition();
+      if (user) {
+        const adminStatus = await adminService.isAdmin(user.id);
+        setIsAdmin(adminStatus);
       }
-    } catch (error) {
-      console.error("Error loading data:", error);
-    }
-  }
 
-  async function loadCompetition() {
-    try {
-      const { data: comp } = await competitionService.getCompetition(id as string);
-      setCompetition(comp);
+      const { data: compData, error: compError } =
+        await competitionService.getCompetitionById(id as string);
 
-      const leaders = await competitionService.getLeaderboard(id as string);
-      setLeaderboard(leaders);
-    } catch (error) {
-      console.error("Error loading competition:", error);
+      if (compError || !compData) {
+        throw new Error("Závod nebyl nalezen");
+      }
+
+      setCompetition(compData);
+
+      const participantsData = await competitionService.getCompetitionParticipants(
+        id as string
+      );
+      setParticipants(participantsData || []);
+
+      const catchesData = await competitionService.getCompetitionCatches(id as string);
+      setCatches(catchesData || []);
+    } catch (error: any) {
+      console.error("Load competition error:", error);
       toast({
         title: "Chyba",
-        description: "Nepodařilo se načíst závod",
+        description: error.message || "Nepodařilo se načíst závod",
         variant: "destructive",
       });
     } finally {
@@ -78,168 +84,94 @@ export default function CompetitionPage() {
     }
   }
 
-  function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  async function handleDeleteCompetition() {
+    if (!competition || !currentUser) return;
 
-    setImageFile(file);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-  }
-
-  function canSubmitCatch(): { allowed: boolean; reason?: string } {
-    if (!currentUser) {
-      return { allowed: false, reason: "Musíte být přihlášeni" };
-    }
-
-    if (!competition) {
-      return { allowed: false, reason: "Závod nenalezen" };
-    }
-
-    const now = new Date();
-    const startDate = new Date(competition.start_date);
-    const endDate = new Date(competition.end_date);
-
-    const isOrganizer = currentUser.id === competition.organizer_id || 
-                       currentUser.id === competition.creator_id;
-
-    // Before competition starts
-    if (now < startDate) {
-      return { allowed: false, reason: "Závod ještě nezačal" };
-    }
-
-    // After competition ends - only organizer can submit
-    if (now > endDate && !isOrganizer) {
-      return { 
-        allowed: false, 
-        reason: "Závod již skončil. Pouze organizátor může dodatečně přidat úlovky." 
-      };
-    }
-
-    return { allowed: true };
-  }
-
-  async function handleSubmitCatch() {
-    if (!imageFile || !selectedSpecies) {
-      toast({
-        title: "Chybí údaje",
-        description: "Vyberte fotografii a druh ryby",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const canSubmit = canSubmitCatch();
-    if (!canSubmit.allowed) {
-      toast({
-        title: "Nelze přidat úlovek",
-        description: canSubmit.reason,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
+    setIsDeleting(true);
 
     try {
-      const user = await authService.getCurrentUser();
-      if (!user) {
-        throw new Error("Uživatel není přihlášen");
-      }
-
-      // Upload photo
-      const { url: photoUrl, path: photoPath } = await storageService.uploadCatchPhoto(
-        imageFile,
-        user.id
-      );
-
-      // Get points for selected species (if points-based competition)
-      const points = competition.scoring_type === "points" && competition.scoring_table
-        ? competition.scoring_table[selectedSpecies]
-        : 0;
-
-      // Create catch record
-      const catchData = {
-        user_id: user.id,
-        species: selectedSpecies,
-        length_cm: null,
-        weight_kg: null,
-        photo_url: photoUrl,
-        photo_path: photoPath,
-        caught_at: new Date().toISOString(),
-        is_public: saveToProfile, // Save to profile if toggle is on
-        latitude: null,
-        longitude: null,
-        country: null,
-        region: null,
-        district: null,
-        fishing_area: null,
-        bait_brand: null,
-      };
-
-      const { data: newCatch, error: catchError } = await catchService.createCatch(catchData);
-
-      if (catchError) {
-        throw new Error(catchError.message);
-      }
-
-      // Submit to competition
-      await competitionService.submitCatchToCompetition(
-        competition.id,
-        newCatch.id,
-        true // auto-approve for now
-      );
-
-      const successMessage = competition.scoring_type === "points"
-        ? `Získali jste ${points} bodů za ${selectedSpecies}`
-        : "Váš úlovek byl přidán do závodu";
-
-      const profileNote = saveToProfile 
-        ? " + přidán do vašeho profilu a veřejné galerie"
-        : "";
+      await competitionService.deleteCompetition(competition.id);
 
       toast({
-        title: "✅ Úlovek přidán!",
-        description: successMessage + profileNote,
+        title: "🗑️ Závod odstraněn",
+        description: `Závod "${competition.name}" byl trvale smazán`,
       });
 
-      // Reset form
-      setImageFile(null);
-      setImagePreview(null);
-      setSelectedSpecies("");
-      setSaveToProfile(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-
-      // Reload leaderboard
-      loadCompetition();
+      router.push("/competitions");
     } catch (error: any) {
-      console.error("Submit catch error:", error);
+      console.error("Delete competition error:", error);
       toast({
         title: "Chyba",
-        description: error.message || "Nepodařilo se přidat úlovek",
+        description: error.message || "Nepodařilo se odstranit závod",
         variant: "destructive",
       });
     } finally {
-      setIsSubmitting(false);
+      setIsDeleting(false);
     }
+  }
+
+  async function handleShare() {
+    if (!competition) return;
+
+    const shareUrl = `${window.location.origin}/competitions/join/${competition.join_code || competition.invite_code}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: competition.name,
+          text: `Připoj se k závodu "${competition.name}"!`,
+          url: shareUrl,
+        });
+      } catch (error) {
+        console.error("Share error:", error);
+      }
+    } else {
+      navigator.clipboard.writeText(shareUrl);
+      toast({
+        title: "✅ Odkaz zkopírován",
+        description: "Odkaz na závod byl zkopírován do schránky",
+      });
+    }
+  }
+
+  function getLeaderboard() {
+    if (!participants.length) return [];
+
+    const participantsWithScores = participants.map((participant) => {
+      const participantCatches = catches.filter(
+        (c) => c.user_id === participant.user_id
+      );
+
+      let score = 0;
+
+      if (competition.scoring_type === "points") {
+        score = participantCatches.length;
+      } else {
+        score = participantCatches.reduce((sum, c) => {
+          const lengthScore = c.length_cm || 0;
+          const weightScore = (c.weight_kg || 0) * 10;
+          return sum + lengthScore + weightScore;
+        }, 0);
+      }
+
+      return {
+        ...participant,
+        score,
+        catchCount: participantCatches.length,
+      };
+    });
+
+    return participantsWithScores.sort((a, b) => b.score - a.score);
   }
 
   if (isLoading) {
     return (
       <>
-        <SEO title="Načítání závodu..." />
+        <SEO title="Načítání..." />
         <div className="min-h-screen bg-background">
           <Header />
           <main className="container py-8">
-            <div className="space-y-4">
-              <Skeleton className="h-32 w-full" />
-              <Skeleton className="h-64 w-full" />
-            </div>
+            <Skeleton className="h-64 w-full" />
           </main>
         </div>
       </>
@@ -254,8 +186,11 @@ export default function CompetitionPage() {
           <Header />
           <main className="container py-8">
             <Card>
-              <CardContent className="p-8 text-center">
-                <p className="text-muted-foreground">Závod nenalezen</p>
+              <CardContent className="py-12 text-center">
+                <Trophy className="h-16 w-16 mx-auto mb-4 text-muted-foreground/30" />
+                <p className="text-xl font-medium text-muted-foreground">
+                  Závod nenalezen
+                </p>
               </CardContent>
             </Card>
           </main>
@@ -264,28 +199,26 @@ export default function CompetitionPage() {
     );
   }
 
-  const availableSpecies = competition.scoring_type === "points" && competition.scoring_table
-    ? Object.keys(competition.scoring_table)
-    : [];
-
-  const submissionStatus = canSubmitCatch();
-  const now = new Date();
-  const startDate = new Date(competition.start_date);
-  const endDate = new Date(competition.end_date);
-  const hasStarted = now >= startDate;
-  const hasEnded = now > endDate;
+  const leaderboard = getLeaderboard();
+  const hasStarted = isBefore(startOfDay(new Date(competition.start_date)), startOfDay(new Date()));
+  const hasEnded = isBefore(startOfDay(new Date(competition.end_date)), startOfDay(new Date()));
+  const isCreator = currentUser?.id === competition.created_by;
+  const canDelete = (isCreator || isAdmin) && !hasStarted;
 
   return (
     <>
-      <SEO title={`${competition.name} - Rybářský závod`} />
+      <SEO
+        title={competition.name}
+        description={competition.description || "Rybářský závod na Ukaž Rybu"}
+      />
       <div className="min-h-screen bg-background">
         <Header />
         <main className="container py-8 space-y-6">
-          {/* Competition Info */}
+          {/* Competition Header */}
           <Card>
             <CardHeader>
-              <div className="flex items-start justify-between">
-                <div>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
                   <CardTitle className="font-serif text-3xl mb-2">
                     {competition.name}
                   </CardTitle>
@@ -293,252 +226,197 @@ export default function CompetitionPage() {
                     <p className="text-muted-foreground">{competition.description}</p>
                   )}
                 </div>
-                <div className="flex flex-col gap-2 items-end">
-                  <Badge variant="secondary" className="gap-2">
-                    <Trophy className="h-4 w-4" />
-                    {competition.scoring_type === "points" ? "Bodování" : "Míry ryby"}
-                  </Badge>
-                  {!hasStarted && (
-                    <Badge variant="outline" className="gap-2">
-                      <Clock className="h-4 w-4" />
-                      Nezačal
-                    </Badge>
-                  )}
-                  {hasStarted && !hasEnded && (
-                    <Badge className="gap-2 bg-green-500">
-                      <Clock className="h-4 w-4" />
-                      Probíhá
-                    </Badge>
-                  )}
-                  {hasEnded && (
-                    <Badge variant="outline" className="gap-2 bg-muted">
-                      <Clock className="h-4 w-4" />
-                      Skončil
-                    </Badge>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={handleShare} className="gap-2">
+                    <Share2 className="h-4 w-4" />
+                    <span className="hidden sm:inline">Sdílet</span>
+                  </Button>
+                  {canDelete && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="destructive"
+                          className="gap-2"
+                          disabled={isDeleting}
+                        >
+                          {isDeleting ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                          <span className="hidden sm:inline">Odstranit</span>
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Opravdu odstranit závod?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Tato akce je nevratná. Závod bude trvale odstraněn včetně
+                            všech účastníků a výsledků.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Zrušit</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={handleDeleteCompetition}
+                            className="bg-destructive hover:bg-destructive/90"
+                          >
+                            Odstranit závod
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   )}
                 </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="flex items-center gap-2 text-sm">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <p className="font-medium">Začátek</p>
-                    <p className="text-muted-foreground">
-                      {format(new Date(competition.start_date), "d. MMMM yyyy HH:mm", { locale: cs })}
+                    <p className="font-medium">
+                      {format(new Date(competition.start_date), "d. MMM", { locale: cs })} -{" "}
+                      {format(new Date(competition.end_date), "d. MMM yyyy", { locale: cs })}
                     </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium">Konec</p>
-                    <p className="text-muted-foreground">
-                      {format(new Date(competition.end_date), "d. MMMM yyyy HH:mm", { locale: cs })}
+                    <p className="text-xs text-muted-foreground">
+                      {hasEnded ? "Ukončen" : hasStarted ? "Probíhá" : "Nadcházející"}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <Users className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <p className="font-medium">Účastníci</p>
-                    <p className="text-muted-foreground">{leaderboard.length}</p>
+                    <p className="font-medium">{participants.length} účastníků</p>
+                    <p className="text-xs text-muted-foreground">Celkem závodníků</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Fish className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">{catches.length} úlovků</p>
+                    <p className="text-xs text-muted-foreground">
+                      {competition.scoring_type === "points" ? "Bodování" : "Podle rozměrů"}
+                    </p>
                   </div>
                 </div>
               </div>
-
-              <div className="flex items-center gap-2 p-3 bg-muted/30 rounded-lg">
-                <p className="text-sm font-medium">Kód pro připojení:</p>
-                <Badge variant="outline" className="font-mono text-lg">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Kód závodu:</span>
+                <Badge variant="outline" className="font-mono text-base px-3 py-1">
                   {competition.join_code || competition.invite_code}
                 </Badge>
               </div>
-
-              {/* Scoring Table (for points-based competitions) */}
-              {competition.scoring_type === "points" && competition.scoring_table && (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">Bodovací tabulka:</p>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    {Object.entries(competition.scoring_table).map(([species, points]: [string, any]) => (
-                      <div
-                        key={species}
-                        className="flex items-center justify-between p-2 bg-muted/30 rounded"
-                      >
-                        <span className="text-sm">{species}</span>
-                        <Badge variant="secondary">{points} b.</Badge>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Submit Catch Form */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="font-serif text-xl flex items-center gap-2">
-                <Camera className="h-5 w-5 text-primary" />
-                Přidat úlovek do závodu
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {!submissionStatus.allowed && (
-                <div className="p-4 bg-muted/50 rounded-lg border border-muted">
-                  <p className="text-sm text-muted-foreground flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    {submissionStatus.reason}
-                  </p>
-                </div>
-              )}
-
-              {submissionStatus.allowed && (
-                <>
-                  {/* Image Upload */}
-                  <div className="space-y-2">
-                    <Label>Fotografie úlovku *</Label>
-                    {!imagePreview ? (
-                      <div
-                        onClick={() => fileInputRef.current?.click()}
-                        className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
-                      >
-                        <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">Klikněte pro výběr fotografie</p>
-                      </div>
-                    ) : (
-                      <div className="relative rounded-lg overflow-hidden">
-                        <img
-                          src={imagePreview}
-                          alt="Náhled"
-                          className="w-full h-auto max-h-64 object-cover"
-                        />
-                      </div>
-                    )}
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageSelect}
-                      className="hidden"
-                    />
-                  </div>
-
-                  {/* Species Selection */}
-                  {competition.scoring_type === "points" ? (
-                    <div className="space-y-2">
-                      <Label htmlFor="species">Druh ryby *</Label>
-                      <Select value={selectedSpecies} onValueChange={setSelectedSpecies}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Vyberte druh ryby" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableSpecies.map((species) => (
-                            <SelectItem key={species} value={species}>
-                              {species} ({competition.scoring_table[species]} bodů)
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {selectedSpecies && (
-                        <p className="text-sm text-muted-foreground">
-                          Za {selectedSpecies} získáte <strong>{competition.scoring_table[selectedSpecies]} bodů</strong>
-                        </p>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <Label htmlFor="species">Druh ryby *</Label>
-                      <Input
-                        id="species"
-                        value={selectedSpecies}
-                        onChange={(e) => setSelectedSpecies(e.target.value)}
-                        placeholder="např. Kapr"
-                      />
-                      <p className="text-sm text-muted-foreground">
-                        Hodnotí se: {competition.scoring_metric === "weight" ? "Hmotnost" : "Délka"}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Save to Profile Toggle */}
-                  <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
-                    <div>
-                      <Label htmlFor="save_to_profile" className="cursor-pointer font-medium">
-                        Přidat i mezi moje úlovky
-                      </Label>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Úlovek se zobrazí ve vašem profilu a veřejné galerii
-                      </p>
-                    </div>
-                    <Switch
-                      id="save_to_profile"
-                      checked={saveToProfile}
-                      onCheckedChange={setSaveToProfile}
-                    />
-                  </div>
-
-                  <Button
-                    onClick={handleSubmitCatch}
-                    disabled={isSubmitting || !imageFile || !selectedSpecies}
-                    className="w-full"
-                    size="lg"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Přidávám...
-                      </>
-                    ) : (
-                      "Přidat úlovek do závodu"
-                    )}
-                  </Button>
-                </>
-              )}
             </CardContent>
           </Card>
 
           {/* Leaderboard */}
           <Card>
             <CardHeader>
-              <CardTitle className="font-serif text-2xl flex items-center gap-2">
-                <Trophy className="h-6 w-6 text-primary" />
-                Pořadí
+              <CardTitle className="font-serif text-xl flex items-center gap-2">
+                <Trophy className="h-5 w-5 text-primary" />
+                Pořadí závodníků
               </CardTitle>
             </CardHeader>
             <CardContent>
               {leaderboard.length === 0 ? (
                 <div className="text-center py-8">
-                  <p className="text-muted-foreground">Zatím žádné úlovky</p>
+                  <Users className="h-16 w-16 mx-auto mb-4 text-muted-foreground/30" />
+                  <p className="text-muted-foreground">Zatím nejsou žádní účastníci</p>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {leaderboard.map((user, index) => (
+                  {leaderboard.map((participant, index) => (
                     <div
-                      key={user.user_id}
-                      className="flex items-center justify-between p-4 bg-muted/30 rounded-lg"
+                      key={participant.user_id}
+                      className={`flex items-center justify-between p-4 rounded-lg transition-colors ${
+                        index === 0
+                          ? "bg-yellow-500/10 border border-yellow-500/20"
+                          : index === 1
+                          ? "bg-gray-400/10 border border-gray-400/20"
+                          : index === 2
+                          ? "bg-amber-700/10 border border-amber-700/20"
+                          : "bg-muted/30"
+                      }`}
                     >
                       <div className="flex items-center gap-4">
-                        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 font-bold text-primary">
-                          {index + 1}
+                        <div className="text-2xl font-bold w-8 text-center">
+                          {index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : `${index + 1}.`}
                         </div>
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={participant.profiles?.avatar_url || undefined} />
+                          <AvatarFallback className="bg-primary/10 text-primary">
+                            <User className="h-5 w-5" />
+                          </AvatarFallback>
+                        </Avatar>
                         <div>
-                          <p className="font-medium">{user.nickname}</p>
+                          <p className="font-medium">{participant.profiles?.nickname || "Rybář"}</p>
                           <p className="text-sm text-muted-foreground">
-                            {user.catch_count} {user.catch_count === 1 ? "úlovek" : "úlovky"}
+                            {participant.catchCount} {participant.catchCount === 1 ? "úlovek" : "úlovky"}
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-2xl font-bold text-primary">
-                          {user.total_score.toFixed(competition.scoring_type === "points" ? 0 : 2)}
-                        </p>
+                        <p className="text-2xl font-bold text-primary">{participant.score}</p>
                         <p className="text-xs text-muted-foreground">
-                          {competition.scoring_type === "points" ? "bodů" : 
-                           competition.scoring_metric === "weight" ? "kg" : "cm"}
+                          {competition.scoring_type === "points" ? "bodů" : "skóre"}
                         </p>
                       </div>
                     </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Recent Catches */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-serif text-xl flex items-center gap-2">
+                <Fish className="h-5 w-5 text-primary" />
+                Nedávné úlovky
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {catches.length === 0 ? (
+                <div className="text-center py-8">
+                  <Fish className="h-16 w-16 mx-auto mb-4 text-muted-foreground/30" />
+                  <p className="text-muted-foreground">Zatím žádné úlovky</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {catches.slice(0, 6).map((catchItem) => (
+                    <Card key={catchItem.id} className="overflow-hidden">
+                      {catchItem.photo_url && (
+                        <div className="aspect-video relative">
+                          <img
+                            src={catchItem.photo_url}
+                            alt={catchItem.species}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                      <CardContent className="p-4">
+                        <h3 className="font-serif font-semibold text-lg">
+                          {catchItem.species}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {catchItem.profiles?.nickname || "Neznámý rybář"}
+                        </p>
+                        {(catchItem.length_cm || catchItem.weight_kg) && (
+                          <p className="text-sm text-muted-foreground">
+                            {catchItem.length_cm && `📏 ${catchItem.length_cm} cm`}
+                            {catchItem.length_cm && catchItem.weight_kg && " • "}
+                            {catchItem.weight_kg && `⚖️ ${catchItem.weight_kg} kg`}
+                          </p>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {format(new Date(catchItem.caught_at), "d. MMM yyyy HH:mm", {
+                            locale: cs,
+                          })}
+                        </p>
+                      </CardContent>
+                    </Card>
                   ))}
                 </div>
               )}

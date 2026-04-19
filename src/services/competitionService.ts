@@ -245,6 +245,25 @@ export const competitionService = {
     return leaderboard.sort((a, b) => b.total_score - a.total_score);
   },
 
+  // Delete competition
+  async deleteCompetition(competitionId: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from("competitions")
+        .delete()
+        .eq("id", competitionId);
+
+      if (error) {
+        throw error;
+      }
+
+      console.log("deleteCompetition success:", competitionId);
+    } catch (error) {
+      console.error("deleteCompetition error:", error);
+      throw error;
+    }
+  },
+
   // Generate random join code
   generateJoinCode(): string {
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
