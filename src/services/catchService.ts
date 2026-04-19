@@ -108,6 +108,7 @@ export const catchService = {
     photo_url: string;
     caught_at: string;
     is_public?: boolean;
+    competition_id?: string | null;
   }): Promise<{ data: any; error: any }> {
     const { data, error } = await supabase
       .from("catches")

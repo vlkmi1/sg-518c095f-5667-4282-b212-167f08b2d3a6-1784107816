@@ -63,7 +63,7 @@ export default function CompetitionDetailPage() {
   async function loadCompetitionData() {
     setIsLoading(true);
     try {
-      const { data: comp, error: compError } = await competitionService.getCompetitionById(id as string);
+      const { data: comp, error: compError } = await competitionService.getCompetition(id as string);
 
       if (compError || !comp) {
         throw new Error("Závod nenalezen");
@@ -72,8 +72,8 @@ export default function CompetitionDetailPage() {
       setCompetition(comp);
 
       // Load participants
-      const { data: parts } = await competitionService.getParticipants(id as string);
-      setParticipants(parts || []);
+      const participantsData = await competitionService.getCompetitionParticipants(id as string);
+      setParticipants(participantsData || []);
 
       // Load catches
       const { data: catchData } = await competitionService.getCompetitionCatches(id as string);
@@ -81,8 +81,8 @@ export default function CompetitionDetailPage() {
 
       // Check if current user is participant
       const user = await authService.getCurrentUser();
-      if (user && parts) {
-        setIsUserParticipant(parts.some((p: any) => p.user_id === user.id));
+      if (user && participantsData) {
+        setIsUserParticipant(participantsData.some((p: any) => p.user_id === user.id));
       }
     } catch (error: any) {
       toast({
