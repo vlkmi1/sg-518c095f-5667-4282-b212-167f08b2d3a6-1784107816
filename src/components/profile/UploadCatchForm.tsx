@@ -1,18 +1,17 @@
-import { useState, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useToast } from "@/hooks/use-toast";
+import { authService } from "@/services/authService";
 import { catchService } from "@/services/catchService";
 import { storageService } from "@/services/storageService";
-import { authService } from "@/services/authService";
-import { useToast } from "@/hooks/use-toast";
-import { Upload, X, MapPin, Loader2, Fish, Camera } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2, Fish, MapPin, Calendar } from "lucide-react";
 
 const FISH_SPECIES = [
   { value: "Kapr", label: "Kapr", image: "/Kapr.webp" },
@@ -34,209 +33,125 @@ const FISH_SPECIES = [
   { value: "Jeseter", label: "Jeseter", image: "/Jeseter.webp" },
 ];
 
+const CZECH_REGIONS = [
+  "Hlavní město Praha",
+  "Středočeský kraj",
+  "Jihočeský kraj",
+  "Plzeňský kraj",
+  "Karlovarský kraj",
+  "Ústecký kraj",
+  "Liberecký kraj",
+  "Královéhradecký kraj",
+  "Pardubický kraj",
+  "Kraj Vysočina",
+  "Jihomoravský kraj",
+  "Olomoucký kraj",
+  "Zlínský kraj",
+  "Moravskoslezský kraj",
+];
+
 export function UploadCatchForm() {
   const router = useRouter();
   const { toast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [isGettingLocation, setIsGettingLocation] = useState(false);
-  const [showAnalysisPrompt, setShowAnalysisPrompt] = useState(false);
+  // Form mode
+  const [isQuickMode, setIsQuickMode] = useState(true);
 
-  const [formData, setFormData] = useState({
-    species: "",
-    length_cm: "",
-    weight_kg: "",
-    latitude: "",
-    longitude: "",
-    country: "",
-    region: "",
-    district: "",
-    fishing_area: "",
-    bait_brand: "",
-    caught_at: new Date().toISOString().slice(0, 16),
-    is_public: true,
-  });
+  // Required fields (quick mode)
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string>("");
+  const [species, setSpecies] = useState("");
 
-  function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // Optional fields (detailed mode)
+  const [length, setLength] = useState("");
+  const [weight, setWeight] = useState("");
+  const [caughtDate, setCaughtDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
+  const [caughtTime, setCaughtTime] = useState(
+    new Date().toTimeString().slice(0, 5)
+  );
+  const [baitBrand, setBaitBrand] = useState("");
+  const [notes, setNotes] = useState("");
+  const [country, setCountry] = useState("Česká republika");
+  const [region, setRegion] = useState("");
+  const [district, setDistrict] = useState("");
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
 
-    setImageFile(file);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result as string);
-      setShowAnalysisPrompt(true);
-    };
-    reader.readAsDataURL(file);
-  }
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
-  function handleRemoveImage() {
-    setImageFile(null);
-    setImagePreview(null);
-    setShowAnalysisPrompt(false);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+  useEffect(() => {
+    if (photo) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(photo);
+    } else {
+      setPhotoPreview("");
     }
-  }
+  }, [photo]);
 
-  function handleSpeciesSelect(species: string) {
-    setFormData({ ...formData, species });
-  }
-
-  async function handleGetLocation() {
-    if (!navigator.geolocation) {
-      toast({
-        title: "GPS není podporováno",
-        description: "Váš prohlížeč nepodporuje geolokaci",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsGettingLocation(true);
-
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const lat = position.coords.latitude.toFixed(6);
-        const lon = position.coords.longitude.toFixed(6);
-
-        try {
-          // Reverse geocoding using Nominatim (OpenStreetMap)
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&accept-language=cs`
-          );
-          const data = await response.json();
-
-          console.log("Reverse geocoding data:", data);
-
-          const address = data.address || {};
-
-          setFormData({
-            ...formData,
-            latitude: lat,
-            longitude: lon,
-            country: address.country || "",
-            region: address.state || address.region || "",
-            district: address.county || address.municipality || "",
-          });
-
-          toast({
-            title: "✅ Poloha získána",
-            description: `${address.country || ""}, ${address.state || address.region || ""}`,
-          });
-        } catch (error) {
-          console.error("Reverse geocoding error:", error);
-          
-          // Still save coordinates even if reverse geocoding fails
-          setFormData({
-            ...formData,
-            latitude: lat,
-            longitude: lon,
-          });
-
-          toast({
-            title: "Poloha uložena",
-            description: "GPS souřadnice uloženy, ale nepodařilo se zjistit adresu",
-          });
-        } finally {
-          setIsGettingLocation(false);
-        }
-      },
-      (error) => {
-        console.error("Geolocation error:", error);
-        setIsGettingLocation(false);
-        
-        toast({
-          title: "Chyba GPS",
-          description: "Nepodařilo se získat polohu. Zkontrolujte oprávnění prohlížeče.",
-          variant: "destructive",
-        });
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
-      }
-    );
-  }
-
-  async function handleAnalyzeFish() {
-    if (!imageFile) return;
-
-    setIsAnalyzing(true);
-    setShowAnalysisPrompt(false);
-
+  async function getCurrentLocation() {
+    setIsLoadingLocation(true);
     try {
-      const formData = new FormData();
-      formData.append("image", imageFile);
-
-      const response = await fetch("/api/analyze-fish", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error("AI analýza selhala");
+      if (!navigator.geolocation) {
+        throw new Error("Geolokace není podporována");
       }
 
-      const result = await response.json();
+      const position = await new Promise<GeolocationPosition>(
+        (resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0,
+          });
+        }
+      );
 
-      setFormData((prev) => ({
-        ...prev,
-        species: result.species || prev.species,
-        length_cm: result.length_cm ? result.length_cm.toString() : prev.length_cm,
-        weight_kg: result.weight_kg ? result.weight_kg.toString() : prev.weight_kg,
-      }));
+      setLatitude(position.coords.latitude);
+      setLongitude(position.coords.longitude);
 
       toast({
-        title: "✅ AI analýza dokončena",
-        description: `Rozpoznán druh: ${result.species || "Neznámý"}`,
+        title: "✅ Poloha získána",
+        description: `${position.coords.latitude.toFixed(6)}, ${position.coords.longitude.toFixed(6)}`,
       });
     } catch (error: any) {
-      console.error("AI analysis error:", error);
+      console.error("Geolocation error:", error);
       toast({
-        title: "Chyba AI analýzy",
-        description: "Zkuste zadat údaje ručně",
+        title: "Chyba",
+        description: error.message || "Nepodařilo se získat polohu",
         variant: "destructive",
       });
     } finally {
-      setIsAnalyzing(false);
+      setIsLoadingLocation(false);
     }
-  }
-
-  function handleSkipAnalysis() {
-    setShowAnalysisPrompt(false);
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    // Hide analysis prompt when submitting
-    setShowAnalysisPrompt(false);
-
-    if (!imageFile) {
+    if (!photo) {
       toast({
         title: "Chybí fotografie",
-        description: "Prosím nahrajte fotografii úlovku",
+        description: "Nahrajte fotografii úlovku",
         variant: "destructive",
       });
       return;
     }
 
-    if (!formData.species) {
+    if (!species) {
       toast({
         title: "Chybí druh ryby",
-        description: "Prosím zadejte druh ryby",
+        description: "Vyberte druh ryby",
         variant: "destructive",
       });
       return;
     }
 
-    setIsUploading(true);
+    setIsSubmitting(true);
 
     try {
       const user = await authService.getCurrentUser();
@@ -245,171 +160,111 @@ export function UploadCatchForm() {
       }
 
       // Upload photo
-      const { url: photoUrl, path: photoPath } = await storageService.uploadCatchPhoto(
-        imageFile,
-        user.id
-      );
+      const photoUrl = await storageService.uploadCatchPhoto(photo, user.id);
 
-      // Create catch record
-      const catchData = {
+      // Prepare caught_at timestamp
+      const caughtAt = new Date(`${caughtDate}T${caughtTime}:00`).toISOString();
+
+      // Create catch
+      const catchData: any = {
         user_id: user.id,
-        species: formData.species,
-        length_cm: formData.length_cm ? parseFloat(formData.length_cm) : null,
-        weight_kg: formData.weight_kg ? parseFloat(formData.weight_kg) : null,
+        species,
         photo_url: photoUrl,
-        photo_path: photoPath,
-        latitude: formData.latitude ? parseFloat(formData.latitude) : null,
-        longitude: formData.longitude ? parseFloat(formData.longitude) : null,
-        country: formData.country || null,
-        region: formData.region || null,
-        district: formData.district || null,
-        fishing_area: formData.fishing_area || null,
-        bait_brand: formData.bait_brand || null,
-        caught_at: new Date(formData.caught_at).toISOString(),
-        is_public: formData.is_public,
+        caught_at: caughtAt,
       };
 
-      const { error } = await catchService.createCatch(catchData);
+      // Add optional fields only if filled
+      if (length) catchData.length_cm = parseFloat(length);
+      if (weight) catchData.weight_kg = parseFloat(weight);
+      if (baitBrand) catchData.bait_brand = baitBrand;
+      if (notes) catchData.notes = notes;
+      if (latitude !== null) catchData.latitude = latitude;
+      if (longitude !== null) catchData.longitude = longitude;
+      if (country) catchData.country = country;
+      if (region) catchData.region = region;
+      if (district) catchData.district = district;
 
-      if (error) {
-        throw new Error(error.message);
-      }
+      await catchService.createCatch(catchData);
 
       toast({
         title: "✅ Úlovek přidán!",
-        description: "Váš úlovek byl úspěšně nahrán",
+        description: `${species} byl úspěšně přidán do galerie`,
       });
 
-      router.push("/profile");
+      router.push("/my-catches");
     } catch (error: any) {
-      console.error("Upload error:", error);
+      console.error("Upload catch error:", error);
       toast({
-        title: "Chyba při nahrávání",
-        description: error.message || "Něco se pokazilo",
+        title: "Chyba",
+        description: error.message || "Nepodařilo se přidat úlovek",
         variant: "destructive",
       });
     } finally {
-      setIsUploading(false);
+      setIsSubmitting(false);
     }
   }
 
   return (
-    <Card>
+    <Card className="max-w-2xl mx-auto">
       <CardHeader>
         <CardTitle className="font-serif text-2xl flex items-center gap-2">
-          <Camera className="h-6 w-6 text-primary" />
+          <Fish className="h-6 w-6 text-primary" />
           Přidat úlovek
         </CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Image Upload */}
-          <div className="space-y-2">
-            <Label>Fotografie úlovku *</Label>
-            <div className="flex flex-col gap-4">
-              {!imagePreview ? (
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
-                >
-                  <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Klikněte pro výběr fotografie
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    PNG, JPG, WEBP (max 10MB)
-                  </p>
-                </div>
-              ) : (
-                <div className="relative rounded-lg overflow-hidden">
-                  <img
-                    src={imagePreview}
-                    alt="Náhled"
-                    className="w-full h-auto max-h-96 object-cover"
-                  />
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="icon"
-                    className="absolute top-2 right-2"
-                    onClick={handleRemoveImage}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleImageSelect}
-                className="hidden"
-              />
-            </div>
+          {/* Mode Toggle */}
+          <div className="space-y-3">
+            <Label>Režim přidání</Label>
+            <RadioGroup
+              value={isQuickMode ? "quick" : "detailed"}
+              onValueChange={(value) => setIsQuickMode(value === "quick")}
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="quick" id="quick" />
+                <Label htmlFor="quick" className="font-normal cursor-pointer">
+                  ⚡ Rychlé přidání (jen foto + druh)
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="detailed" id="detailed" />
+                <Label htmlFor="detailed" className="font-normal cursor-pointer">
+                  📋 Detailní (všechny údaje)
+                </Label>
+              </div>
+            </RadioGroup>
           </div>
 
-          {/* AI Analysis Prompt */}
-          {imagePreview && showAnalysisPrompt && !isAnalyzing && (
-            <Card className="border-accent/50 bg-accent/5">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-accent/10 flex items-center justify-center">
-                      <Fish className="h-5 w-5 text-accent" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">Analyzovat rybu pomocí AI?</p>
-                      <p className="text-xs text-muted-foreground">
-                        Automaticky rozpozná druh, délku a váhu
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleSkipAnalysis}
-                    >
-                      Ne
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={handleAnalyzeFish}
-                      className="gap-2"
-                    >
-                      Ano
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* AI Analysis Loading */}
-          {imagePreview && isAnalyzing && (
-            <Card className="border-primary/50 bg-primary/5">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                  <div>
-                    <p className="font-medium text-sm">Analyzuji rybu...</p>
-                    <p className="text-xs text-muted-foreground">
-                      AI rozpoznává druh a odhaduje rozměry
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          {/* Photo Upload */}
+          <div className="space-y-2">
+            <Label htmlFor="photo">
+              Fotografie úlovku <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="photo"
+              type="file"
+              accept="image/*"
+              onChange={(e) => setPhoto(e.target.files?.[0] || null)}
+              required
+            />
+            {photoPreview && (
+              <div className="mt-2 rounded-lg overflow-hidden border">
+                <img
+                  src={photoPreview}
+                  alt="Náhled"
+                  className="w-full h-64 object-cover"
+                />
+              </div>
+            )}
+          </div>
 
           {/* Fish Species */}
           <div className="space-y-2">
             <Label htmlFor="species">
               Druh ryby <span className="text-destructive">*</span>
             </Label>
-            <Select value={formData.species} onValueChange={(value) => handleSpeciesSelect(value)} required>
+            <Select value={species} onValueChange={setSpecies} required>
               <SelectTrigger id="species">
                 <SelectValue placeholder="Vyberte druh" />
               </SelectTrigger>
@@ -417,8 +272,8 @@ export function UploadCatchForm() {
                 {FISH_SPECIES.map((fish) => (
                   <SelectItem key={fish.value} value={fish.value}>
                     <div className="flex items-center gap-2">
-                      <img 
-                        src={fish.image} 
+                      <img
+                        src={fish.image}
                         alt={fish.label}
                         className="h-5 w-5 object-contain"
                       />
@@ -430,162 +285,190 @@ export function UploadCatchForm() {
             </Select>
           </div>
 
-          {/* Measurements */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="length">Délka (cm)</Label>
-              <Input
-                id="length"
-                type="number"
-                step="0.1"
-                value={formData.length_cm}
-                onChange={(e) => setFormData({ ...formData, length_cm: e.target.value })}
-                placeholder="např. 45.5"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="weight">Váha (kg)</Label>
-              <Input
-                id="weight"
-                type="number"
-                step="0.01"
-                value={formData.weight_kg}
-                onChange={(e) => setFormData({ ...formData, weight_kg: e.target.value })}
-                placeholder="např. 2.5"
-              />
-            </div>
-          </div>
+          {/* Detailed Fields */}
+          {!isQuickMode && (
+            <>
+              {/* Measurements */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="length">Délka (cm)</Label>
+                  <Input
+                    id="length"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    value={length}
+                    onChange={(e) => setLength(e.target.value)}
+                    placeholder="např. 75.5"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="weight">Váha (kg)</Label>
+                  <Input
+                    id="weight"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={weight}
+                    onChange={(e) => setWeight(e.target.value)}
+                    placeholder="např. 8.5"
+                  />
+                </div>
+              </div>
 
-          {/* Location with GPS */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label>Poloha úlovku</Label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleGetLocation}
-                disabled={isGettingLocation}
-                className="gap-2"
-              >
-                {isGettingLocation ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <MapPin className="h-4 w-4" />
+              {/* Date & Time */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Datum a čas ulovení
+                </Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input
+                    type="date"
+                    value={caughtDate}
+                    onChange={(e) => setCaughtDate(e.target.value)}
+                  />
+                  <Input
+                    type="time"
+                    value={caughtTime}
+                    onChange={(e) => setCaughtTime(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Location */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    Místo ulovení
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={getCurrentLocation}
+                    disabled={isLoadingLocation}
+                    className="gap-2"
+                  >
+                    {isLoadingLocation ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Načítám...
+                      </>
+                    ) : (
+                      <>
+                        <MapPin className="h-4 w-4" />
+                        Získat polohu
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                {/* Country */}
+                <div className="space-y-2">
+                  <Label htmlFor="country">Země</Label>
+                  <Select value={country} onValueChange={setCountry}>
+                    <SelectTrigger id="country">
+                      <SelectValue placeholder="Vyberte zemi" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Česká republika">Česká republika</SelectItem>
+                      <SelectItem value="Slovensko">Slovensko</SelectItem>
+                      <SelectItem value="Polsko">Polsko</SelectItem>
+                      <SelectItem value="Rakousko">Rakousko</SelectItem>
+                      <SelectItem value="Německo">Německo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Region (Kraj) */}
+                {country === "Česká republika" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="region">Kraj</Label>
+                    <Select value={region} onValueChange={setRegion}>
+                      <SelectTrigger id="region">
+                        <SelectValue placeholder="Vyberte kraj" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CZECH_REGIONS.map((r) => (
+                          <SelectItem key={r} value={r}>
+                            {r}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 )}
-                {isGettingLocation ? "Získávám..." : "Získat GPS polohu"}
-              </Button>
-            </div>
 
-            {formData.latitude && formData.longitude && (
-              <div className="p-3 bg-muted/30 rounded-lg text-sm">
-                <p className="font-medium mb-1">📍 GPS souřadnice</p>
-                <p className="text-muted-foreground">
-                  {formData.latitude}, {formData.longitude}
-                </p>
+                {/* District (Okres) */}
+                <div className="space-y-2">
+                  <Label htmlFor="district">Okres</Label>
+                  <Input
+                    id="district"
+                    value={district}
+                    onChange={(e) => setDistrict(e.target.value)}
+                    placeholder="např. Brno-město"
+                  />
+                </div>
+
+                {/* GPS Coordinates Display */}
+                {latitude !== null && longitude !== null && (
+                  <div className="text-sm text-muted-foreground">
+                    <p className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4" />
+                      GPS: {latitude.toFixed(6)}, {longitude.toFixed(6)}
+                    </p>
+                  </div>
+                )}
               </div>
-            )}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Bait Brand */}
               <div className="space-y-2">
-                <Label htmlFor="country">Země</Label>
+                <Label htmlFor="bait">Značka nástrahy</Label>
                 <Input
-                  id="country"
-                  value={formData.country}
-                  onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                  placeholder="např. Česká republika"
+                  id="bait"
+                  value={baitBrand}
+                  onChange={(e) => setBaitBrand(e.target.value)}
+                  placeholder="např. Carp Expert"
                 />
               </div>
+
+              {/* Notes */}
               <div className="space-y-2">
-                <Label htmlFor="region">Kraj</Label>
-                <Input
-                  id="region"
-                  value={formData.region}
-                  onChange={(e) => setFormData({ ...formData, region: e.target.value })}
-                  placeholder="např. Jihočeský"
+                <Label htmlFor="notes">Poznámky</Label>
+                <Textarea
+                  id="notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Volitelné poznámky k úlovku..."
+                  rows={3}
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="district">Okres</Label>
-                <Input
-                  id="district"
-                  value={formData.district}
-                  onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-                  placeholder="např. České Budějovice"
-                />
-              </div>
-            </div>
-          </div>
+            </>
+          )}
 
-          {/* Fishing Area */}
-          <div className="space-y-2">
-            <Label htmlFor="fishing_area">Revír / Místo</Label>
-            <Input
-              id="fishing_area"
-              value={formData.fishing_area}
-              onChange={(e) => setFormData({ ...formData, fishing_area: e.target.value })}
-              placeholder="např. Orlík, Rybník Chabičov"
-            />
+          {/* Submit Buttons */}
+          <div className="flex gap-2 pt-4">
+            <Button type="submit" disabled={isSubmitting} className="flex-1">
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Nahrávám úlovek...
+                </>
+              ) : (
+                "Přidat úlovek"
+              )}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.back()}
+              disabled={isSubmitting}
+            >
+              Zrušit
+            </Button>
           </div>
-
-          {/* Bait Brand */}
-          <div className="space-y-2">
-            <Label htmlFor="bait_brand">Značka nástrahy</Label>
-            <Input
-              id="bait_brand"
-              value={formData.bait_brand}
-              onChange={(e) => setFormData({ ...formData, bait_brand: e.target.value })}
-              placeholder="např. Boilies Monster Crab"
-            />
-          </div>
-
-          {/* Date and Time */}
-          <div className="space-y-2">
-            <Label htmlFor="caught_at">Datum a čas úlovku</Label>
-            <Input
-              id="caught_at"
-              type="datetime-local"
-              value={formData.caught_at}
-              onChange={(e) => setFormData({ ...formData, caught_at: e.target.value })}
-              required
-            />
-          </div>
-
-          {/* Public/Private Toggle */}
-          <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
-            <div className="flex items-center gap-2">
-              <Label htmlFor="is_public" className="cursor-pointer">
-                Veřejný úlovek
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                (zobrazí se v galerii)
-              </p>
-            </div>
-            <Switch
-              id="is_public"
-              checked={formData.is_public}
-              onCheckedChange={(checked) =>
-                setFormData({ ...formData, is_public: checked })
-              }
-            />
-          </div>
-
-          {/* Submit Button */}
-          <Button
-            type="submit"
-            className="w-full"
-            size="lg"
-            disabled={isUploading || !imageFile}
-          >
-            {isUploading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Nahrávám...
-              </>
-            ) : (
-              "Přidat úlovek"
-            )}
-          </Button>
         </form>
       </CardContent>
     </Card>
