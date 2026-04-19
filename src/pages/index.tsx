@@ -55,8 +55,11 @@ export default function Home() {
             <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-bold text-foreground mb-4 drop-shadow-lg">
               Ukaž Rybu
             </h1>
-            <p className="text-lg sm:text-xl text-foreground/90 mb-8 max-w-2xl mx-auto drop-shadow">
+            <p className="text-lg sm:text-xl text-foreground/90 mb-2 max-w-2xl mx-auto drop-shadow">
               Sdílej své úlovky s komunitou rybářů. Soutěž v závodech. Najdi inspiraci.
+            </p>
+            <p className="text-xl sm:text-2xl font-bold text-primary mb-8 drop-shadow-lg">
+              A ano, je to ZDARMA!
             </p>
             
             {/* CTA Buttons */}
