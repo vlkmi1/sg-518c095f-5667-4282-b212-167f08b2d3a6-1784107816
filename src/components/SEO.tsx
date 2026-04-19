@@ -9,8 +9,8 @@ interface SEOProps {
 
 // SEO elements that can be used in _document.tsx (returns JSX without Head wrapper)
 export function SEOElements({
-  title = "Hello World",
-  description = "Welcome to my app",
+  title = "Ukaž Rybu - aplikace pro každého rybáře",
+  description = "Sdílej své úlovky s komunitou rybářů. Založte si kamarádský závod a předveďte se v závodech. Najdi inspiraci. A ano je to ZDARMA.",
   image = "/og-image.png",
   url,
 }: SEOProps) {
