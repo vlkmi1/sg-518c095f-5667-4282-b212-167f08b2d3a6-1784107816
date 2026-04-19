@@ -313,8 +313,8 @@ export const competitionService = {
     return leaderboard.sort((a, b) => b.total_score - a.total_score);
   },
 
-  // Delete competition
-  async deleteCompetition(competitionId: string): Promise<void> {
+  // Delete competition (only by creator before start)
+  async deleteCompetition(competitionId: string): Promise<{ success: boolean; error: any }> {
     try {
       const { error } = await supabase
         .from("competitions")
@@ -322,13 +322,49 @@ export const competitionService = {
         .eq("id", competitionId);
 
       if (error) {
-        throw error;
+        console.error("Delete competition error:", error);
+        return { success: false, error };
       }
 
-      console.log("deleteCompetition success:", competitionId);
-    } catch (error) {
-      console.error("deleteCompetition error:", error);
-      throw error;
+      return { success: true, error: null };
+    } catch (error: any) {
+      console.error("Delete competition error:", error);
+      return { success: false, error };
+    }
+  },
+
+  // Terminate competition early (during competition, deletes all catches)
+  async terminateCompetition(competitionId: string): Promise<{ success: boolean; error: any }> {
+    try {
+      // First, delete all catches from this competition
+      const { error: catchesError } = await supabase
+        .from("catches")
+        .delete()
+        .eq("competition_id", competitionId);
+
+      if (catchesError) {
+        console.error("Delete competition catches error:", catchesError);
+        return { success: false, error: catchesError };
+      }
+
+      // Then mark competition as terminated and set end_date to now
+      const { error: updateError } = await supabase
+        .from("competitions")
+        .update({
+          terminated_early: true,
+          end_date: new Date().toISOString(),
+        })
+        .eq("id", competitionId);
+
+      if (updateError) {
+        console.error("Terminate competition error:", updateError);
+        return { success: false, error: updateError };
+      }
+
+      return { success: true, error: null };
+    } catch (error: any) {
+      console.error("Terminate competition error:", error);
+      return { success: false, error };
     }
   },
 

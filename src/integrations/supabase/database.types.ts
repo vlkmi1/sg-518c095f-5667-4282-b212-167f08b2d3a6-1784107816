@@ -194,6 +194,7 @@ export type Database = {
           scoring_table: Json | null
           scoring_type: string
           start_date: string
+          terminated_early: boolean | null
           top_catches_count: number | null
           updated_at: string | null
         }
@@ -216,6 +217,7 @@ export type Database = {
           scoring_table?: Json | null
           scoring_type: string
           start_date: string
+          terminated_early?: boolean | null
           top_catches_count?: number | null
           updated_at?: string | null
         }
@@ -238,6 +240,7 @@ export type Database = {
           scoring_table?: Json | null
           scoring_type?: string
           start_date?: string
+          terminated_early?: boolean | null
           top_catches_count?: number | null
           updated_at?: string | null
         }

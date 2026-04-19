@@ -23,7 +23,7 @@ import { adminService } from "@/services/adminService";
 import { competitionService } from "@/services/competitionService";
 import { catchService } from "@/services/catchService";
 import { useToast } from "@/hooks/use-toast";
-import { Trophy, Users, Calendar, Share2, Fish, User, Trash2, Loader2, ArrowLeft, ExternalLink, Copy } from "lucide-react";
+import { Trophy, Users, Calendar, Share2, Fish, User, Trash2, Loader2, ArrowLeft, ExternalLink, Copy, X } from "lucide-react";
 import { format, isBefore, startOfDay } from "date-fns";
 import { cs } from "date-fns/locale";
 import { AddCompetitionCatch } from "@/components/competitions/AddCompetitionCatch";
@@ -42,9 +42,12 @@ export default function CompetitionDetailPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isTerminating, setIsTerminating] = useState(false);
 
   const isCreator = currentUserId && competition?.creator_id === currentUserId;
   const canDelete = isCreator && competition && new Date(competition.start_date) > new Date();
+  const canTerminate = isCreator && competition && isCompetitionOngoing;
+  const canDeleteTerminated = isCreator && competition?.terminated_early === true;
 
   useEffect(() => {
     if (id) {
@@ -104,28 +107,76 @@ export default function CompetitionDetailPage() {
   }
 
   async function handleDeleteCompetition() {
-    if (!competition || !currentUser) return;
+    if (!competition) return;
+
+    const confirmed = confirm(
+      `Opravdu chcete smazat závod "${competition.name}"? Tato akce je nevratná.`
+    );
+
+    if (!confirmed) return;
 
     setIsDeleting(true);
-
     try {
-      await competitionService.deleteCompetition(competition.id);
+      const { success, error } = await competitionService.deleteCompetition(competition.id);
+
+      if (error || !success) {
+        throw new Error("Nepodařilo se smazat závod");
+      }
 
       toast({
-        title: "🗑️ Závod odstraněn",
-        description: `Závod "${competition.name}" byl trvale smazán`,
+        title: "✅ Závod smazán",
+        description: "Závod byl úspěšně odstraněn",
       });
 
       router.push("/competitions");
     } catch (error: any) {
-      console.error("Delete competition error:", error);
       toast({
         title: "Chyba",
-        description: error.message || "Nepodařilo se odstranit závod",
+        description: error.message,
         variant: "destructive",
       });
     } finally {
       setIsDeleting(false);
+    }
+  }
+
+  async function handleTerminateCompetition() {
+    if (!competition) return;
+
+    const confirmed = confirm(
+      `⚠️ VAROVÁNÍ: Předčasné ukončení závodu "${competition.name}"\n\n` +
+      `Tato akce:\n` +
+      `• Ukončí závod okamžitě\n` +
+      `• ODSTRANÍ VŠECHNY ÚLOVKY ze závodu\n` +
+      `• Umožní následné smazání závodu\n\n` +
+      `Tato akce je NEVRATNÁ. Pokračovat?`
+    );
+
+    if (!confirmed) return;
+
+    setIsTerminating(true);
+    try {
+      const { success, error } = await competitionService.terminateCompetition(competition.id);
+
+      if (error || !success) {
+        throw new Error("Nepodařilo se ukončit závod");
+      }
+
+      toast({
+        title: "✅ Závod ukončen",
+        description: "Závod byl předčasně ukončen a všechny úlovky byly odstraněny",
+      });
+
+      // Reload competition data to show updated state
+      await loadCompetitionData();
+    } catch (error: any) {
+      toast({
+        title: "Chyba",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsTerminating(false);
     }
   }
 
@@ -433,6 +484,109 @@ export default function CompetitionDetailPage() {
                     fishPoints={competition.fish_points || undefined}
                     onSuccess={loadCompetitionData}
                   />
+                </div>
+              )}
+
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Users className="h-4 w-4" />
+                <span>{participants.length} účastníků</span>
+              </div>
+
+              {/* Competition status badges */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {new Date(competition.start_date) > new Date() && (
+                  <Badge variant="outline" className="bg-blue-500/10 text-blue-700 border-blue-200">
+                    Čeká na start
+                  </Badge>
+                )}
+                {isCompetitionOngoing && (
+                  <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-200">
+                    Probíhá
+                  </Badge>
+                )}
+                {isCompetitionEnded && !competition.terminated_early && (
+                  <Badge variant="outline" className="bg-gray-500/10 text-gray-700 border-gray-200">
+                    Ukončen
+                  </Badge>
+                )}
+                {competition.terminated_early && (
+                  <Badge variant="outline" className="bg-red-500/10 text-red-700 border-red-200">
+                    Předčasně ukončen
+                  </Badge>
+                )}
+              </div>
+
+              {/* Creator Actions */}
+              {isCreator && (
+                <div className="pt-4 border-t space-y-2">
+                  {/* Delete competition (before start) */}
+                  {canDelete && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleDeleteCompetition}
+                      disabled={isDeleting}
+                      className="w-full gap-2"
+                    >
+                      {isDeleting ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Mažu...
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="h-4 w-4" />
+                          Smazat závod
+                        </>
+                      )}
+                    </Button>
+                  )}
+
+                  {/* Terminate competition early (during competition) */}
+                  {canTerminate && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleTerminateCompetition}
+                      disabled={isTerminating}
+                      className="w-full gap-2"
+                    >
+                      {isTerminating ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Ukončuji...
+                        </>
+                      ) : (
+                        <>
+                          <X className="h-4 w-4" />
+                          Ukončit závod předčasně
+                        </>
+                      )}
+                    </Button>
+                  )}
+
+                  {/* Delete terminated competition */}
+                  {canDeleteTerminated && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleDeleteCompetition}
+                      disabled={isDeleting}
+                      className="w-full gap-2"
+                    >
+                      {isDeleting ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Mažu...
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="h-4 w-4" />
+                          Odstranit závod
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
               )}
             </CardContent>
