@@ -45,6 +45,12 @@ export default function CompetitionDetailPage() {
   const [isTerminating, setIsTerminating] = useState(false);
 
   const isCreator = currentUserId && competition?.creator_id === currentUserId;
+  
+  const isCompetitionEnded = competition && new Date(competition.end_date) < new Date();
+  const isCompetitionOngoing = competition && 
+    new Date(competition.start_date) <= new Date() && 
+    new Date(competition.end_date) >= new Date();
+    
   const canDelete = isCreator && competition && new Date(competition.start_date) > new Date();
   const canTerminate = isCreator && competition && isCompetitionOngoing;
   const canDeleteTerminated = isCreator && competition?.terminated_early === true;
@@ -318,10 +324,6 @@ export default function CompetitionDetailPage() {
   }
 
   const leaderboard = getLeaderboard();
-  const isCompetitionEnded = competition && new Date(competition.end_date) < new Date();
-  const isCompetitionOngoing = competition && 
-    new Date(competition.start_date) <= new Date() && 
-    new Date(competition.end_date) >= new Date();
 
   // Get recent catches sorted by newest first
   const recentCatches = [...catches]
