@@ -27,27 +27,40 @@ export default function CompetitionsPage() {
   const ITEMS_PER_PAGE = 10;
 
   useEffect(() => {
-    loadData();
+    loadCompetitions();
   }, []);
 
-  async function loadData() {
+  async function loadCompetitions() {
+    setIsLoading(true);
     try {
-      const currentUser = await authService.getCurrentUser();
-      if (!currentUser) {
-        router.push("/auth/login");
+      const { data, error } = await competitionService.getAllCompetitions();
+
+      if (error) {
+        toast({
+          title: "Chyba",
+          description: "Nepodařilo se načíst závody",
+          variant: "destructive",
+        });
         return;
       }
-      setUser(currentUser);
 
-      const comps = await competitionService.getUserCompetitions(currentUser.id);
-      setCompetitions(comps || []);
+      console.log("Competitions loaded:", data);
+
+      // Load participant counts for each competition
+      const competitionsWithCounts = await Promise.all(
+        (data || []).map(async (comp: any) => {
+          const participants = await competitionService.getCompetitionParticipants(comp.id);
+          return {
+            ...comp,
+            participant_count: participants?.length || 0,
+          };
+        })
+      );
+
+      console.log("Competitions with participant counts:", competitionsWithCounts);
+      setCompetitions(competitionsWithCounts);
     } catch (error) {
       console.error("Error loading competitions:", error);
-      toast({
-        title: "Chyba",
-        description: "Nepodařilo se načíst závody",
-        variant: "destructive",
-      });
     } finally {
       setIsLoading(false);
     }

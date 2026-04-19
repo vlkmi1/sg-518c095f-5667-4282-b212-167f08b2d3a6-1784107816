@@ -78,24 +78,40 @@ export default function CompetitionDetailPage() {
         throw new Error("Závod nenalezen");
       }
 
-      console.log("Competition loaded:", comp);
+      console.log("=== COMPETITION LOADED ===");
+      console.log("Competition ID:", comp.id);
+      console.log("Competition name:", comp.name);
+      console.log("Competition:", comp);
       setCompetition(comp);
 
       // Load participants
       const participantsData = await competitionService.getCompetitionParticipants(id as string);
-      console.log("Participants loaded:", participantsData);
+      console.log("=== PARTICIPANTS LOADED ===");
+      console.log("Participants count:", participantsData?.length || 0);
+      console.log("Participants:", participantsData);
       setParticipants(participantsData || []);
 
       // Load catches
-      const { data: catchData } = await competitionService.getCompetitionCatches(id as string);
-      console.log("Competition catches loaded:", catchData);
-      console.log("Number of catches:", catchData?.length || 0);
+      console.log("=== LOADING CATCHES ===");
+      console.log("Looking for catches with competition_id:", id);
+      const { data: catchData, error: catchError } = await competitionService.getCompetitionCatches(id as string);
+      
+      console.log("=== CATCHES LOADED ===");
+      console.log("Catches error:", catchError);
+      console.log("Catches count:", catchData?.length || 0);
+      console.log("Catches data:", catchData);
+      
+      if (catchError) {
+        console.error("Error loading catches:", catchError);
+      }
+      
       setCatches(catchData || []);
 
       // Check if current user is participant
       const user = await authService.getCurrentUser();
       if (user && participantsData) {
         const isParticipant = participantsData.some((p: any) => p.user_id === user.id);
+        console.log("Current user ID:", user.id);
         console.log("Is user participant:", isParticipant);
         setIsUserParticipant(isParticipant);
       }
