@@ -33,7 +33,7 @@ export default function CompetitionsPage() {
   async function loadCompetitions() {
     setIsLoading(true);
     try {
-      const { data, error } = await competitionService.getAllCompetitions();
+      const { data, error } = await competitionService.getCompetitions();
 
       if (error) {
         toast({

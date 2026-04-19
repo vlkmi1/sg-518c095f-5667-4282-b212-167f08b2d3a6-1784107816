@@ -642,7 +642,7 @@ export default function CompetitionDetailPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="font-medium truncate">
-                              {participant?.profiles?.nick || "Neznámý"}
+                              {participant?.profiles?.nickname || catchData.profiles?.nickname || "Neznámý"}
                             </span>
                             <Badge variant="outline" className="text-xs">
                               {catchData.species}
@@ -659,7 +659,7 @@ export default function CompetitionDetailPage() {
                           </div>
                           
                           <div className="text-xs text-muted-foreground mt-1">
-                            {format(new Date(catchData.caught_at), "d. M. yyyy HH:mm", { locale: cs })}
+                            {format(new Date(catchData.caught_at || catchData.created_at), "d. M. yyyy HH:mm", { locale: cs })}
                           </div>
                         </div>
 

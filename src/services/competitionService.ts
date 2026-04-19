@@ -105,9 +105,9 @@ export const competitionService = {
         .from("catches")
         .select(`
           *,
-          profiles!catches_user_id_fkey (
+          profiles:user_id (
             id,
-            nick,
+            nickname,
             avatar_url
           )
         `)
