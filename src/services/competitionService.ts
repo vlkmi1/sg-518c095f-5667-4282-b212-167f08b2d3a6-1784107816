@@ -58,6 +58,64 @@ export const competitionService = {
     return { data, error };
   },
 
+  // Get competition participants
+  async getCompetitionParticipants(competitionId: string): Promise<any[]> {
+    const { data, error } = await supabase
+      .from("competition_participants")
+      .select(`
+        *,
+        profiles:user_id (
+          nickname,
+          avatar_url
+        )
+      `)
+      .eq("competition_id", competitionId);
+
+    if (error) {
+      console.error("getCompetitionParticipants error:", error);
+      return [];
+    }
+    return data || [];
+  },
+
+  // Get competition catches
+  async getCompetitionCatches(competitionId: string): Promise<any[]> {
+    const { data, error } = await supabase
+      .from("competition_catches")
+      .select(`
+        id,
+        approved,
+        catches (
+          id,
+          species,
+          length_cm,
+          weight_kg,
+          caught_at,
+          photo_url,
+          user_id,
+          profiles:user_id (
+            nickname
+          )
+        )
+      `)
+      .eq("competition_id", competitionId)
+      .eq("approved", true);
+
+    if (error) {
+      console.error("getCompetitionCatches error:", error);
+      return [];
+    }
+
+    // Flatten the structure to return just the catches with their profile
+    return (data || [])
+      .filter((item: any) => item.catches)
+      .map((item: any) => ({
+        ...item.catches,
+        competition_catch_id: item.id
+      }))
+      .sort((a: any, b: any) => new Date(b.caught_at).getTime() - new Date(a.caught_at).getTime());
+  },
+
   // Join a competition
   async joinCompetition(competitionId: string, userId: string): Promise<void> {
     const { error } = await supabase

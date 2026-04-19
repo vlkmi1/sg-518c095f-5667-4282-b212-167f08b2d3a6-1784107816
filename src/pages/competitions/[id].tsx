@@ -57,7 +57,7 @@ export default function CompetitionDetailPage() {
       }
 
       const { data: compData, error: compError } =
-        await competitionService.getCompetitionById(id as string);
+        await competitionService.getCompetition(id as string);
 
       if (compError || !compData) {
         throw new Error("Závod nebyl nalezen");
