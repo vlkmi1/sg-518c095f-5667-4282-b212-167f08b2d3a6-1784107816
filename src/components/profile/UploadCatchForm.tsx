@@ -17,7 +17,8 @@ import { useToast } from "@/hooks/use-toast";
 import { authService } from "@/services/authService";
 import { catchService } from "@/services/catchService";
 import { storageService } from "@/services/storageService";
-import { Loader2, Upload, MapPin, X, Zap, FileText } from "lucide-react";
+import { Loader2, MapPin, Fish, Sparkles } from "lucide-react";
+import { format } from "date-fns";
 
 const FISH_SPECIES = [
   { value: "Kapr", label: "Kapr", image: "/Kapr.webp" },
@@ -128,14 +129,8 @@ export function UploadCatchForm() {
     reader.readAsDataURL(file);
   }
 
-  async function handleModeSelect(selectedMode: "quick" | "detailed") {
-    setMode(selectedMode);
-
-    if (selectedMode === "detailed" && photoFile) {
-      // Run AI analysis for detailed mode
-      await analyzePhoto(photoFile);
-    }
-
+  async function handleModeSelect(mode: "quick" | "detailed") {
+    setMode(mode);
     setStep("form");
   }
 
@@ -203,7 +198,6 @@ export function UploadCatchForm() {
         description: "Můžete pokračovat a vyplnit údaje ručně",
         variant: "destructive",
       });
-      // Don't block the form, just show warning
     } finally {
       setIsAnalyzing(false);
     }
@@ -416,41 +410,94 @@ export function UploadCatchForm() {
         {/* Step 3: Form */}
         {step === "form" && (
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Photo Preview Small */}
-            <div className="relative">
-              <img
-                src={photoPreview}
-                alt="Preview"
-                className="w-full h-48 object-cover rounded-lg"
-              />
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                className="absolute top-2 right-2"
-                onClick={handleReset}
-              >
-                <X className="h-4 w-4 mr-1" />
-                Změnit foto
-              </Button>
+            {/* Photo Preview */}
+            <div className="space-y-2">
+              <Label>Fotografie úlovku</Label>
+              <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
+                {photoPreview ? (
+                  <img
+                    src={photoPreview}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                  />
+                ) : null}
+              </div>
             </div>
 
-            {/* AI Analysis Loading */}
-            {isAnalyzing && (
-              <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                  <div>
-                    <p className="font-medium">🤖 AI analýza probíhá...</p>
-                    <p className="text-sm text-muted-foreground">
-                      Rozpoznávám druh, délku a váhu
-                    </p>
-                  </div>
+            {/* AI Analysis Button - Only in detail mode */}
+            {mode === "detailed" && (
+              <div className="flex items-center justify-between p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                <div className="flex-1">
+                  <p className="font-medium text-sm">🤖 AI Analýza</p>
+                  <p className="text-xs text-muted-foreground">
+                    Automaticky rozpozná druh a odhadne rozměry
+                  </p>
                 </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => photoFile && analyzePhoto(photoFile)}
+                  disabled={isAnalyzing || !photoFile}
+                  className="gap-2"
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Analyzuji...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4" />
+                      Analyzovat
+                    </>
+                  )}
+                </Button>
               </div>
             )}
 
-            {/* Fish Species - Always visible */}
+            {/* Show AI Analysis Results if available */}
+            {aiAnalysis && (
+              <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4 space-y-2">
+                <p className="text-sm font-medium text-green-900 dark:text-green-100">
+                  ✅ AI předvyplnila:
+                </p>
+                <div className="text-sm text-green-800 dark:text-green-200 space-y-1">
+                  {aiAnalysis.species && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground">Druh:</span>
+                      <div className="flex items-center gap-2">
+                        {FISH_SPECIES.find(f => f.value === aiAnalysis.species) && (
+                          <img 
+                            src={FISH_SPECIES.find(f => f.value === aiAnalysis.species)!.image} 
+                            alt={aiAnalysis.species}
+                            className="h-5 w-5 object-cover rounded-full"
+                          />
+                        )}
+                        <span className="font-medium">{aiAnalysis.species}</span>
+                      </div>
+                    </div>
+                  )}
+                  {aiAnalysis.length && (
+                    <p>
+                      <span className="text-muted-foreground">Délka:</span>{" "}
+                      <span className="font-medium">{aiAnalysis.length} cm</span>
+                    </p>
+                  )}
+                  {aiAnalysis.weight && (
+                    <p>
+                      <span className="text-muted-foreground">Váha:</span>{" "}
+                      <span className="font-medium">{aiAnalysis.weight} kg</span>
+                    </p>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground italic">
+                  Můžete upravit předvyplněné hodnoty níže
+                </p>
+              </div>
+            )}
+
+            {/* Fish Species */}
             <div className="space-y-2">
               <Label htmlFor="species">
                 Druh ryby <span className="text-destructive">*</span>
