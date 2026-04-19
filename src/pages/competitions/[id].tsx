@@ -430,6 +430,7 @@ export default function CompetitionDetailPage() {
                     competitionId={competition.id}
                     scoringType={competition.scoring_type}
                     measurementType={competition.measurement_type}
+                    fishPoints={competition.fish_points || undefined}
                     onSuccess={loadCompetitionData}
                   />
                 </div>

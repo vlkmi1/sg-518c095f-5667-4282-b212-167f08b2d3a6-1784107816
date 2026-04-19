@@ -46,7 +46,8 @@ const FISH_SPECIES = [
 interface AddCompetitionCatchProps {
   competitionId: string;
   scoringType: "points" | "measurements";
-  measurementType?: "weight" | "length" | "both" | null;
+  measurementType?: "weight" | "length" | "both";
+  fishPoints?: Record<string, number>;
   onSuccess?: () => void;
 }
 
@@ -54,6 +55,7 @@ export function AddCompetitionCatch({
   competitionId,
   scoringType,
   measurementType,
+  fishPoints,
   onSuccess,
 }: AddCompetitionCatchProps) {
   const { toast } = useToast();
@@ -67,6 +69,11 @@ export function AddCompetitionCatch({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Filter fish species based on scoring type
+  const availableFish = scoringType === "points" && fishPoints
+    ? FISH_SPECIES.filter(fish => fishPoints[fish.value] !== undefined)
+    : FISH_SPECIES;
+
   // Debug logging
   useEffect(() => {
     if (open) {
@@ -74,10 +81,12 @@ export function AddCompetitionCatch({
       console.log("Competition ID:", competitionId);
       console.log("Scoring Type:", scoringType);
       console.log("Measurement Type:", measurementType);
+      console.log("Fish Points:", fishPoints);
+      console.log("Available Fish:", availableFish);
       console.log("Should show length field:", scoringType === "measurements" && (measurementType === "length" || measurementType === "both"));
       console.log("Should show weight field:", scoringType === "measurements" && (measurementType === "weight" || measurementType === "both"));
     }
-  }, [open, competitionId, scoringType, measurementType]);
+  }, [open, competitionId, scoringType, measurementType, fishPoints, availableFish]);
 
   function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -180,10 +189,17 @@ export function AddCompetitionCatch({
         competition_id: competitionId, // CRITICAL: Link to competition
       };
 
-      console.log("Catch data to save:", catchData);
+      console.log("=== ABOUT TO SAVE CATCH ===");
+      console.log("Catch data to save:", JSON.stringify(catchData, null, 2));
+      console.log("competition_id value:", catchData.competition_id);
+      console.log("competition_id type:", typeof catchData.competition_id);
 
       // Create catch linked to competition
       const { data, error } = await catchService.createCatch(catchData);
+
+      console.log("=== AFTER SAVE ===");
+      console.log("Returned data:", data);
+      console.log("Returned error:", error);
 
       if (error) {
         console.error("Create catch error:", error);
@@ -289,7 +305,7 @@ export function AddCompetitionCatch({
                 <SelectValue placeholder="Vyberte druh" />
               </SelectTrigger>
               <SelectContent>
-                {FISH_SPECIES.map((fish) => (
+                {availableFish.map((fish) => (
                   <SelectItem key={fish.value} value={fish.value}>
                     <div className="flex items-center gap-2">
                       <img 
@@ -298,6 +314,11 @@ export function AddCompetitionCatch({
                         className="h-5 w-5 object-cover rounded-full"
                       />
                       {fish.label}
+                      {scoringType === "points" && fishPoints && (
+                        <span className="ml-auto text-xs text-muted-foreground">
+                          {fishPoints[fish.value]} bodů
+                        </span>
+                      )}
                     </div>
                   </SelectItem>
                 ))}
