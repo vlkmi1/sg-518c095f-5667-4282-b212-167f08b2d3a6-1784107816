@@ -240,7 +240,8 @@ export function UploadCatchForm() {
       }
 
       // Upload photo
-      const photoUrl = await storageService.uploadCatchPhoto(photoFile, user.id);
+      const photoData = await storageService.uploadCatchPhoto(photoFile, user.id);
+      const photoUrl = typeof photoData === 'string' ? photoData : photoData.url;
 
       // Create catch date-time
       const caughtAt = new Date(`${caughtDate}T${caughtTime}:00`).toISOString();
