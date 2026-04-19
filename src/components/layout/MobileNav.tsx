@@ -1,103 +1,65 @@
-import { useRouter } from "next/router";
+import { Home, Trophy, User, PlusCircle } from "lucide-react";
 import Link from "next/link";
-import { Fish, Trophy, User, Plus, Shield } from "lucide-react";
-import { useState, useEffect } from "react";
-import { authService } from "@/services/authService";
-import { adminService } from "@/services/adminService";
+import { useRouter } from "next/router";
+import { Button } from "@/components/ui/button";
 
 export function MobileNav() {
   const router = useRouter();
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  useEffect(() => {
-    checkAdmin();
-  }, []);
-
-  async function checkAdmin() {
-    try {
-      const user = await authService.getCurrentUser();
-      if (user) {
-        const adminStatus = await adminService.isAdmin(user.id);
-        setIsAdmin(adminStatus);
-      }
-    } catch (error) {
-      console.error("Check admin error:", error);
-    }
-  }
-
+  
   const isActive = (path: string) => {
-    return router.pathname === path || router.pathname.startsWith(path + "/");
+    if (path === "/") {
+      return router.pathname === "/";
+    }
+    return router.pathname.startsWith(path);
   };
 
-  return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background border-t">
-      <div className="container max-w-full px-0">
-        <div className="grid grid-cols-4 h-16">
-          {/* My Catches */}
-          <Link
-            href="/my-catches"
-            className={`flex flex-col items-center justify-center gap-1 transition-colors ${
-              isActive("/my-catches")
-                ? "text-primary"
-                : "text-muted-foreground hover:text-primary"
-            }`}
-          >
-            <Fish className="h-5 w-5" />
-            <span className="text-xs font-medium">Úlovky</span>
-          </Link>
+  // Highlight "Přidat úlovek" if on competition detail page (user can add catch to competition)
+  const isOnCompetitionDetail = router.pathname === "/competitions/[id]";
+  const shouldHighlightAddCatch = isActive("/profile/add-catch") || isOnCompetitionDetail;
 
-          {/* Competitions */}
-          <Link
-            href="/competitions"
-            className={`flex flex-col items-center justify-center gap-1 transition-colors ${
-              isActive("/competitions")
-                ? "text-primary"
-                : "text-muted-foreground hover:text-primary"
-            }`}
+  return (
+    <div className="fixed bottom-0 left-0 right-0 bg-background border-t md:hidden z-50">
+      <nav className="flex items-center justify-around p-2">
+        <Link href="/">
+          <Button
+            variant="ghost"
+            size="icon"
+            className={isActive("/") ? "text-primary" : "text-muted-foreground"}
+          >
+            <Home className="h-5 w-5" />
+          </Button>
+        </Link>
+
+        <Link href="/competitions">
+          <Button
+            variant="ghost"
+            size="icon"
+            className={isActive("/competitions") ? "text-primary" : "text-muted-foreground"}
           >
             <Trophy className="h-5 w-5" />
-            <span className="text-xs font-medium">Závody</span>
-          </Link>
+          </Button>
+        </Link>
 
-          {/* Add Catch FAB */}
-          <Link
-            href="/profile/add-catch"
-            className="flex flex-col items-center justify-center relative"
+        <Link href="/profile/add-catch">
+          <Button
+            variant="ghost"
+            size="icon"
+            className={shouldHighlightAddCatch ? "text-primary" : "text-muted-foreground"}
           >
-            <div className="absolute -top-6 bg-primary rounded-full p-3 shadow-lg hover:scale-110 transition-transform">
-              <Plus className="h-6 w-6 text-primary-foreground" />
-            </div>
-            <span className="text-xs font-medium text-muted-foreground mt-6">Přidat</span>
-          </Link>
+            <PlusCircle className="h-5 w-5" />
+          </Button>
+        </Link>
 
-          {/* Profile or Admin */}
-          {isAdmin ? (
-            <Link
-              href="/admin"
-              className={`flex flex-col items-center justify-center gap-1 transition-colors ${
-                isActive("/admin")
-                  ? "text-primary"
-                  : "text-muted-foreground hover:text-primary"
-              }`}
-            >
-              <Shield className="h-5 w-5" />
-              <span className="text-xs font-medium">Admin</span>
-            </Link>
-          ) : (
-            <Link
-              href="/profile"
-              className={`flex flex-col items-center justify-center gap-1 transition-colors ${
-                isActive("/profile")
-                  ? "text-primary"
-                  : "text-muted-foreground hover:text-primary"
-              }`}
-            >
-              <User className="h-5 w-5" />
-              <span className="text-xs font-medium">Profil</span>
-            </Link>
-          )}
-        </div>
-      </div>
-    </nav>
+        <Link href="/profile">
+          <Button
+            variant="ghost"
+            size="icon"
+            className={isActive("/profile") ? "text-primary" : "text-muted-foreground"}
+          >
+            <User className="h-5 w-5" />
+          </Button>
+        </Link>
+      </nav>
+    </div>
   );
 }
