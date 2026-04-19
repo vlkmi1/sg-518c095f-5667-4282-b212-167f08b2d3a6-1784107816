@@ -102,7 +102,7 @@ export const catchService = {
     district: string | null;
     latitude?: number | null;
     longitude?: number | null;
-    fishing_area: string | null;
+    fishing_area?: string | null;
     bait_brand: string | null;
     notes?: string | null;
     photo_url: string;

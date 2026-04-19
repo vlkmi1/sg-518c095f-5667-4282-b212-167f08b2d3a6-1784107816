@@ -29,6 +29,7 @@ export type Database = {
           latitude: number | null
           length_cm: number | null
           longitude: number | null
+          notes: string | null
           photo_url: string
           region: string | null
           species: string
@@ -49,6 +50,7 @@ export type Database = {
           latitude?: number | null
           length_cm?: number | null
           longitude?: number | null
+          notes?: string | null
           photo_url: string
           region?: string | null
           species: string
@@ -69,6 +71,7 @@ export type Database = {
           latitude?: number | null
           length_cm?: number | null
           longitude?: number | null
+          notes?: string | null
           photo_url?: string
           region?: string | null
           species?: string
