@@ -21,20 +21,11 @@ export default function Home() {
         <section className="relative h-[60vh] min-h-[500px] flex items-center justify-center overflow-hidden">
           {/* Background Image */}
           <div className="absolute inset-0 z-0">
-            {/* Gradient background as fallback */}
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-secondary/30 to-accent/20" />
-            
-            {/* Image overlay - using a different source */}
             <img
-              src="https://images.pexels.com/photos/1111390/pexels-photo-1111390.jpeg?auto=compress&cs=tinysrgb&w=1920"
-              alt="Rybářské pruty u jezera"
-              className="w-full h-full object-cover opacity-90"
-              onError={(e) => {
-                // Hide image on error, show only gradient
-                e.currentTarget.style.display = 'none';
-              }}
+              src="/hero-fishing.jpg"
+              alt="Rybářské pruty u jezera při západu slunce"
+              className="w-full h-full object-cover"
             />
-            
             {/* Overlay for better text readability */}
             <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/50 to-background" />
           </div>
