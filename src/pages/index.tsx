@@ -21,7 +21,7 @@ export default function Home() {
           {/* Background Image */}
           <div className="absolute inset-0 z-0">
             <img
-              src="https://images.unsplash.com/photo-1545450660-1b62204a58bb?w=1920&q=80"
+              src="https://images.unsplash.com/photo-1504826260979-242151ce5d24?q=80&w=1920&auto=format&fit=crop"
               alt="Rybářské pruty u jezera"
               className="w-full h-full object-cover"
             />
