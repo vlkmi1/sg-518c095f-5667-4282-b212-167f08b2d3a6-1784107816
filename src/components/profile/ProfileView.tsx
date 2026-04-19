@@ -14,12 +14,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { EditProfileForm } from "@/components/profile/EditProfileForm";
 import { authService } from "@/services/authService";
 import { profileService } from "@/services/profileService";
 import { catchService } from "@/services/catchService";
 import { competitionService } from "@/services/competitionService";
 import { useToast } from "@/hooks/use-toast";
-import { User, Fish, Trophy, LogOut, Plus, Users, Loader2 } from "lucide-react";
+import { User, Fish, Trophy, LogOut, Plus, Users, Loader2, Edit } from "lucide-react";
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
 
@@ -33,6 +34,7 @@ export function ProfileView() {
   const [competitions, setCompetitions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [joinCode, setJoinCode] = useState("");
   const [isJoining, setIsJoining] = useState(false);
 
@@ -119,6 +121,11 @@ export function ProfileView() {
     router.push("/");
   }
 
+  function handleProfileUpdated() {
+    setEditDialogOpen(false);
+    loadProfile();
+  }
+
   if (isLoading) {
     return (
       <div className="container py-8 space-y-6">
@@ -146,6 +153,26 @@ export function ProfileView() {
               </div>
             </div>
             <div className="flex gap-2">
+              <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <Edit className="h-4 w-4" />
+                    Upravit profil
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle className="font-serif">Upravit profil</DialogTitle>
+                    <DialogDescription>
+                      Změňte svůj nickname nebo jiné informace
+                    </DialogDescription>
+                  </DialogHeader>
+                  <EditProfileForm
+                    profile={profile}
+                    onSuccess={handleProfileUpdated}
+                  />
+                </DialogContent>
+              </Dialog>
               <Button variant="outline" onClick={() => router.push("/my-catches")}>
                 Moje úlovky
               </Button>
