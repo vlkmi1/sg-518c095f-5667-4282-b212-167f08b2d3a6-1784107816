@@ -1,6 +1,7 @@
 import { SEO } from "@/components/SEO";
 import { Header } from "@/components/layout/Header";
 import { CatchGallery } from "@/components/gallery/CatchGallery";
+import { ContactForm } from "@/components/ContactForm";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Trophy, Camera, Users } from "lucide-react";
 import Link from "next/link";
@@ -81,6 +82,9 @@ export default function Home() {
           </div>
           <CatchGallery />
         </main>
+
+        {/* Contact Form */}
+        <ContactForm />
       </div>
     </>
   );
