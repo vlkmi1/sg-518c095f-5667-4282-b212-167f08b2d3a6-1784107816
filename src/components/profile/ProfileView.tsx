@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Dialog,
   DialogContent,
@@ -142,29 +143,40 @@ export function ProfileView() {
         <CardHeader>
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
-              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                <User className="h-8 w-8 text-primary" />
-              </div>
+              <Avatar className="h-16 w-16">
+                <AvatarImage src={profile?.avatar_url || undefined} />
+                <AvatarFallback className="bg-primary/10 text-primary">
+                  <User className="h-8 w-8" />
+                </AvatarFallback>
+              </Avatar>
               <div>
                 <CardTitle className="font-serif text-2xl mb-1">
                   {profile?.nickname || "Rybář"}
                 </CardTitle>
-                <p className="text-sm text-muted-foreground">{user?.email}</p>
+                {profile?.full_name && (
+                  <p className="text-sm font-medium text-muted-foreground">
+                    {profile.full_name}
+                  </p>
+                )}
+                {profile?.location && (
+                  <p className="text-xs text-muted-foreground">📍 {profile.location}</p>
+                )}
+                <p className="text-xs text-muted-foreground mt-1">{user?.email}</p>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap justify-end">
               <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" className="gap-2">
                     <Edit className="h-4 w-4" />
-                    Upravit profil
+                    <span className="hidden sm:inline">Upravit profil</span>
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-w-md">
                   <DialogHeader>
                     <DialogTitle className="font-serif">Upravit profil</DialogTitle>
                     <DialogDescription>
-                      Změňte svůj nickname nebo jiné informace
+                      Změňte svůj nickname, fotku nebo jiné informace
                     </DialogDescription>
                   </DialogHeader>
                   <EditProfileForm
@@ -174,12 +186,12 @@ export function ProfileView() {
                   />
                 </DialogContent>
               </Dialog>
-              <Button variant="outline" onClick={() => router.push("/my-catches")}>
+              <Button variant="outline" onClick={() => router.push("/my-catches")} className="hidden sm:inline-flex">
                 Moje úlovky
               </Button>
               <Button variant="outline" onClick={handleLogout} className="gap-2">
                 <LogOut className="h-4 w-4" />
-                Odhlásit se
+                <span className="hidden sm:inline">Odhlásit se</span>
               </Button>
             </div>
           </div>
@@ -211,7 +223,7 @@ export function ProfileView() {
                 <DialogTrigger asChild>
                   <Button variant="outline" className="gap-2">
                     <Users className="h-4 w-4" />
-                    Přidat se k závodu
+                    <span className="hidden sm:inline">Přidat se k závodu</span>
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
@@ -252,7 +264,7 @@ export function ProfileView() {
               </Dialog>
               <Button onClick={() => router.push("/competitions/create")} className="gap-2">
                 <Plus className="h-4 w-4" />
-                Nový závod
+                <span className="hidden sm:inline">Nový závod</span>
               </Button>
             </div>
           </div>

@@ -83,6 +83,19 @@ export const profileService = {
     return { error };
   },
 
+  // Update profile avatar
+  async updateAvatar(userId: string, avatarUrl: string): Promise<{ data: any; error: any }> {
+    const { data, error } = await supabase
+      .from("profiles")
+      .update({ avatar_url: avatarUrl })
+      .eq("id", userId)
+      .select()
+      .single();
+
+    console.log("updateAvatar:", { data, error });
+    return { data, error };
+  },
+
   // Check if nickname is available
   async isNicknameAvailable(nickname: string): Promise<boolean> {
     const { data } = await supabase
