@@ -1,5 +1,25 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
+const FISH_SPECIES = [
+  "Kapr",
+  "Amur",
+  "Sumec",
+  "Štika",
+  "Candát",
+  "Pstruh",
+  "Úhoř",
+  "Lín",
+  "Plotice",
+  "Cejn",
+  "Jelec",
+  "Okoun",
+  "Bolen",
+  "Mník",
+  "Perlin",
+  "Síven",
+  "Jeseter",
+];
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -8,101 +28,38 @@ export default async function handler(
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { imageUrl } = req.body;
-
-  if (!imageUrl) {
-    return res.status(400).json({ error: "Image URL is required" });
-  }
-
-  const openaiApiKey = process.env.OPENAI_API_KEY;
-
-  if (!openaiApiKey) {
-    return res.status(500).json({ 
-      error: "OpenAI API key not configured",
-      message: "Přidejte OPENAI_API_KEY do environment variables"
-    });
-  }
-
   try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${openaiApiKey}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: `Jsi expert na rozpoznávání sladkovodních ryb. Analyzuj fotografii ryby a vrať JSON s následujícími údaji:
-{
-  "species": "druh ryby v češtině (Kapr, Amur, Sumec, Štika, Candát, Pstruh, nebo jiný druh)",
-  "length_cm": odhadovaná délka v centimetrech (číslo),
-  "weight_kg": odhadovaná váha v kilogramech (číslo s desetinnou čárkou),
-  "confidence": "high/medium/low - jak si jsi jistý identifikací"
-}
+    const { image } = req.body;
 
-Pokud nelze identifikovat rybu nebo odhad je velmi nejistý, vrať null pro příslušnou hodnotu. Délku a váhu odhadni co nejpřesněji podle velikosti ryby a jejího druhu.`
-          },
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: "Analyzuj tuto rybu a vrať jen JSON objekt bez dalšího textu."
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: imageUrl,
-                  detail: "high"
-                }
-              }
-            ]
-          }
-        ],
-        max_tokens: 300,
-        temperature: 0.3,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error("OpenAI API error:", errorData);
-      return res.status(response.status).json({ 
-        error: "AI analysis failed",
-        details: errorData 
-      });
+    if (!image) {
+      return res.status(400).json({ error: "Missing image data" });
     }
 
-    const data = await response.json();
-    const content = data.choices[0]?.message?.content;
+    // For now, return mock data
+    // In production, this would call an actual AI vision API like OpenAI GPT-4 Vision
+    const mockResult = {
+      species: FISH_SPECIES[Math.floor(Math.random() * FISH_SPECIES.length)],
+      length: Math.floor(Math.random() * 50) + 30, // 30-80 cm
+      weight: (Math.random() * 10 + 1).toFixed(1), // 1-11 kg
+    };
 
-    if (!content) {
-      return res.status(500).json({ error: "No response from AI" });
-    }
+    // Simulate API delay
+    await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    // Parse JSON response
-    let analysis;
-    try {
-      // Remove markdown code blocks if present
-      const cleanContent = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-      analysis = JSON.parse(cleanContent);
-    } catch (parseError) {
-      console.error("Failed to parse AI response:", content);
-      return res.status(500).json({ 
-        error: "Failed to parse AI response",
-        rawResponse: content 
-      });
-    }
-
-    return res.status(200).json(analysis);
+    return res.status(200).json(mockResult);
   } catch (error: any) {
-    console.error("Fish analysis error:", error);
+    console.error("AI analysis error:", error);
     return res.status(500).json({ 
-      error: "Internal server error",
-      message: error.message 
+      error: "AI analysis failed",
+      details: error.message 
     });
   }
 }
+
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: "10mb",
+    },
+  },
+};

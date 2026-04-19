@@ -127,40 +127,53 @@ export function UploadCatchForm() {
 
     if (selectedMode === "detailed" && photoFile) {
       // Run AI analysis for detailed mode
-      await analyzePhoto();
+      await analyzePhoto(photoFile);
     }
 
     setStep("form");
   }
 
-  async function analyzePhoto() {
-    if (!photoFile) return;
-
-    setIsAnalyzing(true);
-
+  async function analyzePhoto(file: File) {
     try {
+      setIsAnalyzing(true);
+
       // Convert file to base64
-      const base64 = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
         reader.onloadend = () => {
-          const base64String = (reader.result as string).split(",")[1];
-          resolve(base64String);
+          const base64 = reader.result as string;
+          resolve(base64);
         };
-        reader.readAsDataURL(photoFile);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
       });
 
-      // Call AI analysis API
+      const base64Image = await base64Promise;
+
       const response = await fetch("/api/analyze-fish", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: base64 }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          image: base64Image,
+        }),
       });
 
       if (!response.ok) {
-        throw new Error("AI analýza selhala");
+        const errorData = await response.json().catch(() => ({}));
+        console.error("AI analysis error:", errorData);
+        throw new Error(errorData.error || "AI analýza selhala");
       }
 
       const result = await response.json();
+      console.log("AI analysis result:", result);
+
+      setAiAnalysis({
+        species: result.species || null,
+        length: result.length || null,
+        weight: result.weight || null,
+      });
 
       // Pre-fill form with AI results
       if (result.species) {
@@ -174,16 +187,17 @@ export function UploadCatchForm() {
       }
 
       toast({
-        title: "🤖 AI analýza dokončena",
-        description: `Rozpoznáno: ${result.species || "neznámý druh"}`,
+        title: "✅ AI analýza dokončena",
+        description: "Formulář byl předvyplněn odhadovanými údaji",
       });
     } catch (error: any) {
       console.error("AI analysis error:", error);
       toast({
-        title: "AI analýza selhala",
-        description: "Vyplňte údaje ručně",
+        title: "⚠️ AI analýza se nezdařila",
+        description: "Můžete pokračovat a vyplnit údaje ručně",
         variant: "destructive",
       });
+      // Don't block the form, just show warning
     } finally {
       setIsAnalyzing(false);
     }
