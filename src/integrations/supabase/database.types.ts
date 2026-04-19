@@ -19,6 +19,7 @@ export type Database = {
         Row: {
           bait_brand: string | null
           caught_at: string
+          competition_id: string | null
           country: string | null
           created_at: string | null
           district: string | null
@@ -40,6 +41,7 @@ export type Database = {
         Insert: {
           bait_brand?: string | null
           caught_at: string
+          competition_id?: string | null
           country?: string | null
           created_at?: string | null
           district?: string | null
@@ -61,6 +63,7 @@ export type Database = {
         Update: {
           bait_brand?: string | null
           caught_at?: string
+          competition_id?: string | null
           country?: string | null
           created_at?: string | null
           district?: string | null
@@ -80,6 +83,13 @@ export type Database = {
           weight_kg?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "catches_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "catches_user_id_fkey"
             columns: ["user_id"]

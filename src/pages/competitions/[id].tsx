@@ -23,9 +23,10 @@ import { adminService } from "@/services/adminService";
 import { competitionService } from "@/services/competitionService";
 import { catchService } from "@/services/catchService";
 import { useToast } from "@/hooks/use-toast";
-import { Trophy, Users, Calendar, Share2, Fish, User, Trash2, Loader2 } from "lucide-react";
+import { Trophy, Users, Calendar, Share2, Fish, User, Trash2, Loader2, ArrowLeft, ExternalLink, Copy } from "lucide-react";
 import { format, isBefore, startOfDay } from "date-fns";
 import { cs } from "date-fns/locale";
+import { AddCompetitionCatch } from "@/components/competitions/AddCompetitionCatch";
 
 export default function CompetitionDetailPage() {
   const router = useRouter();
@@ -35,50 +36,61 @@ export default function CompetitionDetailPage() {
   const [competition, setCompetition] = useState<any>(null);
   const [participants, setParticipants] = useState<any[]>([]);
   const [catches, setCatches] = useState<any[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [isUserParticipant, setIsUserParticipant] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const isCreator = currentUserId && competition?.created_by === currentUserId;
+  const canDelete = isCreator && competition && new Date(competition.start_date) > new Date();
+
   useEffect(() => {
     if (id) {
       loadCompetitionData();
+      checkUserStatus();
     }
   }, [id]);
 
+  async function checkUserStatus() {
+    const user = await authService.getCurrentUser();
+    if (user) {
+      setCurrentUserId(user.id);
+    }
+  }
+
   async function loadCompetitionData() {
+    setIsLoading(true);
     try {
+      const { data: comp, error: compError } = await competitionService.getCompetitionById(id as string);
+
+      if (compError || !comp) {
+        throw new Error("Závod nenalezen");
+      }
+
+      setCompetition(comp);
+
+      // Load participants
+      const { data: parts } = await competitionService.getParticipants(id as string);
+      setParticipants(parts || []);
+
+      // Load catches
+      const { data: catchData } = await competitionService.getCompetitionCatches(id as string);
+      setCatches(catchData || []);
+
+      // Check if current user is participant
       const user = await authService.getCurrentUser();
-      setCurrentUser(user);
-
-      if (user) {
-        const adminStatus = await adminService.isAdmin(user.id);
-        setIsAdmin(adminStatus);
+      if (user && parts) {
+        setIsUserParticipant(parts.some((p: any) => p.user_id === user.id));
       }
-
-      const { data: compData, error: compError } =
-        await competitionService.getCompetition(id as string);
-
-      if (compError || !compData) {
-        throw new Error("Závod nebyl nalezen");
-      }
-
-      setCompetition(compData);
-
-      const participantsData = await competitionService.getCompetitionParticipants(
-        id as string
-      );
-      setParticipants(participantsData || []);
-
-      const catchesData = await competitionService.getCompetitionCatches(id as string);
-      setCatches(catchesData || []);
     } catch (error: any) {
-      console.error("Load competition error:", error);
       toast({
         title: "Chyba",
-        description: error.message || "Nepodařilo se načíst závod",
+        description: error.message,
         variant: "destructive",
       });
+      router.push("/competitions");
     } finally {
       setIsLoading(false);
     }
@@ -148,14 +160,13 @@ export default function CompetitionDetailPage() {
         // Use fish points configuration
         const fishPointsConfig = competition.fish_points || {};
         score = participantCatches.reduce((sum, c) => {
-          const points = fishPointsConfig[c.species] || 1; // Default to 1 if species not configured
+          const points = fishPointsConfig[c.species] || 1;
           return sum + points;
         }, 0);
       } else {
         // Measurements scoring
         const measurementType = competition.measurement_type || "both";
         
-        // Calculate score for each catch
         const catchScores = participantCatches.map((c) => {
           let catchScore = 0;
           
@@ -164,7 +175,6 @@ export default function CompetitionDetailPage() {
           } else if (measurementType === "length") {
             catchScore = c.length_cm || 0;
           } else {
-            // both
             const lengthScore = c.length_cm || 0;
             const weightScore = (c.weight_kg || 0) * 10;
             catchScore = lengthScore + weightScore;
@@ -173,10 +183,8 @@ export default function CompetitionDetailPage() {
           return catchScore;
         });
 
-        // Sort scores descending
         catchScores.sort((a, b) => b - a);
 
-        // Take top N if configured
         const topCount = competition.top_catches_count;
         const scoresToCount = topCount && topCount > 0 
           ? catchScores.slice(0, topCount)
@@ -193,6 +201,27 @@ export default function CompetitionDetailPage() {
     });
 
     return participantsWithScores.sort((a, b) => b.score - a.score);
+  }
+
+  function calculateCatchScore(catchData: any): number {
+    if (!competition) return 0;
+
+    if (competition.scoring_type === "points") {
+      const fishPoints = competition.fish_points || {};
+      return fishPoints[catchData.species] || 1;
+    } else {
+      const measurementType = competition.measurement_type || "both";
+      
+      if (measurementType === "weight") {
+        return catchData.weight_kg || 0;
+      } else if (measurementType === "length") {
+        return catchData.length_cm || 0;
+      } else {
+        const lengthScore = catchData.length_cm || 0;
+        const weightScore = (catchData.weight_kg || 0) * 10;
+        return lengthScore + weightScore;
+      }
+    }
   }
 
   if (isLoading) {
@@ -231,10 +260,15 @@ export default function CompetitionDetailPage() {
   }
 
   const leaderboard = getLeaderboard();
-  const hasStarted = isBefore(startOfDay(new Date(competition.start_date)), startOfDay(new Date()));
-  const hasEnded = isBefore(startOfDay(new Date(competition.end_date)), startOfDay(new Date()));
-  const isCreator = currentUser?.id === competition.created_by;
-  const canDelete = (isCreator || isAdmin) && !hasStarted;
+  const isCompetitionEnded = competition && new Date(competition.end_date) < new Date();
+  const isCompetitionOngoing = competition && 
+    new Date(competition.start_date) <= new Date() && 
+    new Date(competition.end_date) >= new Date();
+
+  // Get recent catches sorted by newest first
+  const recentCatches = [...catches]
+    .sort((a, b) => new Date(b.caught_at).getTime() - new Date(a.caught_at).getTime())
+    .slice(0, 10);
 
   return (
     <>
@@ -332,7 +366,7 @@ export default function CompetitionDetailPage() {
                   <div>
                     <p className="font-medium">{participants.length} účastníků</p>
                     <p className="text-xs text-muted-foreground">
-                      {hasEnded ? "Ukončen" : hasStarted ? "Probíhá" : "Nadcházející"}
+                      {isCompetitionEnded ? "Ukončen" : isCompetitionOngoing ? "Probíhá" : "Nadcházející"}
                     </p>
                   </div>
                 </div>
@@ -381,15 +415,96 @@ export default function CompetitionDetailPage() {
                   </div>
                 </div>
               )}
+
+              {/* Add Catch Button - Only for participants during competition */}
+              {isUserParticipant && isCompetitionOngoing && (
+                <div className="pt-4 border-t">
+                  <AddCompetitionCatch
+                    competitionId={competition.id}
+                    scoringType={competition.scoring_type}
+                    measurementType={competition.measurement_type}
+                    onSuccess={loadCompetitionData}
+                  />
+                </div>
+              )}
             </CardContent>
           </Card>
+
+          {/* Recent Catches */}
+          {recentCatches.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-serif text-xl">
+                  Nedávné úlovky
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {recentCatches.map((catchData) => {
+                    const participant = participants.find((p) => p.user_id === catchData.user_id);
+                    const score = calculateCatchScore(catchData);
+                    
+                    return (
+                      <div
+                        key={catchData.id}
+                        className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
+                      >
+                        {/* Photo */}
+                        <div className="relative w-20 h-20 flex-shrink-0">
+                          <img
+                            src={catchData.photo_url}
+                            alt={catchData.species}
+                            className="w-full h-full object-cover rounded-lg"
+                          />
+                        </div>
+
+                        {/* Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium truncate">
+                              {participant?.profiles?.nick || "Neznámý"}
+                            </span>
+                            <Badge variant="outline" className="text-xs">
+                              {catchData.species}
+                            </Badge>
+                          </div>
+                          
+                          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                            {catchData.length_cm && (
+                              <span>📏 {catchData.length_cm} cm</span>
+                            )}
+                            {catchData.weight_kg && (
+                              <span>⚖️ {catchData.weight_kg} kg</span>
+                            )}
+                          </div>
+                          
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {format(new Date(catchData.caught_at), "d. M. yyyy HH:mm", { locale: cs })}
+                          </div>
+                        </div>
+
+                        {/* Score */}
+                        <div className="text-right flex-shrink-0">
+                          <div className="text-2xl font-bold text-primary">
+                            {score.toFixed(competition.scoring_type === "measurements" ? 1 : 0)}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {competition.scoring_type === "points" ? "bodů" : "bodů"}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Leaderboard */}
           <Card>
             <CardHeader>
-              <CardTitle className="font-serif text-xl flex items-center gap-2">
-                <Trophy className="h-5 w-5 text-primary" />
-                Pořadí závodníků
+              <CardTitle className="font-serif text-xl">
+                {isCompetitionEnded ? "🏁 Konečné pořadí" : "📊 Průběžné pořadí"}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -437,60 +552,6 @@ export default function CompetitionDetailPage() {
                         </p>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Recent Catches */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="font-serif text-xl flex items-center gap-2">
-                <Fish className="h-5 w-5 text-primary" />
-                Nedávné úlovky
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {catches.length === 0 ? (
-                <div className="text-center py-8">
-                  <Fish className="h-16 w-16 mx-auto mb-4 text-muted-foreground/30" />
-                  <p className="text-muted-foreground">Zatím žádné úlovky</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {catches.slice(0, 6).map((catchItem) => (
-                    <Card key={catchItem.id} className="overflow-hidden">
-                      {catchItem.photo_url && (
-                        <div className="aspect-video relative">
-                          <img
-                            src={catchItem.photo_url}
-                            alt={catchItem.species}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
-                      <CardContent className="p-4">
-                        <h3 className="font-serif font-semibold text-lg">
-                          {catchItem.species}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {catchItem.profiles?.nickname || "Neznámý rybář"}
-                        </p>
-                        {(catchItem.length_cm || catchItem.weight_kg) && (
-                          <p className="text-sm text-muted-foreground">
-                            {catchItem.length_cm && `📏 ${catchItem.length_cm} cm`}
-                            {catchItem.length_cm && catchItem.weight_kg && " • "}
-                            {catchItem.weight_kg && `⚖️ ${catchItem.weight_kg} kg`}
-                          </p>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {format(new Date(catchItem.caught_at), "d. MMM yyyy HH:mm", {
-                            locale: cs,
-                          })}
-                        </p>
-                      </CardContent>
-                    </Card>
                   ))}
                 </div>
               )}

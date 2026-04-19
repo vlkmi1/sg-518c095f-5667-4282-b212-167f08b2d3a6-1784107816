@@ -1,0 +1,330 @@
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Card, CardContent } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { authService } from "@/services/authService";
+import { catchService } from "@/services/catchService";
+import { storageService } from "@/services/storageService";
+import { Loader2, Upload, Plus, X } from "lucide-react";
+
+const FISH_SPECIES = [
+  { value: "Kapr", label: "Kapr", image: "/Kapr.webp" },
+  { value: "Amur", label: "Amur", image: "/amur.webp" },
+  { value: "Sumec", label: "Sumec", image: "/Sumec.webp" },
+  { value: "Štika", label: "Štika", image: "/Stika.webp" },
+  { value: "Candát", label: "Candát", image: "/candat.webp" },
+  { value: "Pstruh", label: "Pstruh", image: "/Pstruh.webp" },
+  { value: "Úhoř", label: "Úhoř", image: "/Uhor.webp" },
+  { value: "Lín", label: "Lín", image: "/lin.webp" },
+  { value: "Plotice", label: "Plotice", image: "/plotice.webp" },
+  { value: "Cejn", label: "Cejn", image: "/Cejn.webp" },
+  { value: "Jelec", label: "Jelec", image: "/Jelec.webp" },
+  { value: "Okoun", label: "Okoun", image: "/okoun.webp" },
+  { value: "Bolen", label: "Bolen", image: "/Bolen.webp" },
+  { value: "Mník", label: "Mník", image: "/Mnik.webp" },
+  { value: "Perlin", label: "Perlin", image: "/Perlin.webp" },
+  { value: "Síven", label: "Síven", image: "/Siven.webp" },
+  { value: "Jeseter", label: "Jeseter", image: "/Jeseter.webp" },
+];
+
+interface AddCompetitionCatchProps {
+  competitionId: string;
+  scoringType: "points" | "measurements";
+  measurementType?: "weight" | "length" | "both" | null;
+  onSuccess?: () => void;
+}
+
+export function AddCompetitionCatch({
+  competitionId,
+  scoringType,
+  measurementType,
+  onSuccess,
+}: AddCompetitionCatchProps) {
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string>("");
+  const [species, setSpecies] = useState("");
+  const [lengthCm, setLengthCm] = useState("");
+  const [weightKg, setWeightKg] = useState("");
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setPhotoFile(file);
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPhotoPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function clearPhoto() {
+    setPhotoFile(null);
+    setPhotoPreview("");
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+
+    if (!photoFile || !species) {
+      toast({
+        title: "Chybí údaje",
+        description: "Nahrajte fotografii a vyberte druh ryby",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate measurements if required
+    if (scoringType === "measurements") {
+      const needsWeight = measurementType === "weight" || measurementType === "both";
+      const needsLength = measurementType === "length" || measurementType === "both";
+
+      if (needsWeight && !weightKg) {
+        toast({
+          title: "Chybí váha",
+          description: "Tento závod vyžaduje zadání váhy úlovku",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (needsLength && !lengthCm) {
+        toast({
+          title: "Chybí délka",
+          description: "Tento závod vyžaduje zadání délky úlovku",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const user = await authService.getCurrentUser();
+      if (!user) {
+        throw new Error("Uživatel není přihlášen");
+      }
+
+      // Upload photo
+      const photoData = await storageService.uploadCatchPhoto(photoFile, user.id);
+      const photoUrl = typeof photoData === 'string' ? photoData : photoData.url;
+
+      // Create catch linked to competition
+      await catchService.createCatch({
+        user_id: user.id,
+        species,
+        photo_url: photoUrl,
+        length_cm: lengthCm ? parseFloat(lengthCm) : null,
+        weight_kg: weightKg ? parseFloat(weightKg) : null,
+        country: null,
+        region: null,
+        district: null,
+        bait_brand: null,
+        caught_at: new Date().toISOString(),
+        is_public: true,
+        competition_id: competitionId,
+      });
+
+      toast({
+        title: "✅ Úlovek přidán!",
+        description: "Váš úlovek byl úspěšně přidán do závodu",
+      });
+
+      // Reset form
+      setPhotoFile(null);
+      setPhotoPreview("");
+      setSpecies("");
+      setLengthCm("");
+      setWeightKg("");
+      setOpen(false);
+
+      onSuccess?.();
+    } catch (error: any) {
+      console.error("Add catch error:", error);
+      toast({
+        title: "Chyba",
+        description: error.message || "Nepodařilo se přidat úlovek",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  const needsWeight = scoringType === "measurements" && 
+    (measurementType === "weight" || measurementType === "both");
+  const needsLength = scoringType === "measurements" && 
+    (measurementType === "length" || measurementType === "both");
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" className="gap-2">
+          <Plus className="h-4 w-4" />
+          Přidat úlovek
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Přidat úlovek do závodu</DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Photo Upload */}
+          <div className="space-y-2">
+            <Label>
+              Fotografie úlovku <span className="text-destructive">*</span>
+            </Label>
+            {photoPreview ? (
+              <div className="relative">
+                <img
+                  src={photoPreview}
+                  alt="Preview"
+                  className="w-full h-48 object-cover rounded-lg"
+                />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="icon"
+                  className="absolute top-2 right-2"
+                  onClick={clearPhoto}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                <Label
+                  htmlFor="photo-upload"
+                  className="cursor-pointer text-sm text-primary hover:underline"
+                >
+                  Klikněte pro výběr fotografie
+                </Label>
+                <Input
+                  id="photo-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoSelect}
+                  className="hidden"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Species */}
+          <div className="space-y-2">
+            <Label htmlFor="species">
+              Druh ryby <span className="text-destructive">*</span>
+            </Label>
+            <Select value={species} onValueChange={setSpecies} required>
+              <SelectTrigger id="species">
+                <SelectValue placeholder="Vyberte druh" />
+              </SelectTrigger>
+              <SelectContent>
+                {FISH_SPECIES.map((fish) => (
+                  <SelectItem key={fish.value} value={fish.value}>
+                    <div className="flex items-center gap-2">
+                      <img 
+                        src={fish.image} 
+                        alt={fish.label}
+                        className="h-5 w-5 object-cover rounded-full"
+                      />
+                      {fish.label}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Measurements - Only if required */}
+          {(needsLength || needsWeight) && (
+            <div className="grid grid-cols-2 gap-4">
+              {needsLength && (
+                <div className="space-y-2">
+                  <Label htmlFor="length">
+                    Délka (cm) <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="length"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    value={lengthCm}
+                    onChange={(e) => setLengthCm(e.target.value)}
+                    placeholder="75.5"
+                    required
+                  />
+                </div>
+              )}
+              {needsWeight && (
+                <div className="space-y-2">
+                  <Label htmlFor="weight">
+                    Váha (kg) <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="weight"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={weightKg}
+                    onChange={(e) => setWeightKg(e.target.value)}
+                    placeholder="8.5"
+                    required
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Submit */}
+          <div className="flex gap-2 pt-2">
+            <Button type="submit" disabled={isSubmitting} className="flex-1">
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Přidávám...
+                </>
+              ) : (
+                "Přidat úlovek"
+              )}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={isSubmitting}
+            >
+              Zrušit
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

@@ -79,41 +79,31 @@ export const competitionService = {
   },
 
   // Get competition catches
-  async getCompetitionCatches(competitionId: string): Promise<any[]> {
-    const { data, error } = await supabase
-      .from("competition_catches")
-      .select(`
-        id,
-        approved,
-        catches (
-          id,
-          species,
-          length_cm,
-          weight_kg,
-          caught_at,
-          photo_url,
-          user_id,
-          profiles:user_id (
-            nickname
+  async getCompetitionCatches(competitionId: string): Promise<{ data: any[] | null; error: any }> {
+    try {
+      const { data, error } = await supabase
+        .from("catches")
+        .select(`
+          *,
+          profiles!catches_user_id_fkey (
+            id,
+            nick,
+            avatar_url
           )
-        )
-      `)
-      .eq("competition_id", competitionId)
-      .eq("approved", true);
+        `)
+        .eq("competition_id", competitionId)
+        .order("caught_at", { ascending: false });
 
-    if (error) {
-      console.error("getCompetitionCatches error:", error);
-      return [];
+      if (error) {
+        console.error("Get competition catches error:", error);
+        return { data: null, error };
+      }
+
+      return { data, error: null };
+    } catch (error: any) {
+      console.error("Get competition catches error:", error);
+      return { data: null, error };
     }
-
-    // Flatten the structure to return just the catches with their profile
-    return (data || [])
-      .filter((item: any) => item.catches)
-      .map((item: any) => ({
-        ...item.catches,
-        competition_catch_id: item.id
-      }))
-      .sort((a: any, b: any) => new Date(b.caught_at).getTime() - new Date(a.caught_at).getTime());
   },
 
   // Join a competition
