@@ -84,12 +84,12 @@ const SPECIES_DATA: Record<string, { image: string; color: string }> = {
 };
 
 const FISH_SPECIES = [
-  { value: "Kapr", label: "Kapr", emoji: "🐟" },
-  { value: "Amur", label: "Amur", emoji: "🐠" },
-  { value: "Sumec", label: "Sumec", emoji: "🦈" },
-  { value: "Štika", label: "Štika", emoji: "🐡" },
-  { value: "Candát", label: "Candát", emoji: "🐠" },
-  { value: "Pstruh", label: "Pstruh", emoji: "🐟" },
+  { value: "Kapr", label: "Kapr", image: "/Kapr.webp" },
+  { value: "Amur", label: "Amur", image: "/amur.webp" },
+  { value: "Sumec", label: "Sumec", image: "/Sumec.webp" },
+  { value: "Štika", label: "Štika", image: "/Stika.webp" },
+  { value: "Candát", label: "Candát", image: "/candat.webp" },
+  { value: "Pstruh", label: "Pstruh", image: "/Pstruh.webp" },
 ];
 
 const MEDAL_CONFIG = {
@@ -273,7 +273,11 @@ export function HallOfFame() {
             onClick={() => setSelectedSpecies(species.value)}
             className="gap-2 h-10 px-4 rounded-full transition-all"
           >
-            <span className="text-xl">{species.emoji}</span>
+            <img 
+              src={species.image} 
+              alt={species.label}
+              className="h-5 w-5 object-contain"
+            />
             {species.label}
           </Button>
         ))}
