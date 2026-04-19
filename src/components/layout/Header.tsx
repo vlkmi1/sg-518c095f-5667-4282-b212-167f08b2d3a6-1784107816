@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { InstallButton } from "@/components/layout/InstallButton";
 import { MobileNav } from "@/components/layout/MobileNav";
+import { Logo } from "@/components/layout/Logo";
 import { authService } from "@/services/authService";
 import { Fish, Trophy, User, LogOut } from "lucide-react";
 
@@ -51,9 +52,13 @@ export function Header() {
         <div className="container flex h-16 items-center justify-between">
           {/* Logo + Install Button */}
           <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2 font-serif text-xl font-bold text-primary">
-              <Fish className="h-6 w-6" />
-              <span className="hidden sm:inline">Ukaž Rybu</span>
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <div className="text-primary transition-transform group-hover:scale-110">
+                <Logo className="h-9 w-9" />
+              </div>
+              <span className="hidden sm:inline font-serif text-xl font-bold text-primary">
+                Ukaž Rybu
+              </span>
             </Link>
             {user && <InstallButton />}
           </div>
