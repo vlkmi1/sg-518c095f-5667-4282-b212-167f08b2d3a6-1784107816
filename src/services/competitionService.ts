@@ -6,6 +6,26 @@ export type CompetitionParticipant = Tables<"competition_participants">;
 export type CompetitionCatch = Tables<"competition_catches">;
 
 export const competitionService = {
+  // Get all competitions
+  async getCompetitions(): Promise<{ data: any[] | null; error: any }> {
+    try {
+      const { data, error } = await supabase
+        .from("competitions")
+        .select("*")
+        .order("start_date", { ascending: false });
+
+      if (error) {
+        console.error("Get competitions error:", error);
+        return { data: null, error };
+      }
+
+      return { data, error: null };
+    } catch (error: any) {
+      console.error("Get competitions error:", error);
+      return { data: null, error };
+    }
+  },
+
   // Create competition
   async createCompetition(competitionData: {
     name: string;
