@@ -11,28 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { authService } from "@/services/authService";
 import { competitionService } from "@/services/competitionService";
-import { Loader2, Trophy, Plus, X } from "lucide-react";
+import { Loader2, Trophy, Plus, Minus, Trash2 } from "lucide-react";
 import { format } from "date-fns";
-
-const FISH_SPECIES = [
-  { value: "Kapr", label: "Kapr", image: "/Kapr.webp" },
-  { value: "Amur", label: "Amur", image: "/amur.webp" },
-  { value: "Sumec", label: "Sumec", image: "/Sumec.webp" },
-  { value: "Štika", label: "Štika", image: "/Stika.webp" },
-  { value: "Candát", label: "Candát", image: "/candat.webp" },
-  { value: "Pstruh", label: "Pstruh", image: "/Pstruh.webp" },
-  { value: "Úhoř", label: "Úhoř", image: "/Uhor.webp" },
-  { value: "Lín", label: "Lín", image: "/lin.webp" },
-  { value: "Plotice", label: "Plotice", image: "/plotice.webp" },
-  { value: "Cejn", label: "Cejn", image: "/Cejn.webp" },
-  { value: "Jelec", label: "Jelec", image: "/Jelec.webp" },
-  { value: "Okoun", label: "Okoun", image: "/okoun.webp" },
-  { value: "Bolen", label: "Bolen", image: "/Bolen.webp" },
-  { value: "Mník", label: "Mník", image: "/Mnik.webp" },
-  { value: "Perlin", label: "Perlin", image: "/Perlin.webp" },
-  { value: "Síven", label: "Síven", image: "/Siven.webp" },
-  { value: "Jeseter", label: "Jeseter", image: "/Jeseter.webp" },
-];
+import { FISH_SPECIES } from "@/lib/constants";
 
 export function CreateCompetitionForm() {
   const router = useRouter();
@@ -51,36 +32,62 @@ export function CreateCompetitionForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Points scoring configuration
-  const [fishPoints, setFishPoints] = useState<Array<{ species: string; points: number }>>([
-    { species: "Kapr", points: 10 },
-  ]);
+  const [selectedFish, setSelectedFish] = useState("");
+  const [fishPoints, setFishPoints] = useState<{ species: string; points: number }[]>([]);
+
+  function handleAddFish() {
+    if (!selectedFish) return;
+
+    const fishSpecies = FISH_SPECIES.find((f) => f.value === selectedFish);
+    if (!fishSpecies) return;
+
+    // Check if fish already exists
+    const existing = fishPoints.find((fp) => fp.species === selectedFish);
+    if (existing) {
+      toast({
+        title: "Druh už existuje",
+        description: "Tento druh ryby už je v seznamu bodování",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setFishPoints([...fishPoints, { species: fishSpecies.value, points: 1 }]);
+    setSelectedFish("");
+  }
+
+  function handleUpdateFishName(index: number, newName: string) {
+    const updated = [...fishPoints];
+    updated[index] = { ...updated[index], species: newName };
+    setFishPoints(updated);
+  }
+
+  function handleUpdateFishPoints(index: number, newPoints: number) {
+    const updated = [...fishPoints];
+    updated[index] = { ...updated[index], points: Math.max(1, newPoints) };
+    setFishPoints(updated);
+  }
+
+  function handleIncrementPoints(index: number) {
+    const updated = [...fishPoints];
+    updated[index] = { ...updated[index], points: updated[index].points + 1 };
+    setFishPoints(updated);
+  }
+
+  function handleDecrementPoints(index: number) {
+    const updated = [...fishPoints];
+    updated[index] = { ...updated[index], points: Math.max(1, updated[index].points - 1) };
+    setFishPoints(updated);
+  }
+
+  function handleRemoveFish(index: number) {
+    const updated = fishPoints.filter((_, i) => i !== index);
+    setFishPoints(updated);
+  }
 
   // Measurements scoring configuration
   const [measurementType, setMeasurementType] = useState<"weight" | "length" | "both">("both");
   const [topCatchesCount, setTopCatchesCount] = useState<number | null>(null);
-
-  function addFishPoints() {
-    const availableSpecies = FISH_SPECIES.filter(
-      (fish) => !fishPoints.some((fp) => fp.species === fish.value)
-    );
-    if (availableSpecies.length > 0) {
-      setFishPoints([...fishPoints, { species: availableSpecies[0].value, points: 1 }]);
-    }
-  }
-
-  function removeFishPoints(index: number) {
-    setFishPoints(fishPoints.filter((_, i) => i !== index));
-  }
-
-  function updateFishPoints(index: number, field: "species" | "points", value: string | number) {
-    const updated = [...fishPoints];
-    if (field === "species") {
-      updated[index].species = value as string;
-    } else {
-      updated[index].points = Number(value);
-    }
-    setFishPoints(updated);
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -280,78 +287,104 @@ export function CreateCompetitionForm() {
 
           {/* Points Scoring Configuration */}
           {scoringType === "points" && (
-            <div className="space-y-3 p-4 bg-muted/30 rounded-lg">
-              <div className="flex items-center justify-between">
-                <Label className="text-base">Bodování druhů ryb</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={addFishPoints}
-                  disabled={fishPoints.length >= FISH_SPECIES.length}
-                  className="gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  Přidat druh
-                </Button>
-              </div>
-              
+            <div className="space-y-4">
               <div className="space-y-2">
-                {fishPoints.map((fp, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <Select
-                      value={fp.species}
-                      onValueChange={(value) => updateFishPoints(index, "species", value)}
-                    >
-                      <SelectTrigger className="flex-1">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {FISH_SPECIES.filter(
-                          (fish) =>
-                            fish.value === fp.species ||
-                            !fishPoints.some((existing) => existing.species === fish.value)
-                        ).map((fish) => (
-                          <SelectItem key={fish.value} value={fish.value}>
-                            <div className="flex items-center gap-2">
-                              <img 
-                                src={fish.image} 
-                                alt={fish.label}
-                                className="h-5 w-5 object-contain"
-                              />
-                              {fish.label}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    
-                    <Input
-                      type="number"
-                      min="1"
-                      value={fp.points}
-                      onChange={(e) => updateFishPoints(index, "points", e.target.value)}
-                      className="w-24"
-                      placeholder="Body"
-                    />
-                    <span className="text-sm text-muted-foreground">bodů</span>
-                    
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeFishPoints(index)}
-                      disabled={fishPoints.length === 1}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
+                <Label>Bodování druhů</Label>
+                <div className="flex gap-2">
+                  <Select value={selectedFish} onValueChange={setSelectedFish}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Vyberte druh ryby" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FISH_SPECIES.map((fish) => (
+                        <SelectItem key={fish.value} value={fish.value}>
+                          <div className="flex items-center gap-2">
+                            <img 
+                              src={fish.image} 
+                              alt={fish.label}
+                              className="h-5 w-5 object-cover rounded-full"
+                            />
+                            {fish.label}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    onClick={handleAddFish}
+                    disabled={!selectedFish}
+                  >
+                    Přidat
+                  </Button>
+                </div>
               </div>
 
-              <p className="text-xs text-muted-foreground">
-                Každý druh ryby má přidělenou bodovou hodnotu. Skóre závodníka = součet bodů za všechny úlovky.
-              </p>
+              {fishPoints.length > 0 && (
+                <div className="space-y-2">
+                  {fishPoints.map((fp, index) => (
+                    <div key={index} className="flex items-center gap-2 p-3 bg-muted/30 rounded-lg">
+                      {/* Fish name - editable */}
+                      <Input
+                        value={fp.species}
+                        onChange={(e) => handleUpdateFishName(index, e.target.value)}
+                        className="flex-1"
+                        placeholder="Název druhu"
+                      />
+                      
+                      {/* Points with increment/decrement */}
+                      <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleDecrementPoints(index)}
+                        >
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                        <Input
+                          type="number"
+                          min="1"
+                          value={fp.points}
+                          onChange={(e) => handleUpdateFishPoints(index, parseInt(e.target.value) || 1)}
+                          className="w-20 text-center"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleIncrementPoints(index)}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+
+                      <span className="text-sm text-muted-foreground whitespace-nowrap">
+                        {fp.points === 1 ? "bod" : fp.points < 5 ? "body" : "bodů"}
+                      </span>
+
+                      {/* Remove button */}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleRemoveFish(index)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {fishPoints.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  Přidejte druhy ryb a nastavte jim body
+                </p>
+              )}
             </div>
           )}
 
