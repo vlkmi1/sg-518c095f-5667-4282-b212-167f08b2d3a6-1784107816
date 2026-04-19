@@ -94,6 +94,12 @@ export function UploadCatchForm() {
   const [baitBrand, setBaitBrand] = useState("");
   const [notes, setNotes] = useState("");
 
+  const [aiAnalysis, setAiAnalysis] = useState<{
+    species: string | null;
+    length: number | null;
+    weight: number | null;
+  } | null>(null);
+
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
