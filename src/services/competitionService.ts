@@ -6,22 +6,42 @@ export type CompetitionParticipant = Tables<"competition_participants">;
 export type CompetitionCatch = Tables<"competition_catches">;
 
 export const competitionService = {
-  // Create a new competition
-  async createCompetition(competitionData: any): Promise<{ data: any; error: any }> {
-    const joinCode = this.generateJoinCode();
+  // Create competition
+  async createCompetition(competitionData: {
+    name: string;
+    description?: string;
+    start_date: string;
+    end_date: string;
+    scoring_type: string;
+    measurement_type?: string | null;
+    fish_points?: Record<string, number> | null;
+    top_catches_count?: number | null;
+    creator_id: string;
+    is_public?: boolean;
+  }): Promise<{ data: any; error: any }> {
+    try {
+      // Generate unique join code
+      const join_code = Math.random().toString(36).substring(2, 8).toUpperCase();
 
-    const { data, error } = await supabase
-      .from("competitions")
-      .insert({
-        ...competitionData,
-        creator_id: competitionData.organizer_id, // For backwards compatibility
-        join_code: joinCode,
-      })
-      .select()
-      .single();
+      const { data, error } = await supabase
+        .from("competitions")
+        .insert({
+          ...competitionData,
+          join_code,
+        })
+        .select()
+        .single();
 
-    console.log("createCompetition:", { data, error });
-    return { data, error };
+      if (error) {
+        console.error("Create competition error:", error);
+        return { data: null, error };
+      }
+
+      return { data, error: null };
+    } catch (error: any) {
+      console.error("Create competition error:", error);
+      return { data: null, error };
+    }
   },
 
   // Get competition by ID

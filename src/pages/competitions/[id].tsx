@@ -43,7 +43,7 @@ export default function CompetitionDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const isCreator = currentUserId && competition?.created_by === currentUserId;
+  const isCreator = currentUserId && competition?.creator_id === currentUserId;
   const canDelete = isCreator && competition && new Date(competition.start_date) > new Date();
 
   useEffect(() => {

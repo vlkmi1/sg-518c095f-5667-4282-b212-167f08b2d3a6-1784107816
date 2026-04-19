@@ -133,15 +133,16 @@ export function CreateCompetitionForm() {
 
       // Create competition with advanced scoring
       const { data: competition, error } = await competitionService.createCompetition({
-        name: name.trim(),
-        description: description.trim() || null,
-        start_date: startDateTime.toISOString(),
-        end_date: endDateTime.toISOString(),
+        name,
+        description,
+        start_date: startDateTime,
+        end_date: endDateTime,
         scoring_type: scoringType,
-        fish_points: fishPointsJson,
         measurement_type: scoringType === "measurements" ? measurementType : null,
-        top_catches_count: scoringType === "measurements" && topCatchesCount ? topCatchesCount : null,
-        created_by: user.id,
+        fish_points: scoringType === "points" ? fishPoints : null,
+        top_catches_count: scoringType === "measurements" ? (topCatchesCount || null) : null,
+        creator_id: user.id, // Use creator_id not created_by
+        is_public: true,
       });
 
       if (error) {
@@ -152,14 +153,10 @@ export function CreateCompetitionForm() {
         throw new Error("Nepodařilo se vytvořit závod");
       }
 
-      // Auto-join creator as participant if checkbox is checked
-      if (autoJoin) {
-        try {
-          await competitionService.joinCompetition(competition.id, user.id);
-        } catch (joinError) {
-          console.error("Auto-join error:", joinError);
-        }
-      }
+      console.log("Competition created:", competition);
+
+      // Auto-join creator as participant
+      await competitionService.joinCompetition(competition.id);
 
       toast({
         title: "✅ Závod vytvořen!",

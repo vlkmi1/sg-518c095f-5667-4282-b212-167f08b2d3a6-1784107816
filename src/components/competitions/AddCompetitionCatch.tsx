@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -66,6 +66,18 @@ export function AddCompetitionCatch({
   const [weightKg, setWeightKg] = useState("");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Debug logging
+  useEffect(() => {
+    if (open) {
+      console.log("=== DIALOG OPENED ===");
+      console.log("Competition ID:", competitionId);
+      console.log("Scoring Type:", scoringType);
+      console.log("Measurement Type:", measurementType);
+      console.log("Should show length field:", scoringType === "measurements" && (measurementType === "length" || measurementType === "both"));
+      console.log("Should show weight field:", scoringType === "measurements" && (measurementType === "weight" || measurementType === "both"));
+    }
+  }, [open, competitionId, scoringType, measurementType]);
 
   function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
