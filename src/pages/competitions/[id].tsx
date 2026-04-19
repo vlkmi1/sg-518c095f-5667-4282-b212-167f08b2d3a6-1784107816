@@ -275,12 +275,24 @@ export default function CompetitionDetailPage() {
                 <div className="flex items-center gap-2 text-sm">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <div>
+                    <p className="font-medium text-xs text-muted-foreground">Začátek:</p>
                     <p className="font-medium">
-                      {format(new Date(competition.start_date), "d. MMM", { locale: cs })} -{" "}
+                      {format(new Date(competition.start_date), "d. MMM yyyy", { locale: cs })}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {format(new Date(competition.start_date), "HH:mm", { locale: cs })}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium text-xs text-muted-foreground">Konec:</p>
+                    <p className="font-medium">
                       {format(new Date(competition.end_date), "d. MMM yyyy", { locale: cs })}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {hasEnded ? "Ukončen" : hasStarted ? "Probíhá" : "Nadcházející"}
+                      {format(new Date(competition.end_date), "HH:mm", { locale: cs })}
                     </p>
                   </div>
                 </div>
@@ -288,24 +300,28 @@ export default function CompetitionDetailPage() {
                   <Users className="h-4 w-4 text-muted-foreground" />
                   <div>
                     <p className="font-medium">{participants.length} účastníků</p>
-                    <p className="text-xs text-muted-foreground">Celkem závodníků</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Fish className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium">{catches.length} úlovků</p>
                     <p className="text-xs text-muted-foreground">
-                      {competition.scoring_type === "points" ? "Bodování" : "Podle rozměrů"}
+                      {hasEnded ? "Ukončen" : hasStarted ? "Probíhá" : "Nadcházející"}
                     </p>
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Kód závodu:</span>
-                <Badge variant="outline" className="font-mono text-base px-3 py-1">
-                  {competition.join_code || competition.invite_code}
-                </Badge>
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">Kód závodu:</span>
+                  <Badge variant="outline" className="font-mono text-base px-3 py-1">
+                    {competition.join_code || competition.invite_code}
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Fish className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm">
+                    {catches.length} {catches.length === 1 ? "úlovek" : "úlovků"}
+                  </span>
+                  <Badge variant="secondary" className="ml-1">
+                    {competition.scoring_type === "points" ? "🏆 Bodování" : "📏 Míry"}
+                  </Badge>
+                </div>
               </div>
             </CardContent>
           </Card>

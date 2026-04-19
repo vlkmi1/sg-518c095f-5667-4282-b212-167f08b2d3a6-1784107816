@@ -139,136 +139,206 @@ export default function CompetitionsPage() {
 
   return (
     <>
-      <SEO title="Rybářské závody" />
+      <SEO title="Závody" />
       <div className="min-h-screen bg-background">
         <Header />
         <main className="container py-8 space-y-6">
           {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="font-serif text-4xl font-bold mb-2">Závody</h1>
-              <p className="text-muted-foreground">Moje rybářské soutěže a závody</p>
-            </div>
-            <div className="flex gap-2">
-              <Dialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" className="gap-2">
-                    <Users className="h-4 w-4" />
-                    Přidat se k závodu
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle className="font-serif">Připojit se k závodu</DialogTitle>
-                    <DialogDescription>
-                      Zadejte 6místný kód závodu, ke kterému se chcete připojit
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 pt-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="join-code">Kód závodu</Label>
-                      <Input
-                        id="join-code"
-                        value={joinCode}
-                        onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                        placeholder="např. ABC123"
-                        maxLength={6}
-                        className="font-mono text-lg text-center tracking-widest"
-                      />
-                    </div>
-                    <Button
-                      onClick={handleJoinCompetition}
-                      disabled={isJoining || !joinCode.trim()}
-                      className="w-full"
+          <Card className="border-primary/20 bg-primary/5">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="font-serif text-2xl flex items-center gap-2">
+                  <Trophy className="h-6 w-6 text-primary" />
+                  Rybářské závody
+                </CardTitle>
+                <Button onClick={() => router.push("/competitions/create")} className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  <span className="hidden sm:inline">Vytvořit závod</span>
+                </Button>
+              </div>
+            </CardHeader>
+          </Card>
+
+          {/* Tabs */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="active">Aktivní ({activePage.length})</TabsTrigger>
+              <TabsTrigger value="upcoming">Nadcházející ({upcomingPage.length})</TabsTrigger>
+              <TabsTrigger value="past">Ukončené ({pastPage.length})</TabsTrigger>
+            </TabsList>
+
+            {/* Active Competitions */}
+            <TabsContent value="active" className="space-y-4">
+              {activePage.length === 0 ? (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <Trophy className="h-16 w-16 mx-auto mb-4 text-muted-foreground/30" />
+                    <p className="text-muted-foreground">Žádné aktivní závody</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {activePage.map((comp) => (
+                    <Card
+                      key={comp.id}
+                      className="cursor-pointer hover:shadow-lg transition-shadow border-primary/30"
+                      onClick={() => router.push(`/competitions/${comp.id}`)}
                     >
-                      {isJoining ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Připojuji se...
-                        </>
-                      ) : (
-                        "Připojit se"
-                      )}
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-              <Button onClick={() => router.push("/competitions/create")} className="gap-2">
-                <Plus className="h-4 w-4" />
-                Nový závod
-              </Button>
-            </div>
-          </div>
-
-          {/* Competitions Grid */}
-          {competitions.length === 0 ? (
-            <Card>
-              <CardContent className="p-12 text-center">
-                <Trophy className="h-16 w-16 mx-auto mb-4 text-muted-foreground/30" />
-                <h3 className="font-serif text-xl font-semibold mb-2">Zatím žádné závody</h3>
-                <p className="text-muted-foreground mb-6">
-                  Vytvořte nový závod nebo se připojte k existujícímu
-                </p>
-                <div className="flex gap-2 justify-center">
-                  <Button variant="outline" onClick={() => setJoinDialogOpen(true)} className="gap-2">
-                    <Users className="h-4 w-4" />
-                    Přidat se k závodu
-                  </Button>
-                  <Button onClick={() => router.push("/competitions/create")}>
-                    Vytvořit závod
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {competitions.map((comp) => {
-                const status = getCompetitionStatus(comp);
-                const StatusIcon = status.icon;
-
-                return (
-                  <Card
-                    key={comp.id}
-                    className="cursor-pointer hover:shadow-lg transition-shadow"
-                    onClick={() => router.push(`/competitions/${comp.id}`)}
-                  >
-                    <CardHeader>
-                      <div className="flex items-start justify-between mb-2">
-                        <Trophy className="h-5 w-5 text-primary" />
-                        <Badge variant={status.variant} className="gap-1">
-                          <StatusIcon className="h-3 w-3" />
-                          {status.label}
-                        </Badge>
-                      </div>
-                      <CardTitle className="font-serif text-xl">{comp.name}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Badge variant="secondary">
-                          {comp.scoring_type === "points" ? "🏆 Bodování" : "📏 Míry"}
-                        </Badge>
-                      </div>
-
-                      <div className="space-y-2 text-sm">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Calendar className="h-4 w-4" />
-                          <span>
-                            {format(new Date(comp.start_date), "d. MMM", { locale: cs })} -{" "}
-                            {format(new Date(comp.end_date), "d. MMM yyyy", { locale: cs })}
-                          </span>
+                      <CardHeader>
+                        <div className="flex items-start justify-between gap-2">
+                          <CardTitle className="font-serif text-lg">{comp.name}</CardTitle>
+                          <Badge className="bg-green-600">Probíhá</Badge>
                         </div>
-                      </div>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="font-medium">
+                              {format(new Date(comp.start_date), "d. MMM yyyy HH:mm", { locale: cs })} -{" "}
+                              {format(new Date(comp.end_date), "d. MMM yyyy HH:mm", { locale: cs })}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Users className="h-4 w-4" />
+                          <span>{comp.participant_count || 0} účastníků</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Badge variant="secondary">
+                            {comp.scoring_type === "points" ? "🏆 Bodování" : "📏 Míry"}
+                          </Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
 
-                      <div className="flex items-center gap-2 pt-2 border-t">
-                        <span className="text-xs text-muted-foreground">Kód:</span>
-                        <Badge variant="outline" className="font-mono text-xs">
-                          {comp.join_code || comp.invite_code}
-                        </Badge>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+            {/* Upcoming Competitions */}
+            <TabsContent value="upcoming" className="space-y-4">
+              {upcomingPage.length === 0 ? (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <Trophy className="h-16 w-16 mx-auto mb-4 text-muted-foreground/30" />
+                    <p className="text-muted-foreground">Žádné nadcházející závody</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {upcomingPage.map((comp) => (
+                    <Card
+                      key={comp.id}
+                      className="cursor-pointer hover:shadow-lg transition-shadow"
+                      onClick={() => router.push(`/competitions/${comp.id}`)}
+                    >
+                      <CardHeader>
+                        <div className="flex items-start justify-between gap-2">
+                          <CardTitle className="font-serif text-lg">{comp.name}</CardTitle>
+                          <Badge variant="secondary">Nadcházející</Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="font-medium">
+                              {format(new Date(comp.start_date), "d. MMM yyyy HH:mm", { locale: cs })} -{" "}
+                              {format(new Date(comp.end_date), "d. MMM yyyy HH:mm", { locale: cs })}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Users className="h-4 w-4" />
+                          <span>{comp.participant_count || 0} účastníků</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Badge variant="secondary">
+                            {comp.scoring_type === "points" ? "🏆 Bodování" : "📏 Míry"}
+                          </Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
+            {/* Past Competitions */}
+            <TabsContent value="past" className="space-y-4">
+              {pastPage.length === 0 ? (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <Trophy className="h-16 w-16 mx-auto mb-4 text-muted-foreground/30" />
+                    <p className="text-muted-foreground">Žádné ukončené závody</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {pastPage.map((comp) => (
+                    <Card
+                      key={comp.id}
+                      className="cursor-pointer hover:shadow-lg transition-shadow opacity-75"
+                      onClick={() => router.push(`/competitions/${comp.id}`)}
+                    >
+                      <CardHeader>
+                        <div className="flex items-start justify-between gap-2">
+                          <CardTitle className="font-serif text-lg">{comp.name}</CardTitle>
+                          <Badge variant="outline">Ukončen</Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="font-medium">
+                              {format(new Date(comp.start_date), "d. MMM yyyy HH:mm", { locale: cs })} -{" "}
+                              {format(new Date(comp.end_date), "d. MMM yyyy HH:mm", { locale: cs })}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Users className="h-4 w-4" />
+                          <span>{comp.participant_count || 0} účastníků</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Badge variant="secondary">
+                            {comp.scoring_type === "points" ? "🏆 Bodování" : "📏 Míry"}
+                          </Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-center">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Předchozí
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  Strana {currentPage} z {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Další
+                </Button>
+              </div>
             </div>
           )}
         </main>

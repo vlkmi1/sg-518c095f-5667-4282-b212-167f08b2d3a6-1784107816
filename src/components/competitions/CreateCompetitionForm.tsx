@@ -20,9 +20,11 @@ export function CreateCompetitionForm() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [startDate, setStartDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [startTime, setStartTime] = useState("00:00");
   const [endDate, setEndDate] = useState(
     format(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), "yyyy-MM-dd")
   );
+  const [endTime, setEndTime] = useState("23:59");
   const [scoringType, setScoringType] = useState<"points" | "measurements">("points");
   const [autoJoin, setAutoJoin] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,7 +41,10 @@ export function CreateCompetitionForm() {
       return;
     }
 
-    if (new Date(endDate) <= new Date(startDate)) {
+    const startDateTime = new Date(`${startDate}T${startTime}:00`);
+    const endDateTime = new Date(`${endDate}T${endTime}:00`);
+
+    if (endDateTime <= startDateTime) {
       toast({
         title: "Neplatné datum",
         description: "Konec závodu musí být po začátku",
@@ -56,12 +61,12 @@ export function CreateCompetitionForm() {
         throw new Error("Uživatel není přihlášen");
       }
 
-      // Create competition
+      // Create competition with timestamps
       const { data: competition, error } = await competitionService.createCompetition({
         name: name.trim(),
         description: description.trim() || null,
-        start_date: startDate,
-        end_date: endDate,
+        start_date: startDateTime.toISOString(),
+        end_date: endDateTime.toISOString(),
         scoring_type: scoringType,
         created_by: user.id,
       });
@@ -140,29 +145,43 @@ export function CreateCompetitionForm() {
             />
           </div>
 
-          {/* Date Range */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="start_date">
-                Začátek <span className="text-destructive">*</span>
-              </Label>
+          {/* Start Date & Time */}
+          <div className="space-y-2">
+            <Label>
+              Začátek <span className="text-destructive">*</span>
+            </Label>
+            <div className="grid grid-cols-2 gap-2">
               <Input
-                id="start_date"
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 required
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="end_date">
-                Konec <span className="text-destructive">*</span>
-              </Label>
               <Input
-                id="end_date"
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+
+          {/* End Date & Time */}
+          <div className="space-y-2">
+            <Label>
+              Konec <span className="text-destructive">*</span>
+            </Label>
+            <div className="grid grid-cols-2 gap-2">
+              <Input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
+                required
+              />
+              <Input
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
                 required
               />
             </div>
