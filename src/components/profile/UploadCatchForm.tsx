@@ -95,6 +95,8 @@ export function UploadCatchForm() {
   const [baitBrand, setBaitBrand] = useState("");
   const [notes, setNotes] = useState("");
 
+  const [isPublic, setIsPublic] = useState(true);
+
   const [aiAnalysis, setAiAnalysis] = useState<{
     species: string | null;
     length: number | null;
@@ -267,14 +269,15 @@ export function UploadCatchForm() {
         photo_url: photoUrl,
         length_cm: lengthCm ? parseFloat(lengthCm) : null,
         weight_kg: weightKg ? parseFloat(weightKg) : null,
+        country: mode === "detailed" ? (country || null) : null,
+        region: mode === "detailed" ? (region || null) : null,
+        district: mode === "detailed" ? (district || null) : null,
+        latitude: mode === "detailed" ? latitude : null,
+        longitude: mode === "detailed" ? longitude : null,
+        bait_brand: mode === "detailed" ? (baitBrand || null) : null,
+        notes: mode === "detailed" ? (notes || null) : null,
         caught_at: caughtAt,
-        country: country || null,
-        region: region || null,
-        district: district || null,
-        latitude: latitude,
-        longitude: longitude,
-        bait_brand: baitBrand || null,
-        notes: notes || null,
+        is_public: isPublic,
       });
 
       toast({
@@ -510,8 +513,8 @@ export function UploadCatchForm() {
                   {FISH_SPECIES.map((fish) => (
                     <SelectItem key={fish.value} value={fish.value}>
                       <div className="flex items-center gap-2">
-                        <img
-                          src={fish.image}
+                        <img 
+                          src={fish.image} 
                           alt={fish.label}
                           className="h-5 w-5 object-cover rounded-full"
                         />
@@ -523,37 +526,59 @@ export function UploadCatchForm() {
               </Select>
             </div>
 
-            {/* Detailed Mode Fields */}
-            {mode === "detailed" && (
-              <>
-                {/* Measurements */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="length">Délka (cm)</Label>
-                    <Input
-                      id="length"
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      value={lengthCm}
-                      onChange={(e) => setLengthCm(e.target.value)}
-                      placeholder="např. 75.5"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="weight">Váha (kg)</Label>
-                    <Input
-                      id="weight"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={weightKg}
-                      onChange={(e) => setWeightKg(e.target.value)}
-                      placeholder="např. 8.5"
-                    />
-                  </div>
-                </div>
+            {/* Length and Weight - Now in Quick Mode */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="length">Délka (cm)</Label>
+                <Input
+                  id="length"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  value={lengthCm}
+                  onChange={(e) => setLengthCm(e.target.value)}
+                  placeholder="např. 75.5"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="weight">Váha (kg)</Label>
+                <Input
+                  id="weight"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={weightKg}
+                  onChange={(e) => setWeightKg(e.target.value)}
+                  placeholder="např. 8.5"
+                />
+              </div>
+            </div>
 
+            {/* Public/Private Toggle */}
+            <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+              <div className="space-y-0.5">
+                <Label className="text-base font-medium">Veřejný úlovek</Label>
+                <p className="text-sm text-muted-foreground">
+                  Zobrazit v galerii pro všechny uživatele
+                </p>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="is-public-quick"
+                  checked={isPublic}
+                  onChange={(e) => setIsPublic(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                <Label htmlFor="is-public-quick" className="font-normal cursor-pointer">
+                  {isPublic ? "Veřejný" : "Soukromý"}
+                </Label>
+              </div>
+            </div>
+
+            {/* Quick Mode Fields */}
+            {mode === "quick" && (
+              <>
                 {/* Date & Time */}
                 <div className="space-y-2">
                   <Label>📅 Datum a čas ulovení</Label>
@@ -663,6 +688,144 @@ export function UploadCatchForm() {
                     placeholder="Volitelné poznámky o úlovku..."
                     rows={3}
                   />
+                </div>
+              </>
+            )}
+
+            {/* Detailed Mode Fields */}
+            {mode === "detailed" && (
+              <>
+                {/* Date & Time */}
+                <div className="space-y-2">
+                  <Label>📅 Datum a čas ulovení</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      type="date"
+                      value={caughtDate}
+                      onChange={(e) => setCaughtDate(e.target.value)}
+                    />
+                    <Input
+                      type="time"
+                      value={caughtTime}
+                      onChange={(e) => setCaughtTime(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                {/* Location */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label>📍 Místo ulovení</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleGetLocation}
+                      className="gap-2"
+                    >
+                      <MapPin className="h-4 w-4" />
+                      Získat polohu
+                    </Button>
+                  </div>
+
+                  {/* Country */}
+                  <div className="space-y-2">
+                    <Label htmlFor="country">Země</Label>
+                    <Select value={country} onValueChange={setCountry}>
+                      <SelectTrigger id="country">
+                        <SelectValue placeholder="Vyberte zemi" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {COUNTRIES.map((c) => (
+                          <SelectItem key={c} value={c}>
+                            {c}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Region - Only for Czech Republic */}
+                  {country === "Česká republika" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="region">Kraj</Label>
+                      <Select value={region} onValueChange={setRegion}>
+                        <SelectTrigger id="region">
+                          <SelectValue placeholder="Vyberte kraj" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {CZECH_REGIONS.map((r) => (
+                            <SelectItem key={r} value={r}>
+                              {r}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {/* District */}
+                  <div className="space-y-2">
+                    <Label htmlFor="district">Okres</Label>
+                    <Input
+                      id="district"
+                      value={district}
+                      onChange={(e) => setDistrict(e.target.value)}
+                      placeholder="např. Brno-město"
+                    />
+                  </div>
+
+                  {/* GPS Coordinates Display */}
+                  {latitude && longitude && (
+                    <p className="text-sm text-muted-foreground">
+                      GPS: {latitude.toFixed(6)}, {longitude.toFixed(6)}
+                    </p>
+                  )}
+                </div>
+
+                {/* Bait Brand */}
+                <div className="space-y-2">
+                  <Label htmlFor="bait">Značka nástrahy</Label>
+                  <Input
+                    id="bait"
+                    value={baitBrand}
+                    onChange={(e) => setBaitBrand(e.target.value)}
+                    placeholder="např. Carp Expert"
+                  />
+                </div>
+
+                {/* Notes */}
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Poznámky (volitelné)</Label>
+                  <Textarea
+                    id="notes"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Volitelné poznámky k úlovku..."
+                    rows={3}
+                  />
+                </div>
+
+                {/* Public/Private Toggle */}
+                <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+                  <div className="space-y-0.5">
+                    <Label className="text-base font-medium">Veřejný úlovek</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Zobrazit v galerii pro všechny uživatele
+                    </p>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="is-public-detail"
+                      checked={isPublic}
+                      onChange={(e) => setIsPublic(e.target.checked)}
+                      className="h-4 w-4 rounded border-gray-300"
+                    />
+                    <Label htmlFor="is-public-detail" className="font-normal cursor-pointer">
+                      {isPublic ? "Veřejný" : "Soukromý"}
+                    </Label>
+                  </div>
                 </div>
               </>
             )}
