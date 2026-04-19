@@ -135,11 +135,11 @@ export function CreateCompetitionForm() {
       const { data: competition, error } = await competitionService.createCompetition({
         name,
         description,
-        start_date: startDateTime,
-        end_date: endDateTime,
+        start_date: startDateTime.toISOString(),
+        end_date: endDateTime.toISOString(),
         scoring_type: scoringType,
         measurement_type: scoringType === "measurements" ? measurementType : null,
-        fish_points: scoringType === "points" ? fishPoints : null,
+        fish_points: fishPointsJson,
         top_catches_count: scoringType === "measurements" ? (topCatchesCount || null) : null,
         creator_id: user.id, // Use creator_id not created_by
         is_public: true,
@@ -156,7 +156,7 @@ export function CreateCompetitionForm() {
       console.log("Competition created:", competition);
 
       // Auto-join creator as participant
-      await competitionService.joinCompetition(competition.id);
+      await competitionService.joinCompetition(competition.id, user.id);
 
       toast({
         title: "✅ Závod vytvořen!",
