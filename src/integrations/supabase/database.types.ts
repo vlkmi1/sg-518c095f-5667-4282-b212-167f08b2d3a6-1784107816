@@ -24,6 +24,7 @@ export type Database = {
           district: string | null
           fishing_area: string | null
           id: string
+          is_hidden: boolean | null
           is_public: boolean | null
           latitude: number | null
           length_cm: number | null
@@ -43,6 +44,7 @@ export type Database = {
           district?: string | null
           fishing_area?: string | null
           id?: string
+          is_hidden?: boolean | null
           is_public?: boolean | null
           latitude?: number | null
           length_cm?: number | null
@@ -62,6 +64,7 @@ export type Database = {
           district?: string | null
           fishing_area?: string | null
           id?: string
+          is_hidden?: boolean | null
           is_public?: boolean | null
           latitude?: number | null
           length_cm?: number | null
@@ -244,6 +247,8 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          is_admin: boolean | null
+          is_blocked: boolean | null
           location: string | null
           nickname: string | null
           updated_at: string | null
@@ -255,6 +260,8 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
+          is_admin?: boolean | null
+          is_blocked?: boolean | null
           location?: string | null
           nickname?: string | null
           updated_at?: string | null
@@ -266,6 +273,8 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          is_admin?: boolean | null
+          is_blocked?: boolean | null
           location?: string | null
           nickname?: string | null
           updated_at?: string | null

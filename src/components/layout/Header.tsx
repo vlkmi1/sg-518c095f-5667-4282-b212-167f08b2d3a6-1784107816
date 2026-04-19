@@ -14,11 +14,13 @@ import { InstallButton } from "@/components/layout/InstallButton";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { Logo } from "@/components/layout/Logo";
 import { authService } from "@/services/authService";
-import { Fish, Trophy, User, LogOut } from "lucide-react";
+import { adminService } from "@/services/adminService";
+import { Fish, Trophy, User, LogOut, Shield } from "lucide-react";
 
 export function Header() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -29,6 +31,11 @@ export function Header() {
     try {
       const currentUser = await authService.getCurrentUser();
       setUser(currentUser);
+
+      if (currentUser) {
+        const adminStatus = await adminService.isAdmin(currentUser.id);
+        setIsAdmin(adminStatus);
+      }
     } catch (error) {
       console.error("Auth check error:", error);
     } finally {
@@ -39,6 +46,7 @@ export function Header() {
   async function handleLogout() {
     await authService.signOut();
     setUser(null);
+    setIsAdmin(false);
     router.push("/");
   }
 
@@ -106,6 +114,21 @@ export function Header() {
                     Profil
                   </div>
                 </Link>
+                {isAdmin && (
+                  <Link
+                    href="/admin"
+                    className={`text-sm font-medium transition-colors hover:text-primary ${
+                      isActive("/admin")
+                        ? "text-primary"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-4 w-4" />
+                      Admin
+                    </div>
+                  </Link>
+                )}
               </nav>
 
               {/* Desktop User Menu */}
@@ -138,6 +161,15 @@ export function Header() {
                       <Trophy className="mr-2 h-4 w-4" />
                       Vytvořit závod
                     </DropdownMenuItem>
+                    {isAdmin && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => router.push("/admin")}>
+                          <Shield className="mr-2 h-4 w-4" />
+                          Admin Panel
+                        </DropdownMenuItem>
+                      </>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout}>
                       <LogOut className="mr-2 h-4 w-4" />
