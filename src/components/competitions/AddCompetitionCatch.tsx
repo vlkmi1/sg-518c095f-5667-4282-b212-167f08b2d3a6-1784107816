@@ -134,7 +134,7 @@ export function AddCompetitionCatch({
       const photoUrl = typeof photoData === 'string' ? photoData : photoData.url;
 
       // Create catch linked to competition
-      await catchService.createCatch({
+      const { data, error } = await catchService.createCatch({
         user_id: user.id,
         species,
         photo_url: photoUrl,
@@ -143,11 +143,22 @@ export function AddCompetitionCatch({
         country: null,
         region: null,
         district: null,
+        latitude: null,
+        longitude: null,
+        fishing_area: null,
         bait_brand: null,
+        notes: null,
         caught_at: new Date().toISOString(),
-        is_public: true,
-        competition_id: competitionId,
+        is_public: false, // Competition catches are private by default
+        competition_id: competitionId, // Link to competition
       });
+
+      if (error) {
+        console.error("Create catch error:", error);
+        throw new Error(error.message || "Nepodařilo se přidat úlovek");
+      }
+
+      console.log("Competition catch created:", data);
 
       toast({
         title: "✅ Úlovek přidán!",
