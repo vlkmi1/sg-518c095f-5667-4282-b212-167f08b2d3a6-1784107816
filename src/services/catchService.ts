@@ -104,6 +104,7 @@ export const catchService = {
     longitude?: number | null;
     fishing_area: string | null;
     bait_brand: string | null;
+    notes?: string | null;
     photo_url: string;
     caught_at: string;
     is_public?: boolean;
