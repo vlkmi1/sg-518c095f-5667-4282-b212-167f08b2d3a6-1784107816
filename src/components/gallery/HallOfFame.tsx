@@ -84,12 +84,12 @@ const SPECIES_DATA: Record<string, { image: string; color: string }> = {
 };
 
 const FISH_SPECIES = [
-  { value: "Kapr", label: "Kapr", image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=64&h=64&fit=crop" },
-  { value: "Amur", label: "Amur", image: "https://images.unsplash.com/photo-1524316027663-d1f8931165ea?w=64&h=64&fit=crop" },
-  { value: "Sumec", label: "Sumec", image: "https://images.unsplash.com/photo-1534431189445-5645e999c086?w=64&h=64&fit=crop" },
-  { value: "Štika", label: "Štika", image: "https://images.unsplash.com/photo-1601334691456-e910ce422115?w=64&h=64&fit=crop" },
-  { value: "Candát", label: "Candát", image: "https://images.unsplash.com/photo-1555952494-efd681c7e3f5?w=64&h=64&fit=crop" },
-  { value: "Pstruh", label: "Pstruh", image: "https://images.unsplash.com/photo-1512413914529-6725a39dc6c8?w=64&h=64&fit=crop" },
+  { value: "Kapr", label: "Kapr", emoji: "🐟" },
+  { value: "Amur", label: "Amur", emoji: "🐠" },
+  { value: "Sumec", label: "Sumec", emoji: "🦈" },
+  { value: "Štika", label: "Štika", emoji: "🐡" },
+  { value: "Candát", label: "Candát", emoji: "🐠" },
+  { value: "Pstruh", label: "Pstruh", emoji: "🐟" },
 ];
 
 const MEDAL_CONFIG = {
@@ -273,13 +273,7 @@ export function HallOfFame() {
             onClick={() => setSelectedSpecies(species.value)}
             className="gap-2 h-10 px-4 rounded-full transition-all"
           >
-            <div className="w-6 h-6 rounded-full overflow-hidden shrink-0 border border-muted">
-              <img 
-                src={species.image} 
-                alt={species.label}
-                className="w-full h-full object-cover"
-              />
-            </div>
+            <span className="text-xl">{species.emoji}</span>
             {species.label}
           </Button>
         ))}
