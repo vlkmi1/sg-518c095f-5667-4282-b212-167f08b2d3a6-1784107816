@@ -169,7 +169,8 @@ export function ProfileView() {
                   </DialogHeader>
                   <EditProfileForm
                     profile={profile}
-                    onSuccess={handleProfileUpdated}
+                    onSave={handleProfileUpdated}
+                    onCancel={() => setEditDialogOpen(false)}
                   />
                 </DialogContent>
               </Dialog>
