@@ -5,7 +5,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { Send, Loader2 } from "lucide-react";
 
 export function ContactForm() {
@@ -40,22 +39,27 @@ export function ContactForm() {
 
     setIsSubmitting(true);
     try {
-      const { error } = await supabase
-        .from("contact_messages")
-        .insert([{
+      const response = await fetch("/api/send-contact-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
           name: name.trim(),
           email: email.trim(),
           message: message.trim(),
-        }]);
+        }),
+      });
 
-      if (error) {
-        console.error("Contact form error:", error);
-        throw new Error("Nepodařilo se odeslat zprávu");
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Nepodařilo se odeslat zprávu");
       }
 
       toast({
         title: "✅ Zpráva odeslána!",
-        description: "Děkujeme za váš návrh. Brzy se vám ozveme.",
+        description: "Děkujeme za váš návrh. Brzy se vám ozveme na email.",
       });
 
       // Reset form

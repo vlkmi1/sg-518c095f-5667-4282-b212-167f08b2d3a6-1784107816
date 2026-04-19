@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -69,10 +69,36 @@ export function AddCompetitionCatch({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Filter fish species based on scoring type
-  const availableFish = scoringType === "points" && fishPoints
-    ? FISH_SPECIES.filter(fish => fishPoints[fish.value] !== undefined)
-    : FISH_SPECIES;
+  const fishPointsMemo = useMemo(() => {
+    if (!fishPoints) return {};
+    try {
+      return typeof fishPoints === "string"
+        ? JSON.parse(fishPoints)
+        : fishPoints;
+    } catch {
+      return {};
+    }
+  }, [fishPoints]);
+
+  // Get available fish species based on competition scoring type
+  const availableFish = useMemo(() => {
+    if (scoringType === "points") {
+      // For points-based competitions, use custom fish names from fish_points
+      return Object.keys(fishPointsMemo).map((fishName) => {
+        // Try to find matching image from FISH_SPECIES
+        const matchingFish = FISH_SPECIES.find(
+          (f) => f.value === fishName || f.label === fishName
+        );
+        return {
+          value: fishName,
+          label: fishName,
+          image: matchingFish?.image || "/Kapr.webp", // Fallback to Kapr image
+        };
+      });
+    }
+    // For measurements-based competitions, show all species
+    return FISH_SPECIES;
+  }, [scoringType, fishPointsMemo]);
 
   // Debug logging
   useEffect(() => {
@@ -297,26 +323,24 @@ export function AddCompetitionCatch({
 
           {/* Fish Species */}
           <div className="space-y-2">
-            <Label htmlFor="species">
-              Druh ryby <span className="text-destructive">*</span>
-            </Label>
-            <Select value={species} onValueChange={setSpecies} required>
-              <SelectTrigger id="species">
+            <Label htmlFor="species">Druh ryby *</Label>
+            <Select value={species} onValueChange={setSpecies}>
+              <SelectTrigger>
                 <SelectValue placeholder="Vyberte druh" />
               </SelectTrigger>
               <SelectContent>
                 {availableFish.map((fish) => (
                   <SelectItem key={fish.value} value={fish.value}>
                     <div className="flex items-center gap-2">
-                      <img 
-                        src={fish.image} 
+                      <img
+                        src={fish.image}
                         alt={fish.label}
                         className="h-5 w-5 object-cover rounded-full"
                       />
                       {fish.label}
                       {scoringType === "points" && fishPoints && (
-                        <span className="ml-auto text-xs text-muted-foreground">
-                          {fishPoints[fish.value]} bodů
+                        <span className="text-xs text-muted-foreground ml-2">
+                          ({fishPoints[fish.value]} {fishPoints[fish.value] === 1 ? "bod" : fishPoints[fish.value] < 5 ? "body" : "bodů"})
                         </span>
                       )}
                     </div>
@@ -324,6 +348,11 @@ export function AddCompetitionCatch({
                 ))}
               </SelectContent>
             </Select>
+            {scoringType === "points" && species && fishPoints[species] && (
+              <p className="text-sm text-muted-foreground">
+                💎 Body za tento úlovek: <span className="font-bold text-primary">{fishPoints[species]}</span>
+              </p>
+            )}
           </div>
 
           {/* Show length/weight fields only for measurements scoring */}
