@@ -22,26 +22,20 @@ export default function MyCatchesPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
-      loadUserCatches();
-    }
-  }, [user]);
+    loadUserCatches();
+  }, []);
 
   async function loadUserCatches() {
-    if (!user) return;
-
     setIsLoading(true);
     try {
-      const { data, error } = await catchService.getUserCatches(user.id);
-
-      if (error) {
-        toast({
-          title: "Chyba",
-          description: "Nepodařilo se načíst vaše úlovky",
-          variant: "destructive",
-        });
+      const user = await authService.getCurrentUser();
+      if (!user) {
+        router.push("/auth/login");
         return;
       }
+
+      // getUserCatches returns the data array directly, or throws an error
+      const data = await catchService.getUserCatches(user.id);
 
       // Filter out competition catches - they should not appear in personal catches
       const personalCatches = (data || []).filter(
@@ -49,11 +43,14 @@ export default function MyCatchesPage() {
       );
 
       console.log("Personal catches loaded:", personalCatches.length);
-      console.log("Filtered out competition catches");
-
       setCatches(personalCatches);
     } catch (error) {
       console.error("Error loading catches:", error);
+      toast({
+        title: "Chyba",
+        description: "Nepodařilo se načíst vaše úlovky",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -73,7 +70,7 @@ export default function MyCatchesPage() {
         description: "Úlovek byl úspěšně smazán",
       });
 
-      loadCatches();
+      loadUserCatches();
     } catch (error: any) {
       console.error("Delete catch error:", error);
       toast({
