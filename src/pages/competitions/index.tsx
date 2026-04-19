@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { Header } from "@/components/layout/Header";
 import { SEO } from "@/components/SEO";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -95,7 +96,7 @@ export default function CompetitionsPage() {
 
   if (isLoading) {
     return (
-      <>
+      <ProtectedRoute>
         <SEO title="Závody" />
         <div className="min-h-screen bg-background">
           <Header />
@@ -106,12 +107,12 @@ export default function CompetitionsPage() {
             </div>
           </main>
         </div>
-      </>
+      </ProtectedRoute>
     );
   }
 
   return (
-    <>
+    <ProtectedRoute>
       <SEO title="Závody" />
       <div className="min-h-screen bg-background">
         <Header />
@@ -316,6 +317,6 @@ export default function CompetitionsPage() {
           )}
         </main>
       </div>
-    </>
+    </ProtectedRoute>
   );
 }
