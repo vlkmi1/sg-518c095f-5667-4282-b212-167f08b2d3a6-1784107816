@@ -6,20 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { competitionService } from "@/services/competitionService";
 import { authService } from "@/services/authService";
 import { useToast } from "@/hooks/use-toast";
-import { Trophy, Plus, Users, Calendar, Loader2, Clock } from "lucide-react";
+import { Trophy, Plus, Users, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
 
@@ -29,10 +20,11 @@ export default function CompetitionsPage() {
 
   const [competitions, setCompetitions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [joinDialogOpen, setJoinDialogOpen] = useState(false);
-  const [joinCode, setJoinCode] = useState("");
-  const [isJoining, setIsJoining] = useState(false);
   const [user, setUser] = useState<any>(null);
+
+  const [activeTab, setActiveTab] = useState("active");
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   useEffect(() => {
     loadData();
@@ -45,7 +37,6 @@ export default function CompetitionsPage() {
         router.push("/auth/login");
         return;
       }
-
       setUser(currentUser);
 
       const comps = await competitionService.getUserCompetitions(currentUser.id);
@@ -62,63 +53,32 @@ export default function CompetitionsPage() {
     }
   }
 
-  async function handleJoinCompetition() {
-    if (!joinCode.trim()) {
-      toast({
-        title: "Chybí kód",
-        description: "Zadejte kód závodu",
-        variant: "destructive",
-      });
-      return;
-    }
+  // Filter logic
+  const now = new Date();
+  const activeComps = competitions.filter(
+    (c) => new Date(c.start_date) <= now && new Date(c.end_date) >= now
+  );
+  const upcomingComps = competitions.filter((c) => new Date(c.start_date) > now);
+  const pastComps = competitions.filter((c) => new Date(c.end_date) < now);
 
-    setIsJoining(true);
+  const currentList =
+    activeTab === "active"
+      ? activeComps
+      : activeTab === "upcoming"
+      ? upcomingComps
+      : pastComps;
 
-    try {
-      const { data: competition, error } = await competitionService.getCompetitionByCode(
-        joinCode.toUpperCase().trim()
-      );
+  const totalPages = Math.max(1, Math.ceil(currentList.length / ITEMS_PER_PAGE));
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
 
-      if (error || !competition) {
-        throw new Error("Závod s tímto kódem nebyl nalezen");
-      }
+  const activePage = activeComps.slice(startIndex, endIndex);
+  const upcomingPage = upcomingComps.slice(startIndex, endIndex);
+  const pastPage = pastComps.slice(startIndex, endIndex);
 
-      await competitionService.joinCompetition(competition.id, user.id);
-
-      toast({
-        title: "✅ Přidán do závodu!",
-        description: `Úspěšně jste se přidali do závodu "${competition.name}"`,
-      });
-
-      setJoinDialogOpen(false);
-      setJoinCode("");
-
-      router.push(`/competitions/${competition.id}`);
-    } catch (error: any) {
-      console.error("Join competition error:", error);
-      toast({
-        title: "Chyba",
-        description: error.message || "Nepodařilo se připojit k závodu",
-        variant: "destructive",
-      });
-    } finally {
-      setIsJoining(false);
-    }
-  }
-
-  function getCompetitionStatus(comp: any) {
-    const now = new Date();
-    const startDate = new Date(comp.start_date);
-    const endDate = new Date(comp.end_date);
-
-    if (now < startDate) {
-      return { label: "Nezačal", variant: "outline" as const, icon: Clock };
-    } else if (now > endDate) {
-      return { label: "Skončil", variant: "secondary" as const, icon: Clock };
-    } else {
-      return { label: "Probíhá", variant: "default" as const, icon: Clock };
-    }
-  }
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab]);
 
   if (isLoading) {
     return (
@@ -162,9 +122,9 @@ export default function CompetitionsPage() {
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="active">Aktivní ({activePage.length})</TabsTrigger>
-              <TabsTrigger value="upcoming">Nadcházející ({upcomingPage.length})</TabsTrigger>
-              <TabsTrigger value="past">Ukončené ({pastPage.length})</TabsTrigger>
+              <TabsTrigger value="active">Aktivní ({activeComps.length})</TabsTrigger>
+              <TabsTrigger value="upcoming">Nadcházející ({upcomingComps.length})</TabsTrigger>
+              <TabsTrigger value="past">Ukončené ({pastComps.length})</TabsTrigger>
             </TabsList>
 
             {/* Active Competitions */}
