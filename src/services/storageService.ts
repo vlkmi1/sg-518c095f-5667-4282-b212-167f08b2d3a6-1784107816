@@ -203,7 +203,7 @@ export const storageService = {
   async uploadAvatar(file: File, userId: string): Promise<{ url: string; path: string }> {
     try {
       // Compress and resize image
-      const compressedFile = await this.compressImage(file, 400, 400, 0.8);
+      const compressedFile = await storageService.compressImage(file, 400, 400, 0.8);
       
       // Generate unique filename
       const fileExt = file.name.split(".").pop();
