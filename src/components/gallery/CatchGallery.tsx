@@ -4,20 +4,22 @@ import type { CatchWithProfile, CatchFilters } from "@/services/catchService";
 import { CatchCard } from "./CatchCard";
 import { FilterBar } from "./FilterBar";
 import { Fish } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export function CatchGallery() {
   const [catches, setCatches] = useState<CatchWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<CatchFilters>({});
+  const { toast } = useToast();
 
   useEffect(() => {
     loadCatches();
-  }, [selectedCountry, selectedRegion, selectedDistrict]);
+  }, [filters]);
 
   async function loadCatches() {
     setLoading(true);
     try {
-      const { data, error } = await catchService.getAllCatches();
+      const { data, error } = await catchService.getCatches(filters);
       
       if (error) {
         toast({
@@ -34,7 +36,6 @@ export function CatchGallery() {
       );
 
       console.log("Public catches loaded:", publicCatches.length);
-      console.log("Filtered out competition catches");
 
       setCatches(publicCatches);
     } catch (error) {
