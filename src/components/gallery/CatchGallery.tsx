@@ -12,14 +12,37 @@ export function CatchGallery() {
 
   useEffect(() => {
     loadCatches();
-  }, [filters]);
+  }, [selectedCountry, selectedRegion, selectedDistrict]);
 
-  const loadCatches = async () => {
+  async function loadCatches() {
     setLoading(true);
-    const { data } = await catchService.getCatches(filters);
-    setCatches(data || []);
-    setLoading(false);
-  };
+    try {
+      const { data, error } = await catchService.getAllCatches();
+      
+      if (error) {
+        toast({
+          title: "Chyba načítání",
+          description: "Nepodařilo se načíst úlovky",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Filter out competition catches - they should not appear in public gallery
+      const publicCatches = (data || []).filter(
+        (c: any) => c.is_public === true && !c.competition_id
+      );
+
+      console.log("Public catches loaded:", publicCatches.length);
+      console.log("Filtered out competition catches");
+
+      setCatches(publicCatches);
+    } catch (error) {
+      console.error("Error loading catches:", error);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   if (loading) {
     return (

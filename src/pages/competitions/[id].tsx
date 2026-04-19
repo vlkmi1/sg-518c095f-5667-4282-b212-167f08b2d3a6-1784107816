@@ -69,22 +69,29 @@ export default function CompetitionDetailPage() {
         throw new Error("Závod nenalezen");
       }
 
+      console.log("Competition loaded:", comp);
       setCompetition(comp);
 
       // Load participants
       const participantsData = await competitionService.getCompetitionParticipants(id as string);
+      console.log("Participants loaded:", participantsData);
       setParticipants(participantsData || []);
 
       // Load catches
       const { data: catchData } = await competitionService.getCompetitionCatches(id as string);
+      console.log("Competition catches loaded:", catchData);
+      console.log("Number of catches:", catchData?.length || 0);
       setCatches(catchData || []);
 
       // Check if current user is participant
       const user = await authService.getCurrentUser();
       if (user && participantsData) {
-        setIsUserParticipant(participantsData.some((p: any) => p.user_id === user.id));
+        const isParticipant = participantsData.some((p: any) => p.user_id === user.id);
+        console.log("Is user participant:", isParticipant);
+        setIsUserParticipant(isParticipant);
       }
     } catch (error: any) {
+      console.error("Load competition data error:", error);
       toast({
         title: "Chyba",
         description: error.message,

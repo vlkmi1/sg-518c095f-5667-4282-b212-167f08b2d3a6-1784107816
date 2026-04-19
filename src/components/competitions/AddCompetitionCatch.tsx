@@ -88,6 +88,14 @@ export function AddCompetitionCatch({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
+    console.log("=== ADD COMPETITION CATCH DEBUG ===");
+    console.log("Competition ID:", competitionId);
+    console.log("Scoring Type:", scoringType);
+    console.log("Measurement Type:", measurementType);
+    console.log("Species:", species);
+    console.log("Length:", lengthCm);
+    console.log("Weight:", weightKg);
+
     if (!photoFile || !species) {
       toast({
         title: "Chybí údaje",
@@ -101,6 +109,9 @@ export function AddCompetitionCatch({
     if (scoringType === "measurements") {
       const needsWeight = measurementType === "weight" || measurementType === "both";
       const needsLength = measurementType === "length" || measurementType === "both";
+
+      console.log("Needs weight:", needsWeight);
+      console.log("Needs length:", needsLength);
 
       if (needsWeight && !weightKg) {
         toast({
@@ -129,12 +140,16 @@ export function AddCompetitionCatch({
         throw new Error("Uživatel není přihlášen");
       }
 
+      console.log("User ID:", user.id);
+
       // Upload photo
       const photoData = await storageService.uploadCatchPhoto(photoFile, user.id);
       const photoUrl = typeof photoData === 'string' ? photoData : photoData.url;
 
-      // Create catch linked to competition
-      const { data, error } = await catchService.createCatch({
+      console.log("Photo uploaded:", photoUrl);
+
+      // Create catch data
+      const catchData = {
         user_id: user.id,
         species,
         photo_url: photoUrl,
@@ -149,16 +164,21 @@ export function AddCompetitionCatch({
         bait_brand: null,
         notes: null,
         caught_at: new Date().toISOString(),
-        is_public: false, // Competition catches are private by default
-        competition_id: competitionId, // Link to competition
-      });
+        is_public: false, // CRITICAL: Competition catches must be private
+        competition_id: competitionId, // CRITICAL: Link to competition
+      };
+
+      console.log("Catch data to save:", catchData);
+
+      // Create catch linked to competition
+      const { data, error } = await catchService.createCatch(catchData);
 
       if (error) {
         console.error("Create catch error:", error);
         throw new Error(error.message || "Nepodařilo se přidat úlovek");
       }
 
-      console.log("Competition catch created:", data);
+      console.log("Competition catch created successfully:", data);
 
       toast({
         title: "✅ Úlovek přidán!",
@@ -247,7 +267,7 @@ export function AddCompetitionCatch({
             )}
           </div>
 
-          {/* Species */}
+          {/* Fish Species */}
           <div className="space-y-2">
             <Label htmlFor="species">
               Druh ryby <span className="text-destructive">*</span>
@@ -273,10 +293,11 @@ export function AddCompetitionCatch({
             </Select>
           </div>
 
-          {/* Measurements - Only if required */}
-          {(needsLength || needsWeight) && (
+          {/* Show length/weight fields only for measurements scoring */}
+          {scoringType === "measurements" && (
             <div className="grid grid-cols-2 gap-4">
-              {needsLength && (
+              {/* Length - required if measurementType is 'length' or 'both' */}
+              {(measurementType === "length" || measurementType === "both") && (
                 <div className="space-y-2">
                   <Label htmlFor="length">
                     Délka (cm) <span className="text-destructive">*</span>
@@ -288,12 +309,14 @@ export function AddCompetitionCatch({
                     min="0"
                     value={lengthCm}
                     onChange={(e) => setLengthCm(e.target.value)}
-                    placeholder="75.5"
+                    placeholder="např. 75.5"
                     required
                   />
                 </div>
               )}
-              {needsWeight && (
+
+              {/* Weight - required if measurementType is 'weight' or 'both' */}
+              {(measurementType === "weight" || measurementType === "both") && (
                 <div className="space-y-2">
                   <Label htmlFor="weight">
                     Váha (kg) <span className="text-destructive">*</span>
@@ -305,12 +328,28 @@ export function AddCompetitionCatch({
                     min="0"
                     value={weightKg}
                     onChange={(e) => setWeightKg(e.target.value)}
-                    placeholder="8.5"
+                    placeholder="např. 8.5"
                     required
                   />
                 </div>
               )}
             </div>
+          )}
+
+          {/* Info about what will be scored */}
+          {scoringType === "points" && (
+            <p className="text-sm text-muted-foreground bg-primary/5 p-3 rounded-lg">
+              ℹ️ Tento závod hodnotí podle druhu ryby. Stačí vybrat druh.
+            </p>
+          )}
+          {scoringType === "measurements" && (
+            <p className="text-sm text-muted-foreground bg-primary/5 p-3 rounded-lg">
+              ℹ️ Tento závod hodnotí podle {
+                measurementType === "weight" ? "váhy" :
+                measurementType === "length" ? "délky" :
+                "délky a váhy"
+              }. Zadejte přesné rozměry úlovku.
+            </p>
           )}
 
           {/* Submit */}
