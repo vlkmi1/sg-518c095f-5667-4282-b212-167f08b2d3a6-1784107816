@@ -17,7 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { authService } from "@/services/authService";
 import { catchService } from "@/services/catchService";
 import { storageService } from "@/services/storageService";
-import { Loader2, MapPin, Fish, Sparkles } from "lucide-react";
+import { Loader2, MapPin, Fish, Sparkles, Upload, X, Zap, FileText } from "lucide-react";
 import { format } from "date-fns";
 
 const FISH_SPECIES = [
