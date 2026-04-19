@@ -338,9 +338,9 @@ export function AddCompetitionCatch({
                         className="h-5 w-5 object-cover rounded-full"
                       />
                       {fish.label}
-                      {scoringType === "points" && fishPoints && (
+                      {scoringType === "points" && fishPointsMemo[fish.value] && (
                         <span className="text-xs text-muted-foreground ml-2">
-                          ({fishPoints[fish.value]} {fishPoints[fish.value] === 1 ? "bod" : fishPoints[fish.value] < 5 ? "body" : "bodů"})
+                          ({fishPointsMemo[fish.value]} {fishPointsMemo[fish.value] === 1 ? "bod" : fishPointsMemo[fish.value] < 5 ? "body" : "bodů"})
                         </span>
                       )}
                     </div>
@@ -348,9 +348,9 @@ export function AddCompetitionCatch({
                 ))}
               </SelectContent>
             </Select>
-            {scoringType === "points" && species && fishPoints[species] && (
+            {scoringType === "points" && species && fishPointsMemo[species] && (
               <p className="text-sm text-muted-foreground">
-                💎 Body za tento úlovek: <span className="font-bold text-primary">{fishPoints[species]}</span>
+                💎 Body za tento úlovek: <span className="font-bold text-primary">{fishPointsMemo[species]}</span>
               </p>
             )}
           </div>
