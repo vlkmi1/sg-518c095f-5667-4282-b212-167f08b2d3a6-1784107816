@@ -214,4 +214,56 @@ export const catchService = {
 
     return Array.isArray(data) ? data : [];
   },
+
+  // Get top catches by species and time period for Hall of Fame
+  async getTopCatchesBySpeciesAndPeriod(
+    species: string, 
+    period: "week" | "month" | "year" | "all", 
+    limit: number = 3
+  ): Promise<any[]> {
+    const now = new Date();
+    let dateFilter: string | null = null;
+
+    if (period === "week") {
+      const weekAgo = new Date(now);
+      weekAgo.setDate(now.getDate() - 7);
+      dateFilter = weekAgo.toISOString();
+    } else if (period === "month") {
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      dateFilter = monthStart.toISOString();
+    } else if (period === "year") {
+      const yearStart = new Date(now.getFullYear(), 0, 1);
+      dateFilter = yearStart.toISOString();
+    }
+
+    let query = supabase
+      .from("catches")
+      .select(`
+        *,
+        profiles (
+          nickname
+        )
+      `)
+      .eq("species", species)
+      .eq("is_public", true)
+      .not("length_cm", "is", null)
+      .not("weight_kg", "is", null);
+
+    if (dateFilter) {
+      query = query.gte("caught_at", dateFilter);
+    }
+
+    const { data, error } = await query
+      .order("length_cm", { ascending: false })
+      .limit(limit);
+
+    console.log("getTopCatchesBySpeciesAndPeriod:", { species, period, dateFilter, data, error });
+    
+    if (error) {
+      console.error("getTopCatchesBySpeciesAndPeriod error:", error);
+      return [];
+    }
+
+    return Array.isArray(data) ? data : [];
+  },
 };
