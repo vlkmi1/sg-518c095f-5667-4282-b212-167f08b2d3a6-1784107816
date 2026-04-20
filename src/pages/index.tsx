@@ -74,20 +74,22 @@ export default function Home() {
             
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Link href="/auth/register">
-                <Button size="lg" className="gap-2 shadow-lg w-full sm:w-auto">
-                  <Camera className="h-5 w-5" />
-                  Přidat úlovek
-                  <ArrowRight className="h-5 w-5" />
-                </Button>
-              </Link>
               {mounted && (
-                <Link href={isAuthenticated ? "/competitions" : "/auth/register"}>
-                  <Button size="lg" variant="outline" className="gap-2 bg-background/80 backdrop-blur w-full sm:w-auto">
-                    <Trophy className="h-5 w-5" />
-                    {isAuthenticated ? "Zobrazit závody" : "Připojit se k závodům"}
-                  </Button>
-                </Link>
+                <>
+                  <Link href={isAuthenticated ? "/my-catches" : "/auth/register"}>
+                    <Button size="lg" className="gap-2 shadow-lg w-full sm:w-auto">
+                      <Camera className="h-5 w-5" />
+                      {isAuthenticated ? "Moje úlovky" : "Přidat úlovek"}
+                      <ArrowRight className="h-5 w-5" />
+                    </Button>
+                  </Link>
+                  <Link href={isAuthenticated ? "/competitions" : "/auth/register"}>
+                    <Button size="lg" variant="outline" className="gap-2 bg-background/80 backdrop-blur w-full sm:w-auto">
+                      <Trophy className="h-5 w-5" />
+                      {isAuthenticated ? "Zobrazit závody" : "Připojit se k závodům"}
+                    </Button>
+                  </Link>
+                </>
               )}
             </div>
 
