@@ -10,8 +10,11 @@ interface BeforeInstallPromptEvent extends Event {
 export function InstallButton() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstallable, setIsInstallable] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
@@ -42,7 +45,7 @@ export function InstallButton() {
     }
   }
 
-  if (!isInstallable) return null;
+  if (!mounted || !isInstallable) return null;
 
   return (
     <Button
