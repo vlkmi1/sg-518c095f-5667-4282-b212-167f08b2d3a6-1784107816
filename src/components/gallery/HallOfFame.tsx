@@ -129,17 +129,22 @@ const MEDAL_CONFIG = {
 
 export function HallOfFame() {
   const [selectedSpecies, setSelectedSpecies] = useState<string | null>("Kapr");
+  const [selectedPeriod, setSelectedPeriod] = useState<"week" | "month" | "year" | "all">("all");
   const [topCatches, setTopCatches] = useState<TopCatch[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     loadTopCatches();
-  }, [selectedSpecies]);
+  }, [selectedSpecies, selectedPeriod]);
 
   async function loadTopCatches() {
     setIsLoading(true);
     try {
-      const catches = await catchService.getTopCatchesBySpecies(selectedSpecies || "Kapr", 3);
+      const catches = await catchService.getTopCatchesBySpeciesAndPeriod(
+        selectedSpecies || "Kapr", 
+        selectedPeriod,
+        3
+      );
       setTopCatches(catches as TopCatch[]);
     } catch (error) {
       console.error("Error loading top catches:", error);
@@ -150,11 +155,17 @@ export function HallOfFame() {
 
   function renderPodium(catches: TopCatch[]) {
     if (catches.length === 0) {
+      const periodText = 
+        selectedPeriod === "week" ? "tento týden" :
+        selectedPeriod === "month" ? "tento měsíc" :
+        selectedPeriod === "year" ? "tento rok" :
+        "v historii";
+      
       return (
         <div className="text-center py-16">
           <Trophy className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
           <p className="text-muted-foreground">
-            Zatím žádné úlovky druhu {selectedSpecies || "Všechny druhy"}
+            Zatím žádné úlovky druhu {selectedSpecies || "Všechny druhy"} {periodText}
           </p>
         </div>
       );
@@ -272,6 +283,42 @@ export function HallOfFame() {
         <p className="text-muted-foreground max-w-2xl mx-auto">
           Nejlepší úlovky podle druhu ryby
         </p>
+      </div>
+
+      {/* Time Period Filter */}
+      <div className="flex items-center justify-center gap-2 flex-wrap">
+        <Button
+          variant={selectedPeriod === "week" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setSelectedPeriod("week")}
+          className="gap-2 rounded-full transition-all"
+        >
+          📅 Hrdinové týdne
+        </Button>
+        <Button
+          variant={selectedPeriod === "month" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setSelectedPeriod("month")}
+          className="gap-2 rounded-full transition-all"
+        >
+          📆 Hrdinové měsíce
+        </Button>
+        <Button
+          variant={selectedPeriod === "year" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setSelectedPeriod("year")}
+          className="gap-2 rounded-full transition-all"
+        >
+          🗓️ Hrdinové roku
+        </Button>
+        <Button
+          variant={selectedPeriod === "all" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setSelectedPeriod("all")}
+          className="gap-2 rounded-full transition-all"
+        >
+          🏆 Historie
+        </Button>
       </div>
 
       {/* Species Filter */}
