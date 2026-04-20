@@ -131,6 +131,15 @@ export default function CompetitionsPage() {
                 </Button>
               </div>
             </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-muted-foreground">
+                Vyrazte na ryby s přáteli a udělejte z výpravy soutěž.
+                Snadno uvidíte, kdo co a kdy chytil, porovnáte úlovky a získáte přehled o úspěšnosti jednotlivých míst i období.
+              </p>
+              <p className="text-muted-foreground">
+                Vytvořte si vlastní přátelský rybářský závod a mějte své úlovky i statistiky vždy přehledně na jednom místě.
+              </p>
+            </CardContent>
           </Card>
 
           {/* Tabs */}
