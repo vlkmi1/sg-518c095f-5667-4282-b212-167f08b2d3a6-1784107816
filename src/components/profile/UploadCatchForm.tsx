@@ -21,6 +21,34 @@ import { storageService } from "@/services/storageService";
 import { Loader2, MapPin, Fish, Sparkles, Upload, X, Zap, FileText } from "lucide-react";
 import { format } from "date-fns";
 
+// Reverse geocoding using OpenStreetMap Nominatim API
+async function reverseGeocode(latitude: number, longitude: number) {
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`,
+      {
+        headers: {
+          "User-Agent": "UkazRybu/1.0",
+        },
+      }
+    );
+
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    const address = data.address;
+
+    return {
+      country: address.country || "",
+      region: address.state || address.region || "",
+      district: address.county || address.municipality || "",
+    };
+  } catch (error) {
+    console.error("Reverse geocoding error:", error);
+    return null;
+  }
+}
+
 const FISH_SPECIES = [
   { value: "Kapr", label: "Kapr", image: "/Kapr.webp" },
   { value: "Amur", label: "Amur", image: "/amur.webp" },
@@ -124,14 +152,17 @@ export function UploadCatchForm() {
 
     setPhotoFile(file);
 
-    // Try to read EXIF metadata for date/time
+    // Try to read EXIF metadata for date/time and GPS
     try {
-      const exifData = await exifr.parse(file);
+      const exifData = await exifr.parse(file, {
+        gps: true,
+        pick: ["DateTimeOriginal", "latitude", "longitude"],
+      });
       
+      // Extract date/time
       if (exifData?.DateTimeOriginal) {
         const photoDate = new Date(exifData.DateTimeOriginal);
         
-        // Set date and time from EXIF
         setCaughtDate(format(photoDate, "yyyy-MM-dd"));
         setCaughtTime(format(photoDate, "HH:mm"));
         
@@ -140,9 +171,28 @@ export function UploadCatchForm() {
           description: `${format(photoDate, "d.M.yyyy HH:mm")}`,
         });
       }
+
+      // Extract GPS and reverse geocode
+      if (exifData?.latitude && exifData?.longitude) {
+        const location = await reverseGeocode(exifData.latitude, exifData.longitude);
+        
+        if (location) {
+          setFormData((prev) => ({
+            ...prev,
+            country: location.country,
+            region: location.region,
+            district: location.district,
+          }));
+
+          toast({
+            title: "📍 Poloha načtena z fotky",
+            description: `${location.district}, ${location.region}, ${location.country}`,
+          });
+        }
+      }
     } catch (error) {
       console.log("EXIF data not found or error reading:", error);
-      // Keep default current date/time if EXIF reading fails
+      // Keep defaults if EXIF reading fails
     }
 
     // Create preview
