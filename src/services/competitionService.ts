@@ -396,5 +396,47 @@ export const competitionService = {
       code += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     return code;
+  },
+
+  // Get number of competition wins for user
+  async getUserWinsCount(userId: string): Promise<number> {
+    try {
+      // Get all finished competitions where user participated
+      const { data: participations } = await supabase
+        .from("competition_participants")
+        .select("competition_id")
+        .eq("user_id", userId);
+
+      if (!participations || participations.length === 0) {
+        return 0;
+      }
+
+      const competitionIds = participations.map(p => p.competition_id);
+
+      // Get competitions that have ended
+      const { data: competitions } = await supabase
+        .from("competitions")
+        .select("id")
+        .in("id", competitionIds)
+        .lt("end_date", new Date().toISOString());
+
+      if (!competitions || competitions.length === 0) {
+        return 0;
+      }
+
+      // Check each competition to see if user was the winner
+      let wins = 0;
+      for (const comp of competitions) {
+        const leaderboard = await this.getLeaderboard(comp.id);
+        if (leaderboard.length > 0 && leaderboard[0].user_id === userId) {
+          wins++;
+        }
+      }
+
+      return wins;
+    } catch (error) {
+      console.error("getUserWinsCount error:", error);
+      return 0;
+    }
   }
 };

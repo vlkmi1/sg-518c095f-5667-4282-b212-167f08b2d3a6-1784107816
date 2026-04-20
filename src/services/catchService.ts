@@ -140,6 +140,26 @@ export const catchService = {
     return Array.isArray(data) ? data : [];
   },
 
+  // Get user's biggest catch
+  async getUserBiggestCatch(userId: string): Promise<Tables<"catches"> | null> {
+    const { data, error } = await supabase
+      .from("catches")
+      .select("*")
+      .eq("user_id", userId)
+      .not("length_cm", "is", null)
+      .order("length_cm", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    console.log("getUserBiggestCatch:", { data, error });
+    if (error) {
+      console.error("getUserBiggestCatch error:", error);
+      return null;
+    }
+
+    return data;
+  },
+
   // Get unique filter values for dropdown options
   async getFilterOptions(): Promise<{
     countries: string[];
