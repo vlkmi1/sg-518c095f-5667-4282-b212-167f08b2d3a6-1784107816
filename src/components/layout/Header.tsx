@@ -61,7 +61,7 @@ export function Header() {
           {/* Logo + Install Button */}
           <div className="flex items-center gap-3">
             <Logo />
-            {user && <InstallButton />}
+            <InstallButton />
           </div>
 
           {/* Desktop Navigation */}
