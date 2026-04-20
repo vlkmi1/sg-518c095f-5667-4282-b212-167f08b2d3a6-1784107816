@@ -34,6 +34,7 @@ export function ProfileView() {
   const [catchCount, setCatchCount] = useState(0);
   const [competitions, setCompetitions] = useState<any[]>([]);
   const [biggestCatch, setBiggestCatch] = useState<any>(null);
+  const [heaviestCatch, setHeaviestCatch] = useState<any>(null);
   const [winsCount, setWinsCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
@@ -67,6 +68,9 @@ export function ProfileView() {
       // Load statistics
       const biggestCatchData = await catchService.getUserBiggestCatch(currentUser.id);
       setBiggestCatch(biggestCatchData);
+
+      const heaviestCatchData = await catchService.getUserHeaviestCatch(currentUser.id);
+      setHeaviestCatch(heaviestCatchData);
 
       const wins = await competitionService.getUserWinsCount(currentUser.id);
       setWinsCount(wins);
@@ -205,24 +209,6 @@ export function ProfileView() {
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-4">
-            <div 
-              className="text-center p-4 bg-muted/30 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
-              onClick={() => router.push("/my-catches")}
-            >
-              <p className="text-3xl font-bold text-primary">{catchCount}</p>
-              <p className="text-sm text-muted-foreground">Úlovků celkem</p>
-            </div>
-            <div 
-              className="text-center p-4 bg-muted/30 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
-              onClick={() => router.push("/competitions")}
-            >
-              <p className="text-3xl font-bold text-primary">{competitions.length}</p>
-              <p className="text-sm text-muted-foreground">Závodů</p>
-            </div>
-          </div>
-        </CardContent>
       </Card>
 
       {/* Statistics Section */}
@@ -231,16 +217,22 @@ export function ProfileView() {
           <CardTitle className="font-serif text-xl">📊 Statistiky</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {/* Total Catches */}
-            <div className="text-center p-4 bg-primary/5 rounded-lg border border-primary/10">
+            <div 
+              className="text-center p-4 bg-primary/5 rounded-lg border border-primary/10 cursor-pointer hover:bg-primary/10 transition-colors"
+              onClick={() => router.push("/my-catches")}
+            >
               <Fish className="h-8 w-8 mx-auto mb-2 text-primary" />
               <p className="text-3xl font-bold text-primary mb-1">{catchCount}</p>
               <p className="text-sm text-muted-foreground">Celkem úlovků</p>
             </div>
 
             {/* Biggest Catch */}
-            <div className="text-center p-4 bg-accent/5 rounded-lg border border-accent/10">
+            <div 
+              className="text-center p-4 bg-accent/5 rounded-lg border border-accent/10 cursor-pointer hover:bg-accent/10 transition-colors"
+              onClick={() => router.push("/my-catches")}
+            >
               <Trophy className="h-8 w-8 mx-auto mb-2 text-accent" />
               {biggestCatch ? (
                 <>
@@ -262,8 +254,37 @@ export function ProfileView() {
               )}
             </div>
 
+            {/* Heaviest Catch */}
+            <div 
+              className="text-center p-4 bg-accent/5 rounded-lg border border-accent/10 cursor-pointer hover:bg-accent/10 transition-colors"
+              onClick={() => router.push("/my-catches")}
+            >
+              <Trophy className="h-8 w-8 mx-auto mb-2 text-accent" />
+              {heaviestCatch ? (
+                <>
+                  <p className="text-3xl font-bold text-accent mb-1">
+                    {heaviestCatch.weight_kg} kg
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Nejtěžší ryba
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {heaviestCatch.species}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-3xl font-bold text-accent/50 mb-1">-</p>
+                  <p className="text-sm text-muted-foreground">Nejtěžší ryba</p>
+                </>
+              )}
+            </div>
+
             {/* Competition Wins */}
-            <div className="text-center p-4 bg-secondary/5 rounded-lg border border-secondary/10">
+            <div 
+              className="text-center p-4 bg-secondary/5 rounded-lg border border-secondary/10 cursor-pointer hover:bg-secondary/10 transition-colors"
+              onClick={() => router.push("/competitions")}
+            >
               <Trophy className="h-8 w-8 mx-auto mb-2 text-secondary" />
               <p className="text-3xl font-bold text-secondary mb-1">{winsCount}</p>
               <p className="text-sm text-muted-foreground">Výhry v závodech</p>
@@ -341,58 +362,6 @@ export function ProfileView() {
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          {competitions.length === 0 ? (
-            <div className="text-center py-8">
-              <Trophy className="h-16 w-16 mx-auto mb-4 text-muted-foreground/30" />
-              <p className="text-muted-foreground mb-4">Zatím nejste v žádném závodu</p>
-              <div className="flex gap-2 justify-center">
-                <Button
-                  variant="outline"
-                  onClick={() => setJoinDialogOpen(true)}
-                  className="gap-2"
-                >
-                  <Users className="h-4 w-4" />
-                  Přidat se k závodu
-                </Button>
-                <Button onClick={() => router.push("/competitions/create")}>
-                  Vytvořit závod
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {competitions.map((comp) => (
-                <Card
-                  key={comp.id}
-                  className="cursor-pointer hover:shadow-lg transition-shadow"
-                  onClick={() => router.push(`/competitions/${comp.id}`)}
-                >
-                  <CardHeader>
-                    <CardTitle className="font-serif text-lg">{comp.name}</CardTitle>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span>Kód:</span>
-                      <Badge variant="outline" className="font-mono">
-                        {comp.join_code || comp.invite_code || "N/A"}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Badge variant="secondary">
-                        {comp.scoring_type === "points" ? "🏆 Bodování" : "📏 Míry"}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {format(new Date(comp.start_date), "d. MMM", { locale: cs })} -{" "}
-                      {format(new Date(comp.end_date), "d. MMM yyyy", { locale: cs })}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </CardContent>
       </Card>
     </div>
   );
