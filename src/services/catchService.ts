@@ -140,7 +140,7 @@ export const catchService = {
     return Array.isArray(data) ? data : [];
   },
 
-  // Get user's biggest catch
+  // Get user's biggest catch (by length)
   async getUserBiggestCatch(userId: string): Promise<Tables<"catches"> | null> {
     const { data, error } = await supabase
       .from("catches")
@@ -160,7 +160,7 @@ export const catchService = {
     return data;
   },
 
-  // Get user's heaviest catch
+  // Get user's heaviest catch (by weight)
   async getUserHeaviestCatch(userId: string): Promise<Tables<"catches"> | null> {
     const { data, error } = await supabase
       .from("catches")
