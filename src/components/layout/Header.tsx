@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -10,12 +11,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { InstallButton } from "@/components/layout/InstallButton";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { Logo } from "@/components/layout/Logo";
 import { authService } from "@/services/authService";
 import { adminService } from "@/services/adminService";
 import { Fish, Trophy, User, LogOut, Shield } from "lucide-react";
+
+// Dynamic import to avoid hydration issues with PWA API
+const InstallButton = dynamic(
+  () => import("@/components/layout/InstallButton").then((mod) => ({ default: mod.InstallButton })),
+  { ssr: false }
+);
 
 export function Header() {
   const router = useRouter();
