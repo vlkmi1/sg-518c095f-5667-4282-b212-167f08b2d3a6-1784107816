@@ -13,7 +13,6 @@ export function MobileNav() {
     return router.pathname.startsWith(path);
   };
 
-  // Highlight "Přidat úlovek" if on competition detail page (user can add catch to competition)
   const isOnCompetitionDetail = router.pathname === "/competitions/[id]";
   const shouldHighlightAddCatch = isActive("/profile/add-catch") || isOnCompetitionDetail;
 
@@ -33,9 +32,9 @@ export function MobileNav() {
     {
       href: "/profile/add-catch",
       icon: PlusCircle,
-      label: "Přidat úlovek",
+      label: "Přidat",
       isActive: shouldHighlightAddCatch,
-      highlight: true, // Special highlight for add catch
+      highlight: true,
     },
     {
       href: "/profile",
@@ -46,33 +45,25 @@ export function MobileNav() {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-background border-t md:hidden z-50 shadow-lg">
-      <nav className="flex items-center justify-around px-2 py-3 safe-area-bottom">
+    <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-t md:hidden z-50 shadow-[0_-4px_12px_rgba(0,0,0,0.1)] pb-safe">
+      <nav className="flex items-center justify-around px-4 py-2">
         {navItems.map((item) => {
           const Icon = item.icon;
           return (
             <Link key={item.href} href={item.href} className="flex-1">
               <div
                 className={cn(
-                  "flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-all",
-                  item.isActive && "bg-primary/10",
-                  item.highlight && item.isActive && "bg-primary/15"
+                  "flex items-center justify-center py-3 rounded-xl transition-all",
+                  item.isActive && "bg-primary/15",
+                  item.highlight && item.isActive && "bg-primary/20"
                 )}
               >
                 <Icon
                   className={cn(
-                    "h-6 w-6 transition-colors",
-                    item.isActive ? "text-primary" : "text-muted-foreground"
+                    "transition-colors",
+                    item.isActive ? "h-7 w-7 text-primary" : "h-6 w-6 text-muted-foreground"
                   )}
                 />
-                <span
-                  className={cn(
-                    "text-xs font-medium transition-colors",
-                    item.isActive ? "text-primary" : "text-muted-foreground"
-                  )}
-                >
-                  {item.label}
-                </span>
               </div>
             </Link>
           );
