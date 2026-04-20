@@ -11,10 +11,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { competitionService } from "@/services/competitionService";
 import { authService } from "@/services/authService";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Trophy, Plus, Users, Calendar } from "lucide-react";
 import { format, isSameDay } from "date-fns";
 import { cs } from "date-fns/locale";
+import { createClient } from "@supabase/supabase-js";
+
+const supabaseClient = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
+);
 
 export default function CompetitionsPage() {
   const router = useRouter();
@@ -59,6 +66,19 @@ export default function CompetitionsPage() {
             const leaderboard = await competitionService.getLeaderboard(comp.id);
             if (leaderboard && leaderboard.length > 0) {
               winner = leaderboard[0];
+              
+              // Load winner's profile data for avatar
+              if (winner.user_id) {
+                const { data: profileData } = await supabase
+                  .from("profiles")
+                  .select("avatar_url")
+                  .eq("id", winner.user_id)
+                  .maybeSingle();
+                
+                if (profileData) {
+                  winner.avatar_url = profileData.avatar_url;
+                }
+              }
             }
           }
           
