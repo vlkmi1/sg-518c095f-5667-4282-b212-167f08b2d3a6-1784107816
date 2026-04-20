@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -15,22 +14,36 @@ import { MobileNav } from "@/components/layout/MobileNav";
 import { Logo } from "@/components/layout/Logo";
 import { authService } from "@/services/authService";
 import { adminService } from "@/services/adminService";
-import { Fish, Trophy, User, LogOut, Shield } from "lucide-react";
-
-// Dynamic import to avoid hydration issues with PWA API
-const InstallButton = dynamic(
-  () => import("@/components/layout/InstallButton").then((mod) => ({ default: mod.InstallButton })),
-  { ssr: false }
-);
+import { Fish, Trophy, User, LogOut, Shield, Download } from "lucide-react";
 
 export function Header() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [canInstall, setCanInstall] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   useEffect(() => {
     checkAuth();
+    
+    // PWA Install prompt
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setCanInstall(true);
+    };
+
+    window.addEventListener("beforeinstallprompt", handler);
+
+    // Check if already installed
+    if (window.matchMedia("(display-mode: standalone)").matches) {
+      setCanInstall(false);
+    }
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+    };
   }, []);
 
   async function checkAuth() {
@@ -56,6 +69,18 @@ export function Header() {
     router.push("/");
   }
 
+  async function handleInstall() {
+    if (!deferredPrompt) return;
+
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+
+    if (outcome === "accepted") {
+      setDeferredPrompt(null);
+      setCanInstall(false);
+    }
+  }
+
   const isActive = (path: string) => {
     return router.pathname === path || router.pathname.startsWith(path + "/");
   };
@@ -67,7 +92,6 @@ export function Header() {
           {/* Logo + Install Button */}
           <div className="flex items-center gap-3">
             <Logo />
-            <InstallButton />
           </div>
 
           {/* Desktop Navigation */}
@@ -151,16 +175,19 @@ export function Header() {
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => router.push("/profile")}>
                         <User className="mr-2 h-4 w-4" />
-                        Profil
+                        <span>Profil</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => router.push("/profile/add-catch")}>
-                        <Fish className="mr-2 h-4 w-4" />
-                        Přidat úlovek
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => router.push("/competitions/create")}>
-                        <Trophy className="mr-2 h-4 w-4" />
-                        Vytvořit závod
-                      </DropdownMenuItem>
+                      
+                      {canInstall && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={handleInstall}>
+                            <Download className="mr-2 h-4 w-4" />
+                            <span>Nainstalovat aplikaci</span>
+                          </DropdownMenuItem>
+                        </>
+                      )}
+
                       {isAdmin && (
                         <>
                           <DropdownMenuSeparator />
