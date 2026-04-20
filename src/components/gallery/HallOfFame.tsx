@@ -186,7 +186,7 @@ export function HallOfFame() {
     }
 
     return (
-      <div className="flex items-end justify-center gap-4 sm:gap-8 max-w-4xl mx-auto py-8">
+      <div className="flex items-end justify-center gap-4 sm:gap-8 max-w-4xl mx-auto py-8" suppressHydrationWarning>
         {podiumData.map(({ catch: catchData, position, order }) => {
           const config = MEDAL_CONFIG[position];
 
@@ -273,7 +273,7 @@ export function HallOfFame() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" suppressHydrationWarning>
       {/* Header */}
       <div className="text-center space-y-2">
         <div className="flex items-center justify-center gap-2">
@@ -342,7 +342,7 @@ export function HallOfFame() {
       </div>
 
       {/* Podium */}
-      <div className="bg-muted/30 rounded-lg p-4 sm:p-8">
+      <div className="bg-muted/30 rounded-lg p-4 sm:p-8" suppressHydrationWarning>
         {isLoading ? (
           <div className="text-center py-16">
             <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent motion-reduce:animate-[spin_1.5s_linear_infinite]" />
