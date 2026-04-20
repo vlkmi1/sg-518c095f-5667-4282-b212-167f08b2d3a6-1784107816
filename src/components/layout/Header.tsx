@@ -22,8 +22,10 @@ export function Header() {
   const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     checkAuth();
   }, []);
 
@@ -65,7 +67,7 @@ export function Header() {
           </div>
 
           {/* Desktop Navigation */}
-          {user ? (
+          {mounted && user ? (
             <>
               <nav className="hidden md:flex items-center gap-6">
                 <Link
@@ -174,7 +176,7 @@ export function Header() {
             </>
           ) : (
             <div className="flex items-center gap-2">
-              {!isLoading && (
+              {mounted && !isLoading && (
                 <>
                   <Button variant="ghost" onClick={() => router.push("/auth/login")} size="sm">
                     Přihlásit se
@@ -190,7 +192,7 @@ export function Header() {
       </header>
 
       {/* Mobile Bottom Navigation */}
-      {user && <MobileNav />}
+      {mounted && user && <MobileNav />}
     </>
   );
 }
