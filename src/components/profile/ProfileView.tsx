@@ -33,6 +33,8 @@ export function ProfileView() {
   const [profile, setProfile] = useState<any>(null);
   const [catchCount, setCatchCount] = useState(0);
   const [competitions, setCompetitions] = useState<any[]>([]);
+  const [biggestCatch, setBiggestCatch] = useState<any>(null);
+  const [winsCount, setWinsCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -61,6 +63,13 @@ export function ProfileView() {
 
       const comps = await competitionService.getUserCompetitions(currentUser.id);
       setCompetitions(comps || []);
+
+      // Load statistics
+      const biggestCatchData = await catchService.getUserBiggestCatch(currentUser.id);
+      setBiggestCatch(biggestCatchData);
+
+      const wins = await competitionService.getUserWinsCount(currentUser.id);
+      setWinsCount(wins);
     } catch (error) {
       console.error("Error loading profile:", error);
       toast({
@@ -211,6 +220,53 @@ export function ProfileView() {
             >
               <p className="text-3xl font-bold text-primary">{competitions.length}</p>
               <p className="text-sm text-muted-foreground">Závodů</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Statistics Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-serif text-xl">📊 Statistiky</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Total Catches */}
+            <div className="text-center p-4 bg-primary/5 rounded-lg border border-primary/10">
+              <Fish className="h-8 w-8 mx-auto mb-2 text-primary" />
+              <p className="text-3xl font-bold text-primary mb-1">{catchCount}</p>
+              <p className="text-sm text-muted-foreground">Celkem úlovků</p>
+            </div>
+
+            {/* Biggest Catch */}
+            <div className="text-center p-4 bg-accent/5 rounded-lg border border-accent/10">
+              <Trophy className="h-8 w-8 mx-auto mb-2 text-accent" />
+              {biggestCatch ? (
+                <>
+                  <p className="text-3xl font-bold text-accent mb-1">
+                    {biggestCatch.length_cm} cm
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Největší ryba
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {biggestCatch.species}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-3xl font-bold text-accent/50 mb-1">-</p>
+                  <p className="text-sm text-muted-foreground">Největší ryba</p>
+                </>
+              )}
+            </div>
+
+            {/* Competition Wins */}
+            <div className="text-center p-4 bg-secondary/5 rounded-lg border border-secondary/10">
+              <Trophy className="h-8 w-8 mx-auto mb-2 text-secondary" />
+              <p className="text-3xl font-bold text-secondary mb-1">{winsCount}</p>
+              <p className="text-sm text-muted-foreground">Výhry v závodech</p>
             </div>
           </div>
         </CardContent>
