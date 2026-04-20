@@ -13,7 +13,7 @@ import { competitionService } from "@/services/competitionService";
 import { authService } from "@/services/authService";
 import { useToast } from "@/hooks/use-toast";
 import { Trophy, Plus, Users, Calendar } from "lucide-react";
-import { format } from "date-fns";
+import { format, isSameDay } from "date-fns";
 import { cs } from "date-fns/locale";
 
 export default function CompetitionsPage() {
@@ -105,6 +105,20 @@ export default function CompetitionsPage() {
   useEffect(() => {
     setCurrentPage(1);
   }, [activeTab]);
+
+  // Format competition date range
+  function formatCompetitionDate(startDate: string, endDate: string): string {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    if (isSameDay(start, end)) {
+      // Same day format: "Neděle 19.4. - 13:00-20:00"
+      return `${format(start, "EEEE d.M.", { locale: cs })} - ${format(start, "HH:mm")}-${format(end, "HH:mm")}`;
+    } else {
+      // Different days format: "19. Apr 13:00 - 20. Apr 20:00"
+      return `${format(start, "d. MMM HH:mm", { locale: cs })} - ${format(end, "d. MMM yyyy HH:mm", { locale: cs })}`;
+    }
+  }
 
   // Format winner score based on competition type
   function formatWinnerScore(comp: any): string {
@@ -213,8 +227,7 @@ export default function CompetitionsPage() {
                           <Calendar className="h-4 w-4 text-muted-foreground" />
                           <div>
                             <p className="font-medium">
-                              {format(new Date(comp.start_date), "d. MMM yyyy HH:mm", { locale: cs })} -{" "}
-                              {format(new Date(comp.end_date), "d. MMM yyyy HH:mm", { locale: cs })}
+                              {formatCompetitionDate(comp.start_date, comp.end_date)}
                             </p>
                           </div>
                         </div>
@@ -262,8 +275,7 @@ export default function CompetitionsPage() {
                           <Calendar className="h-4 w-4 text-muted-foreground" />
                           <div>
                             <p className="font-medium">
-                              {format(new Date(comp.start_date), "d. MMM yyyy HH:mm", { locale: cs })} -{" "}
-                              {format(new Date(comp.end_date), "d. MMM yyyy HH:mm", { locale: cs })}
+                              {formatCompetitionDate(comp.start_date, comp.end_date)}
                             </p>
                           </div>
                         </div>
@@ -311,8 +323,7 @@ export default function CompetitionsPage() {
                           <Calendar className="h-4 w-4 text-muted-foreground" />
                           <div>
                             <p className="font-medium">
-                              {format(new Date(comp.start_date), "d. MMM yyyy HH:mm", { locale: cs })} -{" "}
-                              {format(new Date(comp.end_date), "d. MMM yyyy HH:mm", { locale: cs })}
+                              {formatCompetitionDate(comp.start_date, comp.end_date)}
                             </p>
                           </div>
                         </div>
