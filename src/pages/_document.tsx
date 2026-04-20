@@ -3,9 +3,12 @@ import { SEOElements } from "@/components/SEO";
 
 export default function Document() {
   return (
-    <Html lang="cs">
+    <Html lang="cs" suppressHydrationWarning>
       <Head>
         <SEOElements />
+        
+        {/* Viewport - CRITICAL for mobile */}
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
         
         {/* PWA Manifest */}
         <link rel="manifest" href="/manifest.json" />
@@ -14,14 +17,6 @@ export default function Document() {
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Ukaž Rybu" />
-        
-        {/* Fonts */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=Work+Sans:wght@400;500;600&display=swap"
-          rel="stylesheet"
-        />
         
         {/* Service Worker Registration */}
         <script
