@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Send, Loader2 } from "lucide-react";
+import { Send, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 
 export function ContactForm() {
   const { toast } = useToast();
@@ -13,6 +13,7 @@ export function ContactForm() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -62,10 +63,11 @@ export function ContactForm() {
         description: "Děkujeme za váš návrh. Brzy se vám ozveme na email.",
       });
 
-      // Reset form
+      // Reset form and collapse
       setName("");
       setEmail("");
       setMessage("");
+      setIsExpanded(false);
     } catch (error: any) {
       toast({
         title: "Chyba",
@@ -81,86 +83,99 @@ export function ContactForm() {
     <section className="py-16 bg-muted/30">
       <div className="container max-w-2xl">
         <Card>
-          <CardHeader className="text-center">
-            <CardTitle className="font-serif text-3xl">
-              Návrhy na vylepšení
-            </CardTitle>
+          <CardHeader 
+            className="text-center cursor-pointer hover:bg-muted/50 transition-colors rounded-t-lg"
+            onClick={() => setIsExpanded(!isExpanded)}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <CardTitle className="font-serif text-3xl">
+                Návrhy na vylepšení
+              </CardTitle>
+              {isExpanded ? (
+                <ChevronUp className="h-6 w-6 text-muted-foreground" />
+              ) : (
+                <ChevronDown className="h-6 w-6 text-muted-foreground" />
+              )}
+            </div>
             <CardDescription className="text-base">
               Kontaktujte nás s vašimi nápady a zpětnou vazbou
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Name */}
-              <div className="space-y-2">
-                <Label htmlFor="name">
-                  Jméno <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="Vaše jméno"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  disabled={isSubmitting}
-                  required
-                />
-              </div>
+          
+          {isExpanded && (
+            <CardContent className="pt-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Name */}
+                <div className="space-y-2">
+                  <Label htmlFor="name">
+                    Jméno <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    placeholder="Vaše jméno"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    disabled={isSubmitting}
+                    required
+                  />
+                </div>
 
-              {/* Email */}
-              <div className="space-y-2">
-                <Label htmlFor="email">
-                  Email <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="vas@email.cz"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={isSubmitting}
-                  required
-                />
-              </div>
+                {/* Email */}
+                <div className="space-y-2">
+                  <Label htmlFor="email">
+                    Email <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="vas@email.cz"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={isSubmitting}
+                    required
+                  />
+                </div>
 
-              {/* Message */}
-              <div className="space-y-2">
-                <Label htmlFor="message">
-                  Váš návrh nebo zpětná vazba <span className="text-destructive">*</span>
-                </Label>
-                <Textarea
-                  id="message"
-                  placeholder="Popište váš návrh na vylepšení nebo sdílejte vaši zpětnou vazbu..."
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  disabled={isSubmitting}
-                  rows={6}
-                  required
-                  className="resize-none"
-                />
-              </div>
+                {/* Message */}
+                <div className="space-y-2">
+                  <Label htmlFor="message">
+                    Váš návrh nebo zpětná vazba <span className="text-destructive">*</span>
+                  </Label>
+                  <Textarea
+                    id="message"
+                    placeholder="Popište váš návrh na vylepšení nebo sdílejte vaši zpětnou vazbu..."
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    disabled={isSubmitting}
+                    rows={6}
+                    required
+                    className="resize-none"
+                  />
+                </div>
 
-              {/* Submit Button */}
-              <Button
-                type="submit"
-                className="w-full gap-2"
-                disabled={isSubmitting}
-                size="lg"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    Odesílám...
-                  </>
-                ) : (
-                  <>
-                    <Send className="h-5 w-5" />
-                    Odeslat zprávu
-                  </>
-                )}
-              </Button>
-            </form>
-          </CardContent>
+                {/* Submit Button */}
+                <Button
+                  type="submit"
+                  className="w-full gap-2"
+                  disabled={isSubmitting}
+                  size="lg"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      Odesílám...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-5 w-5" />
+                      Odeslat zprávu
+                    </>
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+          )}
         </Card>
 
         {/* Additional Info */}
