@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,11 +21,9 @@ export function CreateCompetitionForm() {
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [startDate, setStartDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [startDate, setStartDate] = useState("");
   const [startTime, setStartTime] = useState("00:00");
-  const [endDate, setEndDate] = useState(
-    format(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), "yyyy-MM-dd")
-  );
+  const [endDate, setEndDate] = useState("");
   const [endTime, setEndTime] = useState("23:59");
   const [scoringType, setScoringType] = useState<"points" | "measurements">("points");
   const [autoJoin, setAutoJoin] = useState(true);
@@ -184,6 +182,14 @@ export function CreateCompetitionForm() {
       setIsSubmitting(false);
     }
   }
+
+  useEffect(() => {
+    const now = new Date();
+    const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    
+    setStartDate(format(now, "yyyy-MM-dd"));
+    setEndDate(format(nextWeek, "yyyy-MM-dd"));
+  }, []);
 
   return (
     <Card className="max-w-2xl mx-auto">
