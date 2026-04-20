@@ -10,7 +10,7 @@ import type { CatchWithProfile } from "@/services/catchService";
 import { MapPin, Calendar, Ruler, Weight } from "lucide-react";
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface CatchCardProps {
   catch: CatchWithProfile;
@@ -18,7 +18,12 @@ interface CatchCardProps {
 
 export function CatchCard({ catch: catchData }: CatchCardProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const caughtDate = catchData.caught_at ? new Date(catchData.caught_at) : null;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <>
@@ -84,7 +89,7 @@ export function CatchCard({ catch: catchData }: CatchCardProps) {
               <div className="flex items-center gap-1.5 sm:gap-2">
                 <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
                 <span className="truncate">
-                  {format(caughtDate, "d. MMMM yyyy, HH:mm", { locale: cs })}
+                  {mounted ? format(caughtDate, "d. MMMM yyyy, HH:mm", { locale: cs }) : "Načítání..."}
                 </span>
               </div>
             )}
@@ -177,7 +182,7 @@ export function CatchCard({ catch: catchData }: CatchCardProps) {
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <p className="font-medium">
-                      {format(caughtDate, "d. MMMM yyyy, HH:mm", { locale: cs })}
+                      {mounted ? format(caughtDate, "d. MMMM yyyy, HH:mm", { locale: cs }) : "Načítání..."}
                     </p>
                   </div>
                 </div>
