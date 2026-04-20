@@ -92,6 +92,7 @@ export function UploadCatchForm() {
   const [district, setDistrict] = useState("");
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
+  const [waterBody, setWaterBody] = useState("");
   const [baitBrand, setBaitBrand] = useState("");
   const [notes, setNotes] = useState("");
 
@@ -216,13 +217,95 @@ export function UploadCatchForm() {
     }
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setLatitude(position.coords.latitude);
-        setLongitude(position.coords.longitude);
-        toast({
-          title: "✅ Poloha získána",
-          description: `${position.coords.latitude.toFixed(6)}, ${position.coords.longitude.toFixed(6)}`,
-        });
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        
+        setLatitude(lat);
+        setLongitude(lon);
+        
+        // Reverse geocoding using Nominatim API
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1&accept-language=cs`
+          );
+          
+          if (response.ok) {
+            const data = await response.json();
+            console.log("Geocoding result:", data);
+            
+            // Extract address components
+            const address = data.address || {};
+            
+            // Set country
+            if (address.country) {
+              const countryMap: Record<string, string> = {
+                "Czechia": "Česká republika",
+                "Czech Republic": "Česká republika",
+                "Česko": "Česká republika",
+                "Slovakia": "Slovensko",
+                "Poland": "Polsko",
+                "Austria": "Rakousko",
+                "Germany": "Německo"
+              };
+              const mappedCountry = countryMap[address.country] || address.country;
+              if (COUNTRIES.includes(mappedCountry)) {
+                setCountry(mappedCountry);
+              }
+            }
+            
+            // Set region (kraj) for Czech Republic
+            if (address.state) {
+              const regionMap: Record<string, string> = {
+                "Praha": "Hlavní město Praha",
+                "Středočeský kraj": "Středočeský kraj",
+                "Jihočeský kraj": "Jihočeský kraj",
+                "Plzeňský kraj": "Plzeňský kraj",
+                "Karlovarský kraj": "Karlovarský kraj",
+                "Ústecký kraj": "Ústecký kraj",
+                "Liberecký kraj": "Liberecký kraj",
+                "Královéhradecký kraj": "Královéhradecký kraj",
+                "Pardubický kraj": "Pardubický kraj",
+                "Kraj Vysočina": "Kraj Vysočina",
+                "Jihomoravský kraj": "Jihomoravský kraj",
+                "Olomoucký kraj": "Olomoucký kraj",
+                "Zlínský kraj": "Zlínský kraj",
+                "Moravskoslezský kraj": "Moravskoslezský kraj"
+              };
+              const mappedRegion = regionMap[address.state] || address.state;
+              if (CZECH_REGIONS.includes(mappedRegion)) {
+                setRegion(mappedRegion);
+              }
+            }
+            
+            // Set district (okres)
+            if (address.county) {
+              setDistrict(address.county);
+            } else if (address.city_district) {
+              setDistrict(address.city_district);
+            } else if (address.town) {
+              setDistrict(address.town);
+            } else if (address.city) {
+              setDistrict(address.city);
+            }
+            
+            toast({
+              title: "✅ Poloha získána a doplněna",
+              description: `${lat.toFixed(6)}, ${lon.toFixed(6)}`,
+            });
+          } else {
+            toast({
+              title: "✅ Poloha získána",
+              description: `${lat.toFixed(6)}, ${lon.toFixed(6)}`,
+            });
+          }
+        } catch (error) {
+          console.error("Reverse geocoding error:", error);
+          toast({
+            title: "✅ Poloha získána",
+            description: `${lat.toFixed(6)}, ${lon.toFixed(6)}`,
+          });
+        }
       },
       (error) => {
         console.error("Geolocation error:", error);
@@ -272,6 +355,7 @@ export function UploadCatchForm() {
         country: mode === "detailed" ? (country || null) : null,
         region: mode === "detailed" ? (region || null) : null,
         district: mode === "detailed" ? (district || null) : null,
+        water_body: mode === "detailed" ? (waterBody || null) : null,
         latitude: mode === "detailed" ? latitude : null,
         longitude: mode === "detailed" ? longitude : null,
         bait_brand: mode === "detailed" ? (baitBrand || null) : null,
@@ -311,6 +395,7 @@ export function UploadCatchForm() {
     setDistrict("");
     setLatitude(null);
     setLongitude(null);
+    setWaterBody("");
     setBaitBrand("");
     setNotes("");
   }
@@ -667,6 +752,17 @@ export function UploadCatchForm() {
                   )}
                 </div>
 
+                {/* Water Body Name */}
+                <div className="space-y-2">
+                  <Label htmlFor="water-body-quick">Název revíru</Label>
+                  <Input
+                    id="water-body-quick"
+                    value={waterBody}
+                    onChange={(e) => setWaterBody(e.target.value)}
+                    placeholder="např. Brněnská přehrada"
+                  />
+                </div>
+
                 {/* Bait Brand */}
                 <div className="space-y-2">
                   <Label htmlFor="bait">Značka nástrahy</Label>
@@ -781,6 +877,17 @@ export function UploadCatchForm() {
                       GPS: {latitude.toFixed(6)}, {longitude.toFixed(6)}
                     </p>
                   )}
+                </div>
+
+                {/* Water Body Name */}
+                <div className="space-y-2">
+                  <Label htmlFor="water-body">Název revíru</Label>
+                  <Input
+                    id="water-body"
+                    value={waterBody}
+                    onChange={(e) => setWaterBody(e.target.value)}
+                    placeholder="např. Brněnská přehrada"
+                  />
                 </div>
 
                 {/* Bait Brand */}
