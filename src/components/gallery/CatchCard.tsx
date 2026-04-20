@@ -1,21 +1,31 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { CatchWithProfile } from "@/services/catchService";
 import { MapPin, Calendar, Ruler, Weight } from "lucide-react";
-import Link from "next/link";
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
+import { useState } from "react";
 
 interface CatchCardProps {
   catch: CatchWithProfile;
 }
 
 export function CatchCard({ catch: catchData }: CatchCardProps) {
+  const [isOpen, setIsOpen] = useState(false);
   const caughtDate = catchData.caught_at ? new Date(catchData.caught_at) : null;
 
   return (
-    <Link href={`/catches/${catchData.id}`}>
-      <Card className="group overflow-hidden hover:shadow-lg transition-shadow cursor-pointer h-full">
+    <>
+      <Card 
+        className="group overflow-hidden hover:shadow-lg transition-shadow cursor-pointer h-full"
+        onClick={() => setIsOpen(true)}
+      >
         {/* Image */}
         <div className="aspect-[4/3] bg-muted relative overflow-hidden">
           {catchData.photo_url ? (
@@ -90,6 +100,108 @@ export function CatchCard({ catch: catchData }: CatchCardProps) {
           )}
         </CardContent>
       </Card>
-    </Link>
+
+      {/* Photo Dialog */}
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-2xl">
+              {catchData.species || "Neznámý druh"}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Large Photo */}
+            {catchData.photo_url ? (
+              <div className="relative aspect-[4/3] bg-muted rounded-lg overflow-hidden">
+                <img
+                  src={catchData.photo_url}
+                  alt={`${catchData.species || "Ryba"} - úlovek`}
+                  className="object-contain w-full h-full"
+                />
+              </div>
+            ) : (
+              <div className="aspect-[4/3] bg-muted rounded-lg flex items-center justify-center text-muted-foreground">
+                Bez fotografie
+              </div>
+            )}
+
+            {/* Details */}
+            <div className="space-y-3">
+              {/* Angler */}
+              <div>
+                <p className="text-sm text-muted-foreground">Rybář</p>
+                <p className="font-medium">{catchData.profiles?.nickname || "Anonym"}</p>
+              </div>
+
+              {/* Measurements */}
+              {(catchData.length_cm || catchData.weight_kg) && (
+                <div>
+                  <p className="text-sm text-muted-foreground mb-2">Rozměry</p>
+                  <div className="flex flex-wrap gap-2">
+                    {catchData.length_cm && (
+                      <Badge variant="secondary" className="gap-1">
+                        <Ruler className="h-4 w-4" />
+                        {catchData.length_cm} cm
+                      </Badge>
+                    )}
+                    {catchData.weight_kg && (
+                      <Badge variant="secondary" className="gap-1">
+                        <Weight className="h-4 w-4" />
+                        {catchData.weight_kg} kg
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Location */}
+              {catchData.country && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Místo</p>
+                  <div className="flex items-start gap-2">
+                    <MapPin className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
+                    <p className="font-medium">
+                      {[catchData.district, catchData.region, catchData.country]
+                        .filter(Boolean)
+                        .join(", ")}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Date & Time */}
+              {caughtDate && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Datum a čas</p>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <p className="font-medium">
+                      {format(caughtDate, "d. MMMM yyyy, HH:mm", { locale: cs })}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Bait */}
+              {catchData.bait_brand && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Nástraha</p>
+                  <p className="font-medium">{catchData.bait_brand}</p>
+                </div>
+              )}
+
+              {/* Notes */}
+              {catchData.notes && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Poznámky</p>
+                  <p className="font-medium">{catchData.notes}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
