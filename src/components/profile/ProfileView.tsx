@@ -216,6 +216,16 @@ export function ProfileView() {
         </CardContent>
       </Card>
 
+      {/* Add Catch CTA */}
+      <Button
+        size="lg"
+        onClick={() => router.push("/profile/add-catch")}
+        className="w-full h-16 text-lg gap-3"
+      >
+        <Fish className="h-6 w-6" />
+        Přidat úlovek
+      </Button>
+
       {/* My Competitions */}
       <Card>
         <CardHeader>
