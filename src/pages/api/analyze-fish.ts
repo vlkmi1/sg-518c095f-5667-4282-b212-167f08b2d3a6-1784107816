@@ -20,6 +20,41 @@ const FISH_SPECIES = [
   "Jeseter",
 ];
 
+// Fish species mapping
+const SPECIES_MAP: Record<string, string> = {
+  "kapr": "Kapr obecný",
+  "carp": "Kapr obecný",
+  "common carp": "Kapr obecný",
+  "amur": "Amur bílý",
+  "grass carp": "Amur bílý",
+  "white amur": "Amur bílý",
+  "štika": "Štika obecná",
+  "pike": "Štika obecná",
+  "northern pike": "Štika obecná",
+  "sumec": "Sumec velký",
+  "catfish": "Sumec velký",
+  "wels catfish": "Sumec velký",
+};
+
+const ALLOWED_SPECIES = ["Kapr obecný", "Amur bílý", "Štika obecná", "Sumec velký"];
+
+// Calculate weight from length using fishing tables formula
+// Weight (kg) = Length (cm)³ × coefficient
+function calculateWeightFromLength(species: string, lengthCm: number): number {
+  const coefficients: Record<string, number> = {
+    "Kapr obecný": 0.000015,  // Těžší ryba, vysoké tělo
+    "Amur bílý": 0.000018,     // Nejtěžší, mohutné tělo
+    "Štika obecná": 0.000012,  // Štíhlá ryba
+    "Sumec velký": 0.000010,   // Velmi štíhlá v poměru k délce
+  };
+
+  const coefficient = coefficients[species] || 0.000013; // default pro ostatní
+  const weightKg = Math.pow(lengthCm, 3) * coefficient;
+  
+  // Round to 2 decimal places
+  return Math.round(weightKg * 100) / 100;
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -63,69 +98,17 @@ export default async function handler(
         messages: [
           {
             role: "system",
-            content: `You are an expert ichthyologist specializing in Central European freshwater fish identification. Analyze the fish image carefully and provide accurate species identification with realistic measurements.
+            content: `Jsi expert na rozpoznávání ryb z fotografií. Analyzuj obrázek a urči:
+1. Druh ryby - POUZE pokud je to jednoznačně jeden z těchto druhů: Kapr obecný, Amur bílý, Štika obecná, Sumec velký. Pokud to není žádný z těchto druhů nebo nejsi si jistý, vrať null.
+2. Délku v centimetrech - odhadni podle proporcí ryby a poměru k ruce/okolí.
 
-AVAILABLE SPECIES (use exact Czech names):
-${FISH_SPECIES.join(", ")}
-
-IDENTIFICATION CHARACTERISTICS:
-
-**Kapr (Common Carp)**: Deep, compressed body. Large scales (30-40 along lateral line). 2 pairs of barbels on upper lip. Bronze/golden color. Dorsal fin with serrated spine. SIZE: 30-80 cm, 1-15 kg typical.
-
-**Amur (Grass Carp)**: Elongated, cylindrical body. Large scales. NO barbels. Silver-gray color. Short dorsal fin. SIZE: 40-90 cm, 2-20 kg typical.
-
-**Sumec (Catfish)**: Very elongated body. NO scales (smooth skin). 3 pairs of long barbels. Wide, flat head. Small eyes. Gray-brown mottled. SIZE: 50-200 cm, 5-80 kg typical.
-
-**Štika (Pike)**: Elongated, torpedo-shaped. Duck-bill shaped mouth with sharp teeth. Olive-green with light spots/bars. Dorsal and anal fins far back. SIZE: 30-100 cm, 1-15 kg typical.
-
-**Candát (Zander/Pike-perch)**: Elongated. Two separate dorsal fins (first spiny). Sharp teeth (canines). Gray-green with dark vertical bars. SIZE: 30-80 cm, 1-8 kg typical.
-
-**Pstruh (Trout)**: Streamlined body. Spotted (dark spots on lighter background). Adipose fin (small fatty fin near tail). Red/pink lateral stripe common. SIZE: 20-50 cm, 0.3-3 kg typical.
-
-**Úhoř (Eel)**: Snake-like, extremely elongated cylindrical body. Continuous dorsal/anal fin around tail. Small pectoral fins. Dark gray/brown. SIZE: 40-100 cm, 0.5-3 kg typical.
-
-**Lín (Tench)**: Deep, stocky body. Very small scales (thick mucus layer). Small barbels at mouth corners. Olive-green/bronze. Rounded fins. SIZE: 20-50 cm, 0.5-4 kg typical.
-
-**Plotice (Roach)**: Medium depth body. Silvery sides. Red-orange fins (pelvic, anal). Red eyes. 40-45 scales on lateral line. SIZE: 15-35 cm, 0.1-1.5 kg typical.
-
-**Cejn (White Bream)**: Very deep, compressed body (height > 1/3 length). Small head. Silver with dark fins. Long anal fin (23-30 rays). SIZE: 20-45 cm, 0.3-2 kg typical.
-
-**Jelec (Chub)**: Cylindrical body. Large head. Wide mouth. Large scales with dark edges. Convex anal fin. SIZE: 25-60 cm, 0.5-4 kg typical.
-
-**Okoun (Perch)**: Deep body. TWO dorsal fins (first spiny). 5-9 dark vertical bars. Red/orange pelvic and anal fins. Greenish back. SIZE: 15-40 cm, 0.2-2 kg typical.
-
-**Bolen (Asp)**: Elongated, streamlined. Large mouth extending past eye. Protruding lower jaw. Silver. Short dorsal fin. SIZE: 30-70 cm, 1-8 kg typical.
-
-**Mník (Burbot)**: Elongated, cod-like. Single barbel on chin. Two dorsal fins (second very long). Mottled brown-yellow pattern. SIZE: 30-70 cm, 0.5-5 kg typical.
-
-**Perlin (Common Nase)**: Streamlined. Small head. Underslung mouth with horny edge. Silver sides. Small scales. SIZE: 20-40 cm, 0.2-1.5 kg typical.
-
-**Síven (Blue Bream)**: Deep, compressed body. Small head. Blue-gray color. Long anal fin. Pointed snout. SIZE: 20-35 cm, 0.2-1 kg typical.
-
-**Jeseter (Sturgeon)**: Ancient-looking. 5 rows of bony plates (scutes). 4 barbels in front of ventral mouth. Elongated snout. Heterocercal tail. SIZE: 60-150 cm, 5-40 kg typical.
-
-ANALYSIS INSTRUCTIONS:
-1. Examine body shape: elongated, deep, cylindrical, compressed?
-2. Check for barbels: how many? where located?
-3. Look at fins: dorsal fin(s) count, spines, position?
-4. Observe color pattern: solid, spotted, barred, mottled?
-5. Check scales: large, small, absent?
-6. Look for distinctive features: mouth shape, head size, etc.
-
-SIZE ESTIMATION:
-- Use reference objects in image (hands, measuring tape, background objects)
-- Compare body proportions to typical species ranges
-- Be conservative - prefer middle of range over extremes
-- If image shows small individual, estimate appropriately (e.g., 25 cm Kapr, not 70 cm)
-
-RESPONSE FORMAT (JSON only):
+Odpověz POUZE v JSON formátu:
 {
-  "species": "exact species name from list",
-  "length": number (cm, realistic for visible size),
-  "weight": string (kg with 1 decimal, e.g. "2.5")
+  "species": "Kapr obecný" nebo "Amur bílý" nebo "Štika obecná" nebo "Sumec velký" nebo null,
+  "length_cm": číslo
 }
 
-If uncertain between 2 species, choose the more common one. If fish doesn't match any species well, choose closest match.`,
+Pokud nejsi si jistý druhem, raději vrať null.`,
           },
           {
             role: "user",
@@ -161,23 +144,36 @@ If uncertain between 2 species, choose the more common one. If fish doesn't matc
       throw new Error("No response from OpenAI");
     }
 
-    // Parse JSON response
-    const result = JSON.parse(content.trim());
-
-    // Validate species is in our list
-    if (!FISH_SPECIES.includes(result.species)) {
-      console.warn(`Invalid species "${result.species}", defaulting to closest match`);
-      result.species = FISH_SPECIES[0]; // Default to Kapr if invalid
+    // Parse AI response
+    const analysis = JSON.parse(content.trim());
+    
+    // Normalize species name - only allow specific species
+    let normalizedSpecies = null;
+    if (analysis.species) {
+      const speciesLower = analysis.species.toLowerCase();
+      const mapped = SPECIES_MAP[speciesLower];
+      
+      // Only accept if it's one of the allowed species
+      if (mapped && ALLOWED_SPECIES.includes(mapped)) {
+        normalizedSpecies = mapped;
+      }
     }
 
-    // Ensure proper format
-    const formattedResult = {
-      species: result.species,
-      length: Number(result.length) || 50,
-      weight: String(result.weight) || "1.0",
-    };
+    // Calculate weight from length using fishing tables
+    let calculatedWeight = null;
+    if (normalizedSpecies && analysis.length_cm) {
+      calculatedWeight = calculateWeightFromLength(normalizedSpecies, analysis.length_cm);
+    }
 
-    return res.status(200).json(formattedResult);
+    return res.status(200).json({
+      species: normalizedSpecies, // null if not recognized or not allowed
+      length_cm: analysis.length_cm || null,
+      weight_kg: calculatedWeight, // calculated from length, not AI estimate
+      confidence: normalizedSpecies ? "high" : "low",
+      message: normalizedSpecies 
+        ? "Druh ryby rozpoznán. Hmotnost vypočítána z délky podle rybářských tabulek."
+        : "Druh ryby se nepodařilo rozpoznat. Vyberte druh ručně."
+    });
   } catch (error: any) {
     console.error("AI analysis error:", error);
     
