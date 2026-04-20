@@ -63,38 +63,76 @@ export default async function handler(
         messages: [
           {
             role: "system",
-            content: `You are an expert ichthyologist specializing in Central European freshwater fish identification. Your task is to analyze fish images and provide accurate species identification and measurements.
+            content: `You are an expert ichthyologist specializing in Central European freshwater fish identification. Analyze the fish image carefully and provide accurate species identification with realistic measurements.
 
-Available species (use exact Czech names):
+AVAILABLE SPECIES (use exact Czech names):
 ${FISH_SPECIES.join(", ")}
 
-Respond ONLY with valid JSON in this exact format:
+IDENTIFICATION CHARACTERISTICS:
+
+**Kapr (Common Carp)**: Deep, compressed body. Large scales (30-40 along lateral line). 2 pairs of barbels on upper lip. Bronze/golden color. Dorsal fin with serrated spine. SIZE: 30-80 cm, 1-15 kg typical.
+
+**Amur (Grass Carp)**: Elongated, cylindrical body. Large scales. NO barbels. Silver-gray color. Short dorsal fin. SIZE: 40-90 cm, 2-20 kg typical.
+
+**Sumec (Catfish)**: Very elongated body. NO scales (smooth skin). 3 pairs of long barbels. Wide, flat head. Small eyes. Gray-brown mottled. SIZE: 50-200 cm, 5-80 kg typical.
+
+**Štika (Pike)**: Elongated, torpedo-shaped. Duck-bill shaped mouth with sharp teeth. Olive-green with light spots/bars. Dorsal and anal fins far back. SIZE: 30-100 cm, 1-15 kg typical.
+
+**Candát (Zander/Pike-perch)**: Elongated. Two separate dorsal fins (first spiny). Sharp teeth (canines). Gray-green with dark vertical bars. SIZE: 30-80 cm, 1-8 kg typical.
+
+**Pstruh (Trout)**: Streamlined body. Spotted (dark spots on lighter background). Adipose fin (small fatty fin near tail). Red/pink lateral stripe common. SIZE: 20-50 cm, 0.3-3 kg typical.
+
+**Úhoř (Eel)**: Snake-like, extremely elongated cylindrical body. Continuous dorsal/anal fin around tail. Small pectoral fins. Dark gray/brown. SIZE: 40-100 cm, 0.5-3 kg typical.
+
+**Lín (Tench)**: Deep, stocky body. Very small scales (thick mucus layer). Small barbels at mouth corners. Olive-green/bronze. Rounded fins. SIZE: 20-50 cm, 0.5-4 kg typical.
+
+**Plotice (Roach)**: Medium depth body. Silvery sides. Red-orange fins (pelvic, anal). Red eyes. 40-45 scales on lateral line. SIZE: 15-35 cm, 0.1-1.5 kg typical.
+
+**Cejn (White Bream)**: Very deep, compressed body (height > 1/3 length). Small head. Silver with dark fins. Long anal fin (23-30 rays). SIZE: 20-45 cm, 0.3-2 kg typical.
+
+**Jelec (Chub)**: Cylindrical body. Large head. Wide mouth. Large scales with dark edges. Convex anal fin. SIZE: 25-60 cm, 0.5-4 kg typical.
+
+**Okoun (Perch)**: Deep body. TWO dorsal fins (first spiny). 5-9 dark vertical bars. Red/orange pelvic and anal fins. Greenish back. SIZE: 15-40 cm, 0.2-2 kg typical.
+
+**Bolen (Asp)**: Elongated, streamlined. Large mouth extending past eye. Protruding lower jaw. Silver. Short dorsal fin. SIZE: 30-70 cm, 1-8 kg typical.
+
+**Mník (Burbot)**: Elongated, cod-like. Single barbel on chin. Two dorsal fins (second very long). Mottled brown-yellow pattern. SIZE: 30-70 cm, 0.5-5 kg typical.
+
+**Perlin (Common Nase)**: Streamlined. Small head. Underslung mouth with horny edge. Silver sides. Small scales. SIZE: 20-40 cm, 0.2-1.5 kg typical.
+
+**Síven (Blue Bream)**: Deep, compressed body. Small head. Blue-gray color. Long anal fin. Pointed snout. SIZE: 20-35 cm, 0.2-1 kg typical.
+
+**Jeseter (Sturgeon)**: Ancient-looking. 5 rows of bony plates (scutes). 4 barbels in front of ventral mouth. Elongated snout. Heterocercal tail. SIZE: 60-150 cm, 5-40 kg typical.
+
+ANALYSIS INSTRUCTIONS:
+1. Examine body shape: elongated, deep, cylindrical, compressed?
+2. Check for barbels: how many? where located?
+3. Look at fins: dorsal fin(s) count, spines, position?
+4. Observe color pattern: solid, spotted, barred, mottled?
+5. Check scales: large, small, absent?
+6. Look for distinctive features: mouth shape, head size, etc.
+
+SIZE ESTIMATION:
+- Use reference objects in image (hands, measuring tape, background objects)
+- Compare body proportions to typical species ranges
+- Be conservative - prefer middle of range over extremes
+- If image shows small individual, estimate appropriately (e.g., 25 cm Kapr, not 70 cm)
+
+RESPONSE FORMAT (JSON only):
 {
-  "species": "exact species name from the list above",
-  "length": number (estimated length in cm, realistic for the species),
-  "weight": string (estimated weight in kg with 1 decimal, e.g. "2.5")
+  "species": "exact species name from list",
+  "length": number (cm, realistic for visible size),
+  "weight": string (kg with 1 decimal, e.g. "2.5")
 }
 
-Identification guidelines:
-- Kapr (Carp): Deep body, large scales, barbels near mouth
-- Amur (Grass Carp): Elongated body, large scales, no barbels
-- Sumec (Catfish): Long body, no scales, long barbels
-- Štika (Pike): Elongated body, duck-bill shaped mouth, sharp teeth
-- Candát (Zander): Elongated, two dorsal fins, sharp teeth
-- Pstruh (Trout): Spotted body, adipose fin
-- Úhoř (Eel): Snake-like, long cylindrical body
-- Lín (Tench): Small scales, thick body, small barbels
-- Okoun (Perch): Spiny dorsal fin, vertical stripes
-- Other species: Use distinctive features for identification
-
-Be conservative with measurements - avoid extreme values. If uncertain, choose the most likely species from the list.`,
+If uncertain between 2 species, choose the more common one. If fish doesn't match any species well, choose closest match.`,
           },
           {
             role: "user",
             content: [
               {
                 type: "text",
-                text: "Analyze this fish image and identify the species with measurements. Respond with JSON only.",
+                text: "Analyze this fish image carefully. Identify the species based on body shape, fins, barbels, color pattern, and scales. Estimate realistic length and weight based on visible size cues. Respond with JSON only.",
               },
               {
                 type: "image_url",
@@ -105,8 +143,8 @@ Be conservative with measurements - avoid extreme values. If uncertain, choose t
             ],
           },
         ],
-        max_tokens: 300,
-        temperature: 0.3,
+        max_tokens: 500,
+        temperature: 0.2,
       }),
     });
 
