@@ -35,8 +35,10 @@ export default function AdminPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [catches, setCatches] = useState<any[]>([]);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     checkAdminAccess();
   }, []);
 
@@ -258,7 +260,7 @@ export default function AdminPage() {
                               <p className="text-xs text-muted-foreground">{user.full_name}</p>
                             )}
                             <p className="text-xs text-muted-foreground">
-                              Registrován: {format(new Date(user.created_at), "d. MMM yyyy", { locale: cs })}
+                              Registrován: {mounted ? format(new Date(user.created_at), "d. MMM yyyy", { locale: cs }) : "Načítání..."}
                             </p>
                           </div>
                         </div>
@@ -329,7 +331,7 @@ export default function AdminPage() {
                           </p>
                         )}
                         <p className="text-xs text-muted-foreground">
-                          {format(new Date(catchItem.caught_at), "d. MMM yyyy HH:mm", { locale: cs })}
+                          {mounted ? format(new Date(catchItem.caught_at), "d. MMM yyyy HH:mm", { locale: cs }) : "Načítání..."}
                         </p>
                       </div>
 
