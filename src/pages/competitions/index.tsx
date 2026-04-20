@@ -6,6 +6,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { competitionService } from "@/services/competitionService";
@@ -47,13 +48,24 @@ export default function CompetitionsPage() {
 
       console.log("Competitions loaded:", data);
 
-      // Load participant counts for each competition
+      // Load participant counts and winners for each competition
       const competitionsWithCounts = await Promise.all(
         (data || []).map(async (comp: any) => {
           const participants = await competitionService.getCompetitionParticipants(comp.id);
+          
+          // For past competitions, load the winner
+          let winner = null;
+          if (new Date(comp.end_date) < new Date()) {
+            const leaderboard = await competitionService.getLeaderboard(comp.id);
+            if (leaderboard && leaderboard.length > 0) {
+              winner = leaderboard[0];
+            }
+          }
+          
           return {
             ...comp,
             participant_count: participants?.length || 0,
+            winner,
           };
         })
       );
@@ -93,6 +105,29 @@ export default function CompetitionsPage() {
   useEffect(() => {
     setCurrentPage(1);
   }, [activeTab]);
+
+  // Format winner score based on competition type
+  function formatWinnerScore(comp: any): string {
+    if (!comp.winner) return "";
+    
+    const score = comp.winner.total_score;
+    
+    if (comp.scoring_type === "points") {
+      return `${score} bodů`;
+    }
+    
+    // Measurement-based
+    if (comp.measurement_type === "length") {
+      return `${score} cm`;
+    } else if (comp.measurement_type === "weight") {
+      return `${score} kg`;
+    } else if (comp.measurement_type === "count") {
+      return `${score} ks`;
+    } else {
+      // combined
+      return `${score} bodů`;
+    }
+  }
 
   if (isLoading) {
     return (
@@ -290,6 +325,25 @@ export default function CompetitionsPage() {
                             {comp.scoring_type === "points" ? "🏆 Bodování" : "📏 Míry"}
                           </Badge>
                         </div>
+                        
+                        {/* Winner Badge */}
+                        {comp.winner && (
+                          <div className="flex items-center gap-2 pt-2 border-t">
+                            <Trophy className="h-4 w-4 text-yellow-600" />
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage src={comp.winner.avatar_url} />
+                              <AvatarFallback className="text-xs">
+                                {comp.winner.nickname?.charAt(0).toUpperCase() || "?"}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="text-sm font-medium">
+                              {comp.winner.nickname}
+                            </span>
+                            <Badge variant="default" className="ml-auto">
+                              {formatWinnerScore(comp)}
+                            </Badge>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   ))}
