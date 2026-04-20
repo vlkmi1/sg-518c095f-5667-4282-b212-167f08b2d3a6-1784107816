@@ -35,10 +35,8 @@ export default function AdminPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [catches, setCatches] = useState<any[]>([]);
   const [processingId, setProcessingId] = useState<string | null>(null);
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
     checkAdminAccess();
   }, []);
 
@@ -259,8 +257,8 @@ export default function AdminPage() {
                             {user.full_name && (
                               <p className="text-xs text-muted-foreground">{user.full_name}</p>
                             )}
-                            <p className="text-xs text-muted-foreground">
-                              Registrován: {mounted ? format(new Date(user.created_at), "d. MMM yyyy", { locale: cs }) : "Načítání..."}
+                            <p className="text-xs text-muted-foreground" suppressHydrationWarning>
+                              Registrován: {format(new Date(user.created_at), "d. MMM yyyy", { locale: cs })}
                             </p>
                           </div>
                         </div>
@@ -330,8 +328,8 @@ export default function AdminPage() {
                             {catchItem.weight_kg && `⚖️ ${catchItem.weight_kg} kg`}
                           </p>
                         )}
-                        <p className="text-xs text-muted-foreground">
-                          {mounted ? format(new Date(catchItem.caught_at), "d. MMM yyyy HH:mm", { locale: cs }) : "Načítání..."}
+                        <p className="text-xs text-muted-foreground" suppressHydrationWarning>
+                          {format(new Date(catchItem.caught_at), "d. MMM yyyy HH:mm", { locale: cs })}
                         </p>
                       </div>
 

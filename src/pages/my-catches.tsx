@@ -20,10 +20,8 @@ export default function MyCatchesPage() {
 
   const [catches, setCatches] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
     loadUserCatches();
   }, []);
 
@@ -198,10 +196,10 @@ export default function MyCatchesPage() {
                             </p>
                           )}
 
-                          <p className="text-xs text-muted-foreground">
-                            {mounted ? format(new Date(catchData.caught_at), "d. MMMM yyyy HH:mm", {
+                          <p className="text-xs text-muted-foreground" suppressHydrationWarning>
+                            {format(new Date(catchData.caught_at), "d. MMMM yyyy HH:mm", {
                               locale: cs,
-                            }) : "Načítání..."}
+                            })}
                           </p>
 
                           <Button

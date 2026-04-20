@@ -132,10 +132,8 @@ export function HallOfFame() {
   const [selectedPeriod, setSelectedPeriod] = useState<"week" | "month" | "year" | "all">("all");
   const [topCatches, setTopCatches] = useState<TopCatch[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
     loadTopCatches();
   }, [selectedSpecies, selectedPeriod]);
 
@@ -242,8 +240,8 @@ export function HallOfFame() {
                     </p>
                   )}
                   {catchData.caught_at && (
-                    <p className="text-xs text-muted-foreground">
-                      {mounted ? format(new Date(catchData.caught_at), "d. MMM yyyy", { locale: cs }) : "Načítání..."}
+                    <p className="text-xs text-muted-foreground" suppressHydrationWarning>
+                      {format(new Date(catchData.caught_at), "d. MMM yyyy", { locale: cs })}
                     </p>
                   )}
                 </CardContent>
