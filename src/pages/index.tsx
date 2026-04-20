@@ -11,11 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-    
     // Check authentication status
     supabase.auth.getSession().then(({ data: { session } }) => {
       setIsAuthenticated(!!session);
@@ -76,9 +73,9 @@ export default function Home() {
                 </Button>
               </Link>
               <Link href={isAuthenticated ? "/competitions" : "/auth/register"}>
-                <Button size="lg" variant="outline" className="gap-2 bg-background/80 backdrop-blur w-full sm:w-auto">
+                <Button size="lg" variant="outline" className="gap-2 bg-background/80 backdrop-blur w-full sm:w-auto" suppressHydrationWarning>
                   <Trophy className="h-5 w-5" />
-                  {mounted ? (isAuthenticated ? "Zobrazit závody" : "Připojit se k závodům") : "Připojit se k závodům"}
+                  {isAuthenticated ? "Zobrazit závody" : "Připojit se k závodům"}
                 </Button>
               </Link>
             </div>
