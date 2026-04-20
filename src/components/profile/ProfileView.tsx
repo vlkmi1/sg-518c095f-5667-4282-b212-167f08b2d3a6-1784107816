@@ -198,11 +198,17 @@ export function ProfileView() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-4">
-            <div className="text-center p-4 bg-muted/30 rounded-lg">
+            <div 
+              className="text-center p-4 bg-muted/30 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+              onClick={() => router.push("/my-catches")}
+            >
               <p className="text-3xl font-bold text-primary">{catchCount}</p>
               <p className="text-sm text-muted-foreground">Úlovků celkem</p>
             </div>
-            <div className="text-center p-4 bg-muted/30 rounded-lg">
+            <div 
+              className="text-center p-4 bg-muted/30 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+              onClick={() => router.push("/competitions")}
+            >
               <p className="text-3xl font-bold text-primary">{competitions.length}</p>
               <p className="text-sm text-muted-foreground">Závodů</p>
             </div>
