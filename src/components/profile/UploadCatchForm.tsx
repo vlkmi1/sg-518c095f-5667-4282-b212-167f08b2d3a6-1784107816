@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import exifr from "exifr";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -122,6 +123,27 @@ export function UploadCatchForm() {
     }
 
     setPhotoFile(file);
+
+    // Try to read EXIF metadata for date/time
+    try {
+      const exifData = await exifr.parse(file);
+      
+      if (exifData?.DateTimeOriginal) {
+        const photoDate = new Date(exifData.DateTimeOriginal);
+        
+        // Set date and time from EXIF
+        setCaughtDate(format(photoDate, "yyyy-MM-dd"));
+        setCaughtTime(format(photoDate, "HH:mm"));
+        
+        toast({
+          title: "📅 Datum a čas načteny z fotky",
+          description: `${format(photoDate, "d.M.yyyy HH:mm")}`,
+        });
+      }
+    } catch (error) {
+      console.log("EXIF data not found or error reading:", error);
+      // Keep default current date/time if EXIF reading fails
+    }
 
     // Create preview
     const reader = new FileReader();
