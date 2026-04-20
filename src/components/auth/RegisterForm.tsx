@@ -38,9 +38,27 @@ export function RegisterForm() {
       const { user, error: signUpError } = await authService.signUp(email, password);
 
       if (signUpError) {
+        // Handle specific error cases with Czech messages
+        let errorMessage = "Registrace se nezdařila";
+        let errorDescription = signUpError.message;
+
+        if (signUpError.message.includes("rate limit")) {
+          errorMessage = "Příliš mnoho pokusů";
+          errorDescription = "Počkejte prosím několik minut a zkuste to znovu. Supabase omezuje počet registrací za určitý čas.";
+        } else if (signUpError.message.includes("already registered") || signUpError.message.includes("already exists")) {
+          errorMessage = "Email již existuje";
+          errorDescription = "Tento email je již registrován. Zkuste se přihlásit nebo použijte jiný email.";
+        } else if (signUpError.message.includes("invalid email")) {
+          errorMessage = "Neplatný email";
+          errorDescription = "Zadejte prosím platnou emailovou adresu.";
+        } else if (signUpError.message.includes("password")) {
+          errorMessage = "Problém s heslem";
+          errorDescription = "Heslo musí mít alespoň 6 znaků.";
+        }
+
         toast({
-          title: "Chyba při registraci",
-          description: signUpError.message,
+          title: errorMessage,
+          description: errorDescription,
           variant: "destructive",
         });
         setLoading(false);
