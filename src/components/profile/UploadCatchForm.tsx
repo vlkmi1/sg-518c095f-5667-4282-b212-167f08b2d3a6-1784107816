@@ -174,19 +174,61 @@ export function UploadCatchForm() {
 
       // Extract GPS and reverse geocode
       if (exifData?.latitude && exifData?.longitude) {
+        setLatitude(exifData.latitude);
+        setLongitude(exifData.longitude);
+        
         const location = await reverseGeocode(exifData.latitude, exifData.longitude);
         
         if (location) {
-          setFormData((prev) => ({
-            ...prev,
-            country: location.country,
-            region: location.region,
-            district: location.district,
-          }));
+          // Map country
+          if (location.country) {
+            const countryMap: Record<string, string> = {
+              "Czechia": "Česká republika",
+              "Czech Republic": "Česká republika",
+              "Česko": "Česká republika",
+              "Slovakia": "Slovensko",
+              "Poland": "Polsko",
+              "Austria": "Rakousko",
+              "Germany": "Německo"
+            };
+            const mappedCountry = countryMap[location.country] || location.country;
+            if (COUNTRIES.includes(mappedCountry)) {
+              setCountry(mappedCountry);
+            }
+          }
+          
+          // Map region for Czech Republic
+          if (location.region) {
+            const regionMap: Record<string, string> = {
+              "Praha": "Hlavní město Praha",
+              "Středočeský kraj": "Středočeský kraj",
+              "Jihočeský kraj": "Jihočeský kraj",
+              "Plzeňský kraj": "Plzeňský kraj",
+              "Karlovarský kraj": "Karlovarský kraj",
+              "Ústecký kraj": "Ústecký kraj",
+              "Liberecký kraj": "Liberecký kraj",
+              "Královéhradecký kraj": "Královéhradecký kraj",
+              "Pardubický kraj": "Pardubický kraj",
+              "Kraj Vysočina": "Kraj Vysočina",
+              "Jihomoravský kraj": "Jihomoravský kraj",
+              "Olomoucký kraj": "Olomoucký kraj",
+              "Zlínský kraj": "Zlínský kraj",
+              "Moravskoslezský kraj": "Moravskoslezský kraj"
+            };
+            const mappedRegion = regionMap[location.region] || location.region;
+            if (CZECH_REGIONS.includes(mappedRegion)) {
+              setRegion(mappedRegion);
+            }
+          }
+          
+          // Set district
+          if (location.district) {
+            setDistrict(location.district);
+          }
 
           toast({
             title: "📍 Poloha načtena z fotky",
-            description: `${location.district}, ${location.region}, ${location.country}`,
+            description: `${location.district || location.region || location.country}`,
           });
         }
       }
