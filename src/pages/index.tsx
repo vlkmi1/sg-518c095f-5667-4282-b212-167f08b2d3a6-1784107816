@@ -1,13 +1,19 @@
 import { SEO } from "@/components/SEO";
 import { Header } from "@/components/layout/Header";
 import { CatchGallery } from "@/components/gallery/CatchGallery";
-import { HallOfFame } from "@/components/gallery/HallOfFame";
 import { ContactForm } from "@/components/ContactForm";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Trophy, Camera, Users } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import dynamic from "next/dynamic";
+
+// Dynamic import to avoid hydration issues with async data loading
+const HallOfFame = dynamic(
+  () => import("@/components/gallery/HallOfFame").then((mod) => ({ default: mod.HallOfFame })),
+  { ssr: false }
+);
 
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
