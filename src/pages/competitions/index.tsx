@@ -30,14 +30,12 @@ export default function CompetitionsPage() {
   const [competitions, setCompetitions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
-  const [mounted, setMounted] = useState(false);
 
   const [activeTab, setActiveTab] = useState("active");
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
   useEffect(() => {
-    setMounted(true);
     loadCompetitions();
   }, []);
 
@@ -248,8 +246,8 @@ export default function CompetitionsPage() {
                         <div className="flex items-center gap-2 text-sm">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
                           <div>
-                            <p className="font-medium">
-                              {mounted ? formatCompetitionDate(comp.start_date, comp.end_date) : "Načítání..."}
+                            <p className="font-medium" suppressHydrationWarning>
+                              {formatCompetitionDate(comp.start_date, comp.end_date)}
                             </p>
                           </div>
                         </div>
@@ -296,8 +294,8 @@ export default function CompetitionsPage() {
                         <div className="flex items-center gap-2 text-sm">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
                           <div>
-                            <p className="font-medium">
-                              {mounted ? formatCompetitionDate(comp.start_date, comp.end_date) : "Načítání..."}
+                            <p className="font-medium" suppressHydrationWarning>
+                              {formatCompetitionDate(comp.start_date, comp.end_date)}
                             </p>
                           </div>
                         </div>
@@ -344,8 +342,8 @@ export default function CompetitionsPage() {
                         <div className="flex items-center gap-2 text-sm">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
                           <div>
-                            <p className="font-medium">
-                              {mounted ? formatCompetitionDate(comp.start_date, comp.end_date) : "Načítání..."}
+                            <p className="font-medium" suppressHydrationWarning>
+                              {formatCompetitionDate(comp.start_date, comp.end_date)}
                             </p>
                           </div>
                         </div>
