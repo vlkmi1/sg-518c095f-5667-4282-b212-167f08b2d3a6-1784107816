@@ -92,9 +92,9 @@
     @apply bg-background text-foreground;
   }
   
-  /* Mobile bottom navigation spacing */
+  /* Mobile bottom navigation spacing - automatically applied when MobileNav is rendered */
   @media (max-width: 768px) {
-    body {
+    body:has([data-mobile-nav]) {
       padding-bottom: 80px;
     }
   }
