@@ -355,7 +355,7 @@ export function UploadCatchForm() {
         country: mode === "detailed" ? (country || null) : null,
         region: mode === "detailed" ? (region || null) : null,
         district: mode === "detailed" ? (district || null) : null,
-        water_body: mode === "detailed" ? (waterBody || null) : null,
+        fishing_area: mode === "detailed" ? (waterBody || null) : null,
         latitude: mode === "detailed" ? latitude : null,
         longitude: mode === "detailed" ? longitude : null,
         bait_brand: mode === "detailed" ? (baitBrand || null) : null,
