@@ -160,6 +160,26 @@ export const catchService = {
     return data;
   },
 
+  // Get user's heaviest catch
+  async getUserHeaviestCatch(userId: string): Promise<Tables<"catches"> | null> {
+    const { data, error } = await supabase
+      .from("catches")
+      .select("*")
+      .eq("user_id", userId)
+      .not("weight_kg", "is", null)
+      .order("weight_kg", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    console.log("getUserHeaviestCatch:", { data, error });
+    if (error) {
+      console.error("getUserHeaviestCatch error:", error);
+      return null;
+    }
+
+    return data;
+  },
+
   // Get unique filter values for dropdown options
   async getFilterOptions(): Promise<{
     countries: string[];
