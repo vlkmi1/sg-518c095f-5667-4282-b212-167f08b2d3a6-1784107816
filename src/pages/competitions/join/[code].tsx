@@ -21,8 +21,10 @@ export default function JoinCompetitionPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isJoining, setIsJoining] = useState(false);
   const [hasJoined, setHasJoined] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     if (code && typeof code === "string") {
       loadCompetition(code);
     }
@@ -143,14 +145,14 @@ export default function JoinCompetitionPage() {
                     <p className="text-muted-foreground">Začátek:</p>
                     <p className="font-medium flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
-                      {format(new Date(competition.start_date), "d. MMMM yyyy, HH:mm", { locale: cs })}
+                      {mounted ? format(new Date(competition.start_date), "d. MMMM yyyy, HH:mm", { locale: cs }) : "Načítání..."}
                     </p>
                   </div>
                   <div className="space-y-1">
                     <p className="text-muted-foreground">Konec:</p>
                     <p className="font-medium flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
-                      {format(new Date(competition.end_date), "d. MMMM yyyy, HH:mm", { locale: cs })}
+                      {mounted ? format(new Date(competition.end_date), "d. MMMM yyyy, HH:mm", { locale: cs }) : "Načítání..."}
                     </p>
                   </div>
                 </div>

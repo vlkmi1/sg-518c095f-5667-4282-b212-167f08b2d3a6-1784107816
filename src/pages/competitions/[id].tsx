@@ -43,6 +43,7 @@ export default function CompetitionDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isTerminating, setIsTerminating] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   const isCreator = currentUserId && competition?.creator_id === currentUserId;
   
@@ -56,6 +57,7 @@ export default function CompetitionDetailPage() {
   const canDeleteTerminated = isCreator && competition?.terminated_early === true;
 
   useEffect(() => {
+    setMounted(true);
     if (id) {
       loadCompetitionData();
       checkUserStatus();
@@ -418,10 +420,10 @@ export default function CompetitionDetailPage() {
                   <div>
                     <p className="font-medium text-xs text-muted-foreground">Začátek:</p>
                     <p className="font-medium">
-                      {format(new Date(competition.start_date), "d. MMM yyyy", { locale: cs })}
+                      {mounted ? format(new Date(competition.start_date), "d. MMM yyyy", { locale: cs }) : "Načítání..."}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {format(new Date(competition.start_date), "HH:mm", { locale: cs })}
+                      {mounted ? format(new Date(competition.start_date), "HH:mm", { locale: cs }) : ""}
                     </p>
                   </div>
                 </div>
@@ -430,10 +432,10 @@ export default function CompetitionDetailPage() {
                   <div>
                     <p className="font-medium text-xs text-muted-foreground">Konec:</p>
                     <p className="font-medium">
-                      {format(new Date(competition.end_date), "d. MMM yyyy", { locale: cs })}
+                      {mounted ? format(new Date(competition.end_date), "d. MMM yyyy", { locale: cs }) : "Načítání..."}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {format(new Date(competition.end_date), "HH:mm", { locale: cs })}
+                      {mounted ? format(new Date(competition.end_date), "HH:mm", { locale: cs }) : ""}
                     </p>
                   </div>
                 </div>
@@ -659,7 +661,7 @@ export default function CompetitionDetailPage() {
                           </div>
                           
                           <div className="text-xs text-muted-foreground mt-1">
-                            {format(new Date(catchData.caught_at || catchData.created_at), "d. M. yyyy HH:mm", { locale: cs })}
+                            {mounted ? format(new Date(catchData.caught_at || catchData.created_at), "d. M. yyyy HH:mm", { locale: cs }) : "Načítání..."}
                           </div>
                         </div>
 
