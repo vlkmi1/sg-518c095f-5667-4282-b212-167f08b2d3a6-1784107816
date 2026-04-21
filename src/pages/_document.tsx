@@ -8,15 +8,18 @@ export default function Document() {
         <SEOElements />
         
         {/* Viewport - CRITICAL for mobile */}
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover" />
         
         {/* PWA Manifest */}
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#0F5156" />
         <meta name="mobile-web-app-capable" content="yes" />
+        
+        {/* iOS PWA specific */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Ukaž Rybu" />
+        <link rel="apple-touch-icon" href="/icon-192.png" />
         
         {/* Service Worker Registration */}
         <script

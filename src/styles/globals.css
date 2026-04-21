@@ -72,17 +72,45 @@
     display: block !important;
     visibility: visible !important;
     opacity: 1 !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 50 !important;
   }
   
-  /* Add safe area padding for devices with notches */
+  /* iOS Safari specific - ensure proper safe area handling */
   body {
-    padding-bottom: env(safe-area-inset-bottom);
+    padding-bottom: max(env(safe-area-inset-bottom), 0px);
+  }
+  
+  [data-pwa-nav],
+  [data-mobile-nav] {
+    padding-bottom: max(env(safe-area-inset-bottom), 8px);
+  }
+}
+
+/* iOS specific fixes */
+@supports (-webkit-touch-callout: none) {
+  /* This targets iOS Safari specifically */
+  .pb-safe {
+    padding-bottom: max(env(safe-area-inset-bottom), 8px);
+  }
+  
+  /* Ensure viewport fills entire screen on iOS */
+  body {
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+  }
+  
+  html {
+    height: -webkit-fill-available;
   }
 }
 
 /* Safe area support for mobile devices */
 .pb-safe {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 8px);
 }
 
 @layer components {

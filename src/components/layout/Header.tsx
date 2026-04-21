@@ -26,6 +26,7 @@ export function Header() {
   const [canInstall, setCanInstall] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [mounted, setMounted] = useState(false);
+  const [shouldShowMobileNav, setShouldShowMobileNav] = useState(true);
 
   useEffect(() => {
     setMounted(true);
@@ -54,6 +55,7 @@ export function Header() {
     try {
       const currentUser = await authService.getCurrentUser();
       setUser(currentUser);
+      setShouldShowMobileNav(!!currentUser);
 
       if (currentUser) {
         const { data: userProfile } = await profileService.getProfileById(currentUser.id);
@@ -63,6 +65,7 @@ export function Header() {
       }
     } catch (error) {
       console.error("Auth check error:", error);
+      setShouldShowMobileNav(false);
     } finally {
       setIsLoading(false);
     }
@@ -72,6 +75,7 @@ export function Header() {
     await authService.signOut();
     setUser(null);
     setIsAdmin(false);
+    setShouldShowMobileNav(false);
     router.push("/");
   }
 
@@ -158,8 +162,8 @@ export function Header() {
         </div>
       </header>
 
-      {/* Mobile Bottom Navigation - always show when user is logged in */}
-      {user && <MobileNav />}
+      {/* Mobile Bottom Navigation - render always but hide if not logged in after loading */}
+      {!isLoading && shouldShowMobileNav && <MobileNav />}
     </>
   );
 }
