@@ -186,28 +186,49 @@ export default function MyCatchesPage() {
     }
   }
 
-  async function handleDeleteCatch(catchId: string, photoPath: string) {
-    if (!confirm("Opravdu chcete odstranit tento úlovek?")) {
-      return;
-    }
+  async function handleDeleteCatch() {
+    if (!catchToDelete) return;
+
+    setIsSubmitting(true);
 
     try {
-      await storageService.deleteCatchImage(photoPath);
-      await catchService.deleteCatch(catchId);
+      // Find the catch to get its photo path
+      const catchData = catches.find((c) => c.id === catchToDelete);
+      
+      if (!catchData) {
+        throw new Error("Úlovek nebyl nalezen");
+      }
+
+      // Delete photo from storage
+      if (catchData.photo_url) {
+        // Extract path from URL (format: https://.../storage/v1/object/public/catches/path)
+        const urlParts = catchData.photo_url.split("/catches/");
+        if (urlParts.length > 1) {
+          const photoPath = urlParts[1];
+          await storageService.deleteCatchImage(photoPath);
+        }
+      }
+
+      // Delete catch from database
+      await catchService.deleteCatch(catchToDelete);
 
       toast({
         title: "✅ Úlovek odstraněn",
         description: "Úlovek byl úspěšně smazán",
       });
 
-      loadUserCatches();
+      setDeleteDialogOpen(false);
+      setCatchToDelete(null);
+      loadUserCatches(); // Reload catches
     } catch (error: any) {
       console.error("Delete catch error:", error);
       toast({
         title: "Chyba",
-        description: "Nepodařilo se odstranit úlovek",
+        description: error.message || "Nepodařilo se odstranit úlovek",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -364,6 +385,28 @@ export default function MyCatchesPage() {
           </Card>
         </main>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Opravdu chcete smazat úlovek?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tato akce je nevratná. Úlovek a jeho fotografie budou trvale odstraněny.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSubmitting}>Zrušit</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteCatch}
+              disabled={isSubmitting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isSubmitting ? "Mažu..." : "Smazat"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Edit Catch Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
