@@ -97,134 +97,60 @@ export function Header() {
           </div>
 
           {/* Desktop Navigation */}
-          {mounted && (
-            <div>
-              {user ? (
-                <>
-                  <nav className="hidden md:flex items-center gap-6">
-                    <Link
-                      href="/my-catches"
-                      className={`text-sm font-medium transition-colors hover:text-primary ${
-                        isActive("/my-catches")
-                          ? "text-primary"
-                          : "text-muted-foreground"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Fish className="h-4 w-4" />
-                        Moje úlovky
-                      </div>
-                    </Link>
-                    <Link
-                      href="/competitions"
-                      className={`text-sm font-medium transition-colors hover:text-primary ${
-                        isActive("/competitions")
-                          ? "text-primary"
-                          : "text-muted-foreground"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Trophy className="h-4 w-4" />
-                        Závody
-                      </div>
-                    </Link>
-                    <Link
-                      href="/profile"
-                      className={`text-sm font-medium transition-colors hover:text-primary ${
-                        isActive("/profile")
-                          ? "text-primary"
-                          : "text-muted-foreground"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4" />
-                        Profil
-                      </div>
-                    </Link>
-                    {isAdmin && (
-                      <Link
-                        href="/admin"
-                        className={`text-sm font-medium transition-colors hover:text-primary ${
-                          isActive("/admin")
-                            ? "text-primary"
-                            : "text-muted-foreground"
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <Shield className="h-4 w-4" />
-                          Admin
-                        </div>
-                      </Link>
-                    )}
-                  </nav>
+          <nav className="hidden md:flex items-center gap-6">
+            <Link
+              href="/my-catches"
+              className="flex items-center gap-2 text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
+            >
+              <Fish className="h-4 w-4" />
+              Moje úlovky
+            </Link>
+            <Link
+              href="/competitions"
+              className="flex items-center gap-2 text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
+            >
+              <Trophy className="h-4 w-4" />
+              Závody
+            </Link>
+            {user?.email === "admin@softgen.ai" && (
+              <Link
+                href="/admin"
+                className="flex items-center gap-2 text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
+              >
+                <Shield className="h-4 w-4" />
+                Admin
+              </Link>
+            )}
 
-                  {/* Desktop User Menu */}
-                  <div className="hidden md:flex items-center gap-4">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full">
-                          <User className="h-5 w-5" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-56">
-                        <DropdownMenuLabel>
-                          <div className="flex flex-col space-y-1">
-                            <p className="text-sm font-medium leading-none">Můj účet</p>
-                            <p className="text-xs leading-none text-muted-foreground">
-                              {user.email}
-                            </p>
-                          </div>
-                        </DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => router.push("/profile")}>
-                          <User className="mr-2 h-4 w-4" />
-                          <span>Profil</span>
-                        </DropdownMenuItem>
-                        
-                        {canInstall && (
-                          <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={handleInstall}>
-                              <Download className="mr-2 h-4 w-4" />
-                              <span>Nainstalovat aplikaci</span>
-                            </DropdownMenuItem>
-                          </>
-                        )}
-
-                        {isAdmin && (
-                          <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => router.push("/admin")}>
-                              <Shield className="mr-2 h-4 w-4" />
-                              Admin Panel
-                            </DropdownMenuItem>
-                          </>
-                        )}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={handleLogout}>
-                          <LogOut className="mr-2 h-4 w-4" />
-                          Odhlásit se
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+            {/* User dropdown menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <User className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel>
+                  <div className="flex flex-col">
+                    <span className="font-medium">{profile?.nick || "Uživatel"}</span>
+                    <span className="text-xs text-muted-foreground truncate">{user?.email}</span>
                   </div>
-                </>
-              ) : (
-                <div className="flex items-center gap-2">
-                  {!isLoading && (
-                    <>
-                      <Button variant="ghost" onClick={() => router.push("/auth/login")} size="sm">
-                        Přihlásit se
-                      </Button>
-                      <Button onClick={() => router.push("/auth/register")} size="sm">
-                        Registrovat
-                      </Button>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/profile" className="flex items-center gap-2 cursor-pointer">
+                    <User className="h-4 w-4" />
+                    Profil
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive">
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Odhlásit se
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </nav>
         </div>
       </header>
 
