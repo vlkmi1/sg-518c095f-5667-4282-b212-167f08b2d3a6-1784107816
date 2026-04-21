@@ -14,11 +14,13 @@ import { MobileNav } from "@/components/layout/MobileNav";
 import { Logo } from "@/components/layout/Logo";
 import { authService } from "@/services/authService";
 import { adminService } from "@/services/adminService";
+import { profileService } from "@/services/profileService";
 import { Fish, Trophy, User, LogOut, Shield, Download } from "lucide-react";
 
 export function Header() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [canInstall, setCanInstall] = useState(false);
@@ -54,6 +56,8 @@ export function Header() {
       setUser(currentUser);
 
       if (currentUser) {
+        const userProfile = await profileService.getProfile(currentUser.id);
+        setProfile(userProfile);
         const adminStatus = await adminService.isAdmin(currentUser.id);
         setIsAdmin(adminStatus);
       }
