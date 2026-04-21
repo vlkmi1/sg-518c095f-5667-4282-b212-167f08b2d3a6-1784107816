@@ -320,11 +320,14 @@ export default function AdminPage() {
         throw error;
       }
 
+      console.log("✅ [Admin] Update successful, showing toast...");
+
       toast({
         title: "✅ Úlovek upraven",
         description: "Úlovek byl úspěšně aktualizován",
       });
 
+      console.log("🔒 [Admin] Closing edit dialog...");
       setEditDialogOpen(false);
       
       console.log("🔄 [Admin] Starting data reload...");
