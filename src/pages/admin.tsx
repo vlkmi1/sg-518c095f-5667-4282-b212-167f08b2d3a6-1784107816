@@ -525,15 +525,48 @@ export default function AdminPage() {
                           <Fish className="h-5 w-5 text-primary" />
                           <h3 className="font-serif text-xl font-semibold">{catchItem.species}</h3>
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleOpenEditDialog(catchItem)}
-                          className="gap-2"
-                        >
-                          <Edit className="h-4 w-4" />
-                          Upravit
-                        </Button>
+                        <div className="flex gap-2 mt-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleOpenEditDialog(catchItem)}
+                            disabled={processingId === catchItem.id}
+                            className="gap-2"
+                          >
+                            <Edit className="h-4 w-4" />
+                            Upravit
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                disabled={processingId === catchItem.id}
+                                className="gap-2"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                Odstranit
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Opravdu chcete smazat tento úlovek?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Tato akce je nevratná. Úlovek a jeho fotografie budou trvale odstraněny.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Zrušit</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteCatch(catchItem.id)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Smazat
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </div>
                       <p className="text-sm text-muted-foreground">
                         {catchItem.profiles?.nickname || "Neznámý rybář"}
