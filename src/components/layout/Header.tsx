@@ -56,7 +56,7 @@ export function Header() {
       setUser(currentUser);
 
       if (currentUser) {
-        const userProfile = await profileService.getProfile(currentUser.id);
+        const { data: userProfile } = await profileService.getProfileById(currentUser.id);
         setProfile(userProfile);
         const adminStatus = await adminService.isAdmin(currentUser.id);
         setIsAdmin(adminStatus);
