@@ -47,7 +47,13 @@ export function MobileNav() {
   return (
     <div 
       data-mobile-nav
+      data-pwa-nav
       className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-t md:hidden z-50 shadow-[0_-4px_12px_rgba(0,0,0,0.1)] pb-safe"
+      style={{
+        /* Ensure visibility in PWA standalone mode */
+        display: 'block !important',
+        visibility: 'visible !important'
+      }}
     >
       <nav className="flex items-center justify-around px-4 py-2">
         {navItems.map((item) => {

@@ -158,8 +158,8 @@ export function Header() {
         </div>
       </header>
 
-      {/* Mobile Bottom Navigation */}
-      {mounted && user && <MobileNav />}
+      {/* Mobile Bottom Navigation - always show when user is logged in */}
+      {user && <MobileNav />}
     </>
   );
 }

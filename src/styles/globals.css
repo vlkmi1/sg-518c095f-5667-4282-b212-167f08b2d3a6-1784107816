@@ -4,83 +4,50 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
-}
-
 @layer base {
   :root {
-    --radius: 0.55rem;
     --background: 42 33% 98%;
-    --foreground: 186 38% 10%;
+    --foreground: 186 25% 25%;
     --card: 0 0% 100%;
-    --card-foreground: 186 38% 10%;
+    --card-foreground: 186 25% 25%;
     --popover: 0 0% 100%;
-    --popover-foreground: 186 38% 10%;
+    --popover-foreground: 186 25% 25%;
     --primary: 186 78% 22%;
-    --primary-foreground: 0 0% 98%;
+    --primary-foreground: 42 33% 98%;
     --secondary: 35 50% 65%;
-    --secondary-foreground: 186 38% 10%;
+    --secondary-foreground: 186 25% 25%;
     --muted: 186 15% 92%;
     --muted-foreground: 186 15% 45%;
     --accent: 150 45% 32%;
-    --accent-foreground: 0 0% 98%;
+    --accent-foreground: 42 33% 98%;
     --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 186 20% 85%;
-    --input: 186 20% 85%;
+    --destructive-foreground: 42 33% 98%;
+    --border: 186 15% 85%;
+    --input: 186 15% 85%;
     --ring: 186 78% 22%;
-    --chart-1: 186 78% 22%;
-    --chart-2: 35 50% 65%;
-    --chart-3: 150 45% 32%;
-    --chart-4: 200 50% 50%;
-    --chart-5: 25 60% 55%;
-    --sidebar: 0 0% 97.5%;
-    --sidebar-foreground: 186 38% 10%;
-    --sidebar-primary: 186 78% 22%;
-    --sidebar-primary-foreground: 0 0% 97.5%;
-    --sidebar-accent: 186 15% 92%;
-    --sidebar-accent-foreground: 186 38% 10%;
-    --sidebar-border: 186 20% 85%;
-    --sidebar-ring: 186 78% 22%;
+    --radius: 0.5rem;
   }
 
   .dark {
-    --radius: 0.55rem;
-    --background: 186 38% 10%;
-    --foreground: 42 33% 98%;
-    --card: 186 35% 15%;
-    --card-foreground: 42 33% 98%;
-    --popover: 186 35% 12%;
-    --popover-foreground: 42 33% 98%;
-    --primary: 186 65% 45%;
-    --primary-foreground: 186 38% 10%;
-    --secondary: 35 40% 45%;
+    --background: 186 25% 8%;
+    --foreground: 42 33% 95%;
+    --card: 186 20% 12%;
+    --card-foreground: 42 33% 95%;
+    --popover: 186 20% 12%;
+    --popover-foreground: 42 33% 95%;
+    --primary: 186 78% 35%;
+    --primary-foreground: 42 33% 98%;
+    --secondary: 35 40% 40%;
     --secondary-foreground: 42 33% 98%;
-    --muted: 186 25% 20%;
-    --muted-foreground: 186 15% 65%;
-    --accent: 150 40% 40%;
+    --muted: 186 15% 20%;
+    --muted-foreground: 186 15% 70%;
+    --accent: 150 45% 25%;
     --accent-foreground: 42 33% 98%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 186 20% 25%;
-    --input: 186 20% 25%;
-    --ring: 186 65% 45%;
-    --chart-1: 186 65% 45%;
-    --chart-2: 35 40% 45%;
-    --chart-3: 150 40% 40%;
-    --chart-4: 200 45% 50%;
-    --chart-5: 25 55% 55%;
-    --sidebar: 186 35% 15%;
-    --sidebar-foreground: 42 33% 98%;
-    --sidebar-primary: 186 65% 45%;
-    --sidebar-primary-foreground: 186 38% 10%;
-    --sidebar-accent: 186 25% 20%;
-    --sidebar-accent-foreground: 42 33% 98%;
-    --sidebar-border: 186 20% 25%;
-    --sidebar-ring: 186 65% 45%;
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 42 33% 98%;
+    --border: 186 15% 25%;
+    --input: 186 15% 25%;
+    --ring: 186 78% 35%;
   }
 }
 
@@ -90,14 +57,32 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: 'Work Sans', system-ui, sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Crimson Pro', Georgia, serif;
+  }
+}
+
+/* PWA Standalone Mode Support */
+@media (display-mode: standalone) {
+  /* Ensure mobile navigation is always visible in PWA mode */
+  [data-pwa-nav],
+  [data-mobile-nav] {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
   }
   
-  /* Mobile bottom navigation spacing - automatically applied when MobileNav is rendered */
-  @media (max-width: 768px) {
-    body:has([data-mobile-nav]) {
-      padding-bottom: 80px;
-    }
+  /* Add safe area padding for devices with notches */
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
   }
+}
+
+/* Safe area support for mobile devices */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 @layer components {
