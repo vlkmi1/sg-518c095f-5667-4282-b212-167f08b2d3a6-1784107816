@@ -7,15 +7,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { CatchWithProfile } from "@/services/catchService";
-import { MapPin, Calendar, Ruler, Weight, Share2, Fish } from "lucide-react";
+import { MapPin, Calendar, Ruler, Weight, Share2 } from "lucide-react";
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import Image from "next/image";
-import Link from "next/link";
-import type { Tables } from "@/integrations/supabase/types";
 
 interface CatchCardProps {
   catch: CatchWithProfile;
@@ -26,13 +23,12 @@ export function CatchCard({ catch: catchData }: CatchCardProps) {
   const { toast } = useToast();
 
   async function handleShare(e: React.MouseEvent) {
-    e.preventDefault(); // Prevent navigation to detail page
+    e.preventDefault();
     e.stopPropagation();
 
     const shareUrl = `${window.location.origin}/catch/${catchData.id}`;
     const shareText = `Podívejte se na můj úlovek: ${catchData.species}${catchData.length_cm ? ` (${catchData.length_cm} cm)` : ""}${catchData.weight_kg ? ` (${catchData.weight_kg.toFixed(2)} kg)` : ""}`;
 
-    // Check if Web Share API is supported
     if (navigator.share) {
       try {
         await navigator.share({
@@ -46,13 +42,11 @@ export function CatchCard({ catch: catchData }: CatchCardProps) {
           description: "Úlovek byl úspěšně sdílen",
         });
       } catch (error: any) {
-        // User cancelled share or error occurred
         if (error.name !== "AbortError") {
           console.error("Error sharing:", error);
         }
       }
     } else {
-      // Fallback: copy link to clipboard
       try {
         await navigator.clipboard.writeText(shareUrl);
         toast({
@@ -94,11 +88,22 @@ export function CatchCard({ catch: catchData }: CatchCardProps) {
         </div>
 
         <CardContent className="p-3 sm:p-4 space-y-2 sm:space-y-3">
-          {/* Species & Angler */}
+          {/* Species, Angler & Share Button */}
           <div className="space-y-1">
-            <h3 className="font-serif text-lg sm:text-xl font-semibold text-foreground leading-tight">
-              {catchData.species || "Neznámý druh"}
-            </h3>
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="font-serif text-lg sm:text-xl font-semibold text-foreground leading-tight">
+                {catchData.species || "Neznámý druh"}
+              </h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleShare}
+                className="gap-1 px-2 h-8 flex-shrink-0"
+              >
+                <Share2 className="h-4 w-4" />
+                <span className="hidden sm:inline">Sdílet</span>
+              </Button>
+            </div>
             <p className="text-xs sm:text-sm text-muted-foreground">
               {catchData.profiles?.nickname || "Anonym"}
             </p>
@@ -150,19 +155,6 @@ export function CatchCard({ catch: catchData }: CatchCardProps) {
               </p>
             </div>
           )}
-
-          {/* Info */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <Fish className="h-5 w-5 text-primary" />
-                <h3 className="font-serif text-xl font-semibold">{catchData.species}</h3>
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground" suppressHydrationWarning>
-              {format(new Date(catchData.caught_at), "d. MMM yyyy HH:mm", { locale: cs })}
-            </p>
-          </div>
         </CardContent>
       </Card>
 
