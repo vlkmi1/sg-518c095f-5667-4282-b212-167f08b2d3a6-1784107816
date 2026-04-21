@@ -44,7 +44,7 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// Fetch event - Network First strategy for dynamic content
+// Fetch event - Smart caching strategy
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -59,28 +59,60 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Network First strategy
+  // NEVER cache these - always fetch fresh from network:
+  // 1. Supabase API calls
+  // 2. Next.js API routes
+  // 3. Dynamic pages with query parameters
+  const neverCachePatterns = [
+    /supabase\.co/,           // Supabase API
+    /\/api\//,                // Next.js API routes
+    /_next\/data/,            // Next.js data fetching
+    /\?/,                     // URLs with query params (dynamic)
+  ];
+
+  const shouldNeverCache = neverCachePatterns.some(pattern => pattern.test(url.href));
+
+  if (shouldNeverCache) {
+    // Network only - no caching for API calls
+    event.respondWith(fetch(request));
+    return;
+  }
+
+  // For static assets (JS, CSS, images, fonts) - Cache First strategy
+  // This allows offline functionality for UI
   event.respondWith(
-    fetch(request)
-      .then((response) => {
-        // Clone the response before caching
+    caches.match(request).then((cachedResponse) => {
+      if (cachedResponse) {
+        // Return cached version but fetch update in background
+        fetch(request).then((response) => {
+          if (response && response.status === 200) {
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(request, response.clone());
+            });
+          }
+        });
+        return cachedResponse;
+      }
+
+      // Not in cache - fetch from network and cache it
+      return fetch(request).then((response) => {
+        if (!response || response.status !== 200 || response.type === "error") {
+          return response;
+        }
+
         const responseToCache = response.clone();
-        
         caches.open(CACHE_NAME).then((cache) => {
           cache.put(request, responseToCache);
         });
-        
+
         return response;
-      })
-      .catch(() => {
-        // If network fails, try cache
-        return caches.match(request).then((response) => {
-          return response || new Response("Offline - no cached version available", {
-            status: 503,
-            statusText: "Service Unavailable"
-          });
+      }).catch(() => {
+        return new Response("Offline - no cached version available", {
+          status: 503,
+          statusText: "Service Unavailable"
         });
-      })
+      });
+    })
   );
 });
 
