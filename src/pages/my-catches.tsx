@@ -221,6 +221,19 @@ export default function MyCatchesPage() {
     }
   }
 
+  async function handleUpdateCatch() {
+    if (!catchToEdit) return;
+
+    // Check if date/time changed
+    if (checkDateTimeChange()) {
+      setConfirmDateChangeOpen(true);
+      return;
+    }
+
+    // No date/time change, proceed directly
+    proceedWithUpdate();
+  }
+
   async function handleDeleteCatch() {
     if (!catchToDelete) return;
 
