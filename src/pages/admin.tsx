@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { Header } from "@/components/layout/Header";
 import { SEO } from "@/components/SEO";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -367,7 +366,6 @@ export default function AdminPage() {
       <>
         <SEO title="Admin - Načítání..." />
         <div className="min-h-screen bg-background">
-          <Header />
           <main className="container py-8">
             <Skeleton className="h-64 w-full" />
           </main>
@@ -384,7 +382,6 @@ export default function AdminPage() {
     <>
       <SEO title="Admin Panel" />
       <div className="min-h-screen bg-background">
-        <Header />
         <main className="container py-8 space-y-6">
           {/* Admin Header */}
           <Card className="border-primary/20 bg-primary/5">

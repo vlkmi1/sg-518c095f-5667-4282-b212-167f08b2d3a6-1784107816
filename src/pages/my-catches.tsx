@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { Header } from "@/components/layout/Header";
 import { SEO } from "@/components/SEO";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -285,7 +284,6 @@ export default function MyCatchesPage() {
       <>
         <SEO title="Moje úlovky" />
         <div className="min-h-screen bg-background">
-          <Header />
           <main className="container py-8">
             <div className="space-y-4">
               <Skeleton className="h-32 w-full" />
@@ -305,7 +303,6 @@ export default function MyCatchesPage() {
     <>
       <SEO title="Moje úlovky" />
       <div className="min-h-screen bg-background">
-        <Header />
         <main className="container py-8">
           <Card>
             <CardHeader>
