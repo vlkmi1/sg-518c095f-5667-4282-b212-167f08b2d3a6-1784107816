@@ -29,11 +29,13 @@ const SPECIES_MAP: Record<string, string> = {
   "grass carp": "Amur bílý",
   "white amur": "Amur bílý",
   "štika": "Štika obecná",
+  "stika": "Štika obecná",
   "pike": "Štika obecná",
   "northern pike": "Štika obecná",
   "sumec": "Sumec velký",
   "catfish": "Sumec velký",
   "wels catfish": "Sumec velký",
+  "wels": "Sumec velký",
 };
 
 const ALLOWED_SPECIES = ["Kapr obecný", "Amur bílý", "Štika obecná", "Sumec velký"];
@@ -73,17 +75,16 @@ export default async function handler(
     const openaiApiKey = process.env.OPENAI_API_KEY;
 
     if (!openaiApiKey) {
-      console.warn("OpenAI API key not configured, using mock data");
+      console.warn("OpenAI API key not configured, returning null values");
       
-      // Return mock data if API key is not configured
-      const mockResult = {
-        species: FISH_SPECIES[Math.floor(Math.random() * FISH_SPECIES.length)],
-        length: Math.floor(Math.random() * 50) + 30,
-        weight: (Math.random() * 10 + 1).toFixed(1),
-      };
-      
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      return res.status(200).json(mockResult);
+      // Return null values if API key is not configured
+      return res.status(200).json({
+        species: null,
+        length_cm: null,
+        weight_kg: null,
+        confidence: "none",
+        message: "AI analýza není dostupná. API klíč není nakonfigurován. Vyplňte údaje ručně."
+      });
     }
 
     // Call OpenAI GPT-4 Vision API
@@ -99,23 +100,49 @@ export default async function handler(
           {
             role: "system",
             content: `Jsi expert na rozpoznávání ryb z fotografií. Analyzuj obrázek a urči:
-1. Druh ryby - POUZE pokud je to jednoznačně jeden z těchto druhů: Kapr obecný, Amur bílý, Štika obecná, Sumec velký. Pokud to není žádný z těchto druhů nebo nejsi si jistý, vrať null.
-2. Délku v centimetrech - odhadni podle proporcí ryby a poměru k ruce/okolí.
+
+KRITÉRIA PRO ROZPOZNÁNÍ DRUHU:
+Odpověz POUZE pokud je ryba JEDNOZNAČNĚ jeden z těchto 4 druhů:
+
+1. Kapr obecný (Cyprinus carpio):
+   - Plné tělo, velké šupiny
+   - 2 páry vousků u úst
+   - Zlatohnědá nebo zelenkavá barva
+
+2. Amur bílý (Ctenopharyngodon idella):
+   - Protáhlé mohutné tělo
+   - Velké šupiny s tmavým lemem
+   - Stříbřitá barva, žádné vousky
+
+3. Štika obecná (Esox lucius):
+   - Protáhlé tělo, zploštělá hlava
+   - Velká tlama plná zubů
+   - Zelenkavá s příčnými pruhy/skvrnami
+
+4. Sumec velký (Silurus glanis):
+   - Velmi dlouhé tělo bez šupin
+   - 3 páry vousků (2 dlouhé u horní čelisti)
+   - Šedočerná barva
+
+POKUD:
+- Nejsi si na 100% jistý druhem → vrať null
+- Ryba je jiný druh (okoun, candát, jelec...) → vrať null
+- Fotka je nejasná nebo nevidíš klíčové znaky → vrať null
+
+Délku odhadni v centimetrech podle proporcí těla a poměru k ruce/pozadí.
 
 Odpověz POUZE v JSON formátu:
 {
-  "species": "Kapr obecný" nebo "Amur bílý" nebo "Štika obecná" nebo "Sumec velký" nebo null,
-  "length_cm": číslo
-}
-
-Pokud nejsi si jistý druhem, raději vrať null.`,
+  "species": "Kapr obecný" | "Amur bílý" | "Štika obecná" | "Sumec velký" | null,
+  "length_cm": číslo nebo null
+}`,
           },
           {
             role: "user",
             content: [
               {
                 type: "text",
-                text: "Analyze this fish image carefully. Identify the species based on body shape, fins, barbels, color pattern, and scales. Estimate realistic length and weight based on visible size cues. Respond with JSON only.",
+                text: "Analyze this fish image. If it's clearly one of the 4 allowed species (Common Carp, Grass Carp, Northern Pike, Wels Catfish), identify it and estimate length. Otherwise return null. Be strict - only identify if you're certain.",
               },
               {
                 type: "image_url",
@@ -127,7 +154,7 @@ Pokud nejsi si jistý druhem, raději vrať null.`,
           },
         ],
         max_tokens: 500,
-        temperature: 0.2,
+        temperature: 0.1,
       }),
     });
 
@@ -177,16 +204,14 @@ Pokud nejsi si jistý druhem, raději vrať null.`,
   } catch (error: any) {
     console.error("AI analysis error:", error);
     
-    // Return fallback mock data on error
-    const mockResult = {
-      species: FISH_SPECIES[Math.floor(Math.random() * FISH_SPECIES.length)],
-      length: Math.floor(Math.random() * 50) + 30,
-      weight: (Math.random() * 10 + 1).toFixed(1),
-    };
-    
+    // Return null values on error
     return res.status(200).json({
-      ...mockResult,
-      warning: "AI analysis failed, using estimated values",
+      species: null,
+      length_cm: null,
+      weight_kg: null,
+      confidence: "none",
+      message: "AI analýza selhala. Vyplňte údaje ručně.",
+      error: error.message
     });
   }
 }
