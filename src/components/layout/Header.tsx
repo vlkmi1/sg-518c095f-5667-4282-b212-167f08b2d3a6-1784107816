@@ -162,8 +162,7 @@ export function Header() {
         </div>
       </header>
 
-      {/* Mobile Bottom Navigation - render always but hide if not logged in after loading */}
-      {!isLoading && shouldShowMobileNav && <MobileNav />}
+      {/* Mobile Bottom Navigation moved to _app.tsx for PWA reliability */}
     </>
   );
 }
