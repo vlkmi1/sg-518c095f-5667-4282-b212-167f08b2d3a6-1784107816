@@ -180,6 +180,41 @@ export const catchService = {
     return data;
   },
 
+  // Get catch by ID (for detail page)
+  async getCatchById(catchId: string): Promise<{ catch: Tables<"catches">; profile: any } | null> {
+    try {
+      const { data: catchData, error: catchError } = await supabase
+        .from("catches")
+        .select("*")
+        .eq("id", catchId)
+        .single();
+
+      if (catchError || !catchData) {
+        console.error("Error fetching catch:", catchError);
+        return null;
+      }
+
+      // Get profile data
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("nick")
+        .eq("id", catchData.user_id)
+        .single();
+
+      if (profileError) {
+        console.error("Error fetching profile:", profileError);
+      }
+
+      return {
+        catch: catchData,
+        profile: profileData,
+      };
+    } catch (error) {
+      console.error("Error in getCatchById:", error);
+      return null;
+    }
+  },
+
   // Check if catch made it to Hall of Fame
   async checkHallOfFamePosition(catchId: string): Promise<{
     inHallOfFame: boolean;

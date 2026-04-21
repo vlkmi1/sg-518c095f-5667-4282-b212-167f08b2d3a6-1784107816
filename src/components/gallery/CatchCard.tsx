@@ -7,10 +7,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { CatchWithProfile } from "@/services/catchService";
-import { MapPin, Calendar, Ruler, Weight } from "lucide-react";
+import { MapPin, Calendar, Ruler, Weight, Share2 } from "lucide-react";
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import Image from "next/image";
+import Link from "next/link";
+import type { Tables } from "@/integrations/supabase/types";
 
 interface CatchCardProps {
   catch: CatchWithProfile;
@@ -18,6 +23,53 @@ interface CatchCardProps {
 
 export function CatchCard({ catch: catchData }: CatchCardProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const { toast } = useToast();
+
+  async function handleShare(e: React.MouseEvent) {
+    e.preventDefault(); // Prevent navigation to detail page
+    e.stopPropagation();
+
+    const shareUrl = `${window.location.origin}/catch/${catchData.id}`;
+    const shareText = `Podívejte se na můj úlovek: ${catchData.species}${catchData.length_cm ? ` (${catchData.length_cm} cm)` : ""}${catchData.weight_kg ? ` (${catchData.weight_kg.toFixed(2)} kg)` : ""}`;
+
+    // Check if Web Share API is supported
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${catchData.species} - Ukaž Rybu`,
+          text: shareText,
+          url: shareUrl,
+        });
+        
+        toast({
+          title: "✅ Sdíleno",
+          description: "Úlovek byl úspěšně sdílen",
+        });
+      } catch (error: any) {
+        // User cancelled share or error occurred
+        if (error.name !== "AbortError") {
+          console.error("Error sharing:", error);
+        }
+      }
+    } else {
+      // Fallback: copy link to clipboard
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        toast({
+          title: "📋 Odkaz zkopírován",
+          description: "Odkaz na úlovek byl zkopírován do schránky",
+        });
+      } catch (error) {
+        console.error("Error copying to clipboard:", error);
+        toast({
+          title: "Chyba",
+          description: "Nepodařilo se zkopírovat odkaz",
+          variant: "destructive",
+        });
+      }
+    }
+  }
+
   const caughtDate = catchData.caught_at ? new Date(catchData.caught_at) : null;
 
   return (
@@ -98,6 +150,17 @@ export function CatchCard({ catch: catchData }: CatchCardProps) {
               </p>
             </div>
           )}
+
+          {/* Share button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleShare}
+            className="gap-2 text-muted-foreground hover:text-foreground"
+          >
+            <Share2 className="h-4 w-4" />
+            Sdílet
+          </Button>
         </CardContent>
       </Card>
 
