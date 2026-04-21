@@ -124,4 +124,23 @@ export const adminService = {
       throw error;
     }
   },
+
+  // Delete user profile
+  async deleteUser(userId: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .delete()
+        .eq("id", userId);
+
+      if (error) {
+        throw error;
+      }
+
+      console.log("deleteUser:", { userId });
+    } catch (error) {
+      console.error("deleteUser error:", error);
+      throw error;
+    }
+  },
 };
