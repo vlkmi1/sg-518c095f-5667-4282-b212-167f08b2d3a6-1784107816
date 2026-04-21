@@ -460,7 +460,7 @@ export function UploadCatchForm() {
       const caughtAt = new Date(`${caughtDate}T${caughtTime}:00`).toISOString();
 
       // Create catch
-      await catchService.createCatch({
+      const { data: newCatch, error: createError } = await catchService.createCatch({
         user_id: user.id,
         species,
         photo_url: photoUrl,
@@ -477,6 +477,34 @@ export function UploadCatchForm() {
         caught_at: caughtAt,
         is_public: isPublic,
       });
+
+      if (createError) {
+        throw createError;
+      }
+
+      // Check if catch made it to Hall of Fame
+      if (newCatch?.id) {
+        const hallOfFameResult = await catchService.checkHallOfFamePosition(newCatch.id);
+        
+        if (hallOfFameResult.inHallOfFame) {
+          const periodNames = {
+            week: "týdenní",
+            month: "měsíční",
+            year: "roční",
+            all: "historické",
+          };
+
+          const periodName = periodNames[hallOfFameResult.period!];
+          const position = hallOfFameResult.position;
+          const positionEmoji = position === 1 ? "🥇" : position === 2 ? "🥈" : "🥉";
+
+          toast({
+            title: `${positionEmoji} Gratulujeme! Síň slávy!`,
+            description: `Váš úlovek se dostal do ${periodName} Síně slávy pro druh ${hallOfFameResult.species}! Jste na ${position}. místě.`,
+            duration: 8000,
+          });
+        }
+      }
 
       toast({
         title: "✅ Úlovek přidán!",
