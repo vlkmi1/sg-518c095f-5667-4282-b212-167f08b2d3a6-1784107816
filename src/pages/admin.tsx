@@ -109,10 +109,6 @@ export default function AdminPage() {
       console.log("📊 [Admin] First catch sample:", catchesData[0]);
       setCatches(catchesData);
 
-      // Get statistics
-      const stats = await adminService.getStatistics();
-      console.log("📊 [Admin] Statistics:", stats);
-      setStatistics(stats);
     } catch (error) {
       console.error("❌ [Admin] Load data error:", error);
       toast({
