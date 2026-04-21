@@ -285,6 +285,30 @@ export type Database = {
         }
         Relationships: []
       }
+      fish_weight_table: {
+        Row: {
+          created_at: string | null
+          id: string
+          length_cm: number
+          species: string
+          weight_kg: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          length_cm: number
+          species: string
+          weight_kg: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          length_cm?: number
+          species?: string
+          weight_kg?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_path: string | null

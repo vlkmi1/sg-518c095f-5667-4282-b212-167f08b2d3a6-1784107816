@@ -1,4 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import OpenAI from "openai";
+import { createClient } from "@supabase/supabase-js";
 
 const FISH_SPECIES = [
   "Kapr",
@@ -39,6 +41,64 @@ const SPECIES_MAP: Record<string, string> = {
 };
 
 const ALLOWED_SPECIES = ["Kapr obecný", "Amur bílý", "Štika obecná", "Sumec velký"];
+
+// Calculate weight from reference table with linear interpolation
+async function calculateWeightFromTable(
+  species: string,
+  lengthCm: number
+): Promise<number | null> {
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Get surrounding data points from table
+    const { data, error } = await supabase
+      .from("fish_weight_table")
+      .select("length_cm, weight_kg")
+      .eq("species", species)
+      .order("length_cm", { ascending: true });
+
+    if (error || !data || data.length === 0) {
+      console.warn("No weight data found for species:", species);
+      return null;
+    }
+
+    // Find exact match
+    const exactMatch = data.find((row) => row.length_cm === Math.round(lengthCm));
+    if (exactMatch) {
+      return exactMatch.weight_kg;
+    }
+
+    // Find surrounding points for interpolation
+    const roundedLength = Math.round(lengthCm);
+    const lowerPoint = data.filter((row) => row.length_cm <= roundedLength).pop();
+    const upperPoint = data.find((row) => row.length_cm >= roundedLength);
+
+    if (!lowerPoint && !upperPoint) {
+      return null; // Length outside table range
+    }
+
+    if (!lowerPoint) {
+      return upperPoint!.weight_kg; // Below table range, use first point
+    }
+
+    if (!upperPoint) {
+      return lowerPoint.weight_kg; // Above table range, use last point
+    }
+
+    // Linear interpolation
+    const lengthDiff = upperPoint.length_cm - lowerPoint.length_cm;
+    const weightDiff = upperPoint.weight_kg - lowerPoint.weight_kg;
+    const ratio = (lengthCm - lowerPoint.length_cm) / lengthDiff;
+    const interpolatedWeight = lowerPoint.weight_kg + ratio * weightDiff;
+
+    return Math.round(interpolatedWeight * 100) / 100; // Round to 2 decimals
+  } catch (error) {
+    console.error("Error calculating weight from table:", error);
+    return null;
+  }
+}
 
 // Calculate weight from length using fishing tables formula
 // Weight (kg) = Length (cm)³ × coefficient
