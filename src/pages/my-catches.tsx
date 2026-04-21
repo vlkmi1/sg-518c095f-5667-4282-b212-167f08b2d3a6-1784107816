@@ -56,6 +56,8 @@ export default function MyCatchesPage() {
   const [catchToEdit, setCatchToEdit] = useState<Tables<"catches"> | null>(null);
   const [editFormData, setEditFormData] = useState<any>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [confirmDateChangeOpen, setConfirmDateChangeOpen] = useState(false);
+  const [pendingDateTimeUpdate, setPendingDateTimeUpdate] = useState<{ date: string; time: string } | null>(null);
 
   useEffect(() => {
     loadUserCatches();
@@ -99,6 +101,12 @@ export default function MyCatchesPage() {
 
   function handleOpenEditDialog(catchData: Tables<"catches">) {
     setCatchToEdit(catchData);
+    
+    // Format caught_at to date and time strings
+    const caughtDate = catchData.caught_at ? new Date(catchData.caught_at) : new Date();
+    const dateStr = caughtDate.toISOString().split('T')[0];
+    const timeStr = caughtDate.toTimeString().slice(0, 5);
+    
     // Pre-fill form with current data
     setEditFormData({
       species: catchData.species || "",
@@ -110,17 +118,36 @@ export default function MyCatchesPage() {
       fishing_area: catchData.fishing_area || "",
       bait_brand: catchData.bait_brand || "",
       notes: catchData.notes || "",
+      caught_date: dateStr,
+      caught_time: timeStr,
     });
     setEditDialogOpen(true);
   }
 
-  async function handleUpdateCatch() {
+  function checkDateTimeChange(): boolean {
+    if (!catchToEdit) return false;
+
+    const originalDate = catchToEdit.caught_at ? new Date(catchToEdit.caught_at) : null;
+    if (!originalDate) return false;
+
+    const originalDateStr = originalDate.toISOString().split('T')[0];
+    const originalTimeStr = originalDate.toTimeString().slice(0, 5);
+
+    return editFormData.caught_date !== originalDateStr || editFormData.caught_time !== originalTimeStr;
+  }
+
+  function handleConfirmDateTimeChange() {
+    setConfirmDateChangeOpen(false);
+    proceedWithUpdate();
+  }
+
+  async function proceedWithUpdate() {
     if (!catchToEdit) return;
 
     setIsSubmitting(true);
 
     try {
-      // Only update fields that were filled in (non-empty)
+      // Only update fields that were filled in (non-empty) or changed
       const updates: any = {};
       
       if (editFormData.species && editFormData.species !== catchToEdit.species) {
@@ -149,6 +176,14 @@ export default function MyCatchesPage() {
       }
       if (editFormData.notes && editFormData.notes !== catchToEdit.notes) {
         updates.notes = editFormData.notes;
+      }
+
+      // Handle date/time update
+      if (pendingDateTimeUpdate || checkDateTimeChange()) {
+        const dateTime = pendingDateTimeUpdate || { date: editFormData.caught_date, time: editFormData.caught_time };
+        const caughtAt = new Date(`${dateTime.date}T${dateTime.time}`);
+        updates.caught_at = caughtAt.toISOString();
+        setPendingDateTimeUpdate(null);
       }
 
       if (Object.keys(updates).length === 0) {
@@ -408,6 +443,27 @@ export default function MyCatchesPage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Confirm Date/Time Change Dialog */}
+      <AlertDialog open={confirmDateChangeOpen} onOpenChange={setConfirmDateChangeOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Určitě chcete změnit datum a čas ulovení?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Změna data a času ulovení může ovlivnit umístění v Síni slávy a časových žebříčcích.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSubmitting}>Zrušit</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDateTimeChange}
+              disabled={isSubmitting}
+            >
+              Ano, změnit
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Edit Catch Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -577,6 +633,35 @@ export default function MyCatchesPage() {
                 />
               </div>
             )}
+
+            {/* Date and Time - always shown */}
+            <div className="space-y-4 pt-2 border-t">
+              <Label className="text-base font-semibold">Datum a čas ulovení</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-date">Datum</Label>
+                  <Input
+                    id="edit-date"
+                    type="date"
+                    value={editFormData.caught_date}
+                    onChange={(e) =>
+                      setEditFormData((prev: any) => ({ ...prev, caught_date: e.target.value }))
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-time">Čas</Label>
+                  <Input
+                    id="edit-time"
+                    type="time"
+                    value={editFormData.caught_time}
+                    onChange={(e) =>
+                      setEditFormData((prev: any) => ({ ...prev, caught_time: e.target.value }))
+                    }
+                  />
+                </div>
+              </div>
+            </div>
 
             <div className="flex gap-3 pt-4">
               <Button
