@@ -7,7 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { CatchWithProfile } from "@/services/catchService";
-import { MapPin, Calendar, Ruler, Weight, Share2 } from "lucide-react";
+import { MapPin, Calendar, Ruler, Weight, Share2, Fish } from "lucide-react";
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
 import { useState } from "react";
@@ -151,16 +151,18 @@ export function CatchCard({ catch: catchData }: CatchCardProps) {
             </div>
           )}
 
-          {/* Share button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleShare}
-            className="gap-2 text-muted-foreground hover:text-foreground"
-          >
-            <Share2 className="h-4 w-4" />
-            Sdílet
-          </Button>
+          {/* Info */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Fish className="h-5 w-5 text-primary" />
+                <h3 className="font-serif text-xl font-semibold">{catchData.species}</h3>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground" suppressHydrationWarning>
+              {format(new Date(catchData.caught_at), "d. MMM yyyy HH:mm", { locale: cs })}
+            </p>
+          </div>
         </CardContent>
       </Card>
 
