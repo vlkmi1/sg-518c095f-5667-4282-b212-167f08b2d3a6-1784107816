@@ -1,5 +1,4 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import OpenAI from "openai";
 import { createClient } from "@supabase/supabase-js";
 
 const FISH_SPECIES = [
@@ -48,8 +47,10 @@ async function calculateWeightFromTable(
   lengthCm: number
 ): Promise<number | null> {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !supabaseKey) return null;
+
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Get surrounding data points from table
@@ -90,7 +91,7 @@ async function calculateWeightFromTable(
     // Linear interpolation
     const lengthDiff = upperPoint.length_cm - lowerPoint.length_cm;
     const weightDiff = upperPoint.weight_kg - lowerPoint.weight_kg;
-    const ratio = (lengthCm - lowerPoint.length_cm) / lengthDiff;
+    const ratio = lengthDiff === 0 ? 0 : (lengthCm - lowerPoint.length_cm) / lengthDiff;
     const interpolatedWeight = lowerPoint.weight_kg + ratio * weightDiff;
 
     return Math.round(interpolatedWeight * 100) / 100; // Round to 2 decimals
@@ -98,23 +99,6 @@ async function calculateWeightFromTable(
     console.error("Error calculating weight from table:", error);
     return null;
   }
-}
-
-// Calculate weight from length using fishing tables formula
-// Weight (kg) = Length (cm)³ × coefficient
-function calculateWeightFromLength(species: string, lengthCm: number): number {
-  const coefficients: Record<string, number> = {
-    "Kapr obecný": 0.000015,  // Těžší ryba, vysoké tělo
-    "Amur bílý": 0.000018,     // Nejtěžší, mohutné tělo
-    "Štika obecná": 0.000012,  // Štíhlá ryba
-    "Sumec velký": 0.000010,   // Velmi štíhlá v poměru k délce
-  };
-
-  const coefficient = coefficients[species] || 0.000013; // default pro ostatní
-  const weightKg = Math.pow(lengthCm, 3) * coefficient;
-  
-  // Round to 2 decimal places
-  return Math.round(weightKg * 100) / 100;
 }
 
 export default async function handler(
@@ -232,12 +216,24 @@ Odpověz POUZE v JSON formátu:
     }
 
     // Parse AI response
-    const analysis = JSON.parse(content.trim());
+    let analysis;
+    try {
+      analysis = JSON.parse(content.trim());
+    } catch (err) {
+      console.error("Failed to parse AI response JSON", err);
+      return res.status(200).json({
+        species: null,
+        length_cm: null,
+        weight_kg: null,
+        confidence: "none",
+        message: "AI analýza vrátila neplatný formát. Vyplňte údaje ručně."
+      });
+    }
     
     // Normalize species name - only allow specific species
     let normalizedSpecies = null;
     if (analysis.species) {
-      const speciesLower = analysis.species.toLowerCase();
+      const speciesLower = String(analysis.species).toLowerCase();
       const mapped = SPECIES_MAP[speciesLower];
       
       // Only accept if it's one of the allowed species
@@ -246,20 +242,22 @@ Odpověz POUZE v JSON formátu:
       }
     }
 
-    // Calculate weight from length using fishing tables
-    let calculatedWeight = null;
-    if (normalizedSpecies && analysis.length_cm) {
-      calculatedWeight = calculateWeightFromLength(normalizedSpecies, analysis.length_cm);
+    // Calculate weight from table if we have length
+    let estimatedWeight = null;
+    if (normalizedSpecies && analysis.length_cm && analysis.length_cm > 0) {
+      estimatedWeight = await calculateWeightFromTable(normalizedSpecies, analysis.length_cm);
     }
 
     return res.status(200).json({
       species: normalizedSpecies, // null if not recognized or not allowed
       length_cm: analysis.length_cm || null,
-      weight_kg: calculatedWeight, // calculated from length, not AI estimate
-      confidence: normalizedSpecies ? "high" : "low",
-      message: normalizedSpecies 
-        ? "Druh ryby rozpoznán. Hmotnost vypočítána z délky podle rybářských tabulek."
-        : "Druh ryby se nepodařilo rozpoznat. Vyberte druh ručně."
+      weight_kg: estimatedWeight, // calculated from table interpolation
+      confidence: normalizedSpecies ? "high" : "none",
+      message: estimatedWeight 
+        ? `Rozpoznán druh: ${normalizedSpecies}. Hmotnost vypočtena podle tabulek.`
+        : normalizedSpecies
+          ? `Rozpoznán druh: ${normalizedSpecies}. Hmotnost zadejte ručně.`
+          : "Druh ryby se nepodařilo jednoznačně rozpoznat. Vyplňte údaje ručně."
     });
   } catch (error: any) {
     console.error("AI analysis error:", error);
