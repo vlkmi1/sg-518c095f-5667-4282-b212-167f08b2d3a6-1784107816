@@ -180,6 +180,88 @@ export const catchService = {
     return data;
   },
 
+  // Check if catch made it to Hall of Fame
+  async checkHallOfFamePosition(catchId: string): Promise<{
+    inHallOfFame: boolean;
+    period?: "week" | "month" | "year" | "all";
+    position?: number;
+    species?: string;
+  }> {
+    try {
+      // Get the catch details
+      const { data: catchData, error: catchError } = await supabase
+        .from("catches")
+        .select("*")
+        .eq("id", catchId)
+        .single();
+
+      if (catchError || !catchData) {
+        console.error("Error fetching catch:", catchError);
+        return { inHallOfFame: false };
+      }
+
+      const { species, length_cm, weight_kg } = catchData;
+
+      // Determine sort column based on species
+      const isHeavyFish = species === "Kapr obecný" || species === "Amur bílý";
+      const sortColumn = isHeavyFish ? "weight_kg" : "length_cm";
+      const catchValue = isHeavyFish ? weight_kg : length_cm;
+
+      if (!catchValue) {
+        return { inHallOfFame: false };
+      }
+
+      // Check different time periods
+      const periods: Array<{ key: "week" | "month" | "year" | "all"; days: number | null }> = [
+        { key: "week", days: 7 },
+        { key: "month", days: 30 },
+        { key: "year", days: 365 },
+        { key: "all", days: null },
+      ];
+
+      for (const period of periods) {
+        let query = supabase
+          .from("catches")
+          .select("id")
+          .eq("species", species)
+          .not(sortColumn, "is", null)
+          .order(sortColumn, { ascending: false })
+          .limit(3);
+
+        // Add time filter for non-all periods
+        if (period.days) {
+          const startDate = new Date();
+          startDate.setDate(startDate.getDate() - period.days);
+          query = query.gte("caught_at", startDate.toISOString());
+        }
+
+        const { data, error } = await query;
+
+        if (error) {
+          console.error(`Error checking ${period.key} hall of fame:`, error);
+          continue;
+        }
+
+        // Check if our catch is in top 3
+        const position = (data || []).findIndex((c) => c.id === catchId);
+        
+        if (position !== -1 && position < 3) {
+          return {
+            inHallOfFame: true,
+            period: period.key,
+            position: position + 1, // 1-indexed
+            species,
+          };
+        }
+      }
+
+      return { inHallOfFame: false };
+    } catch (error) {
+      console.error("Error in checkHallOfFamePosition:", error);
+      return { inHallOfFame: false };
+    }
+  },
+
   // Get unique filter values for dropdown options
   async getFilterOptions(): Promise<{
     countries: string[];
