@@ -21,9 +21,12 @@ import { profileService } from "@/services/profileService";
 import { catchService } from "@/services/catchService";
 import { competitionService } from "@/services/competitionService";
 import { useToast } from "@/hooks/use-toast";
-import { User, Fish, Trophy, LogOut, Plus, Users, Loader2, Edit } from "lucide-react";
+import { User, Fish, Trophy, LogOut, Plus, Users, Loader2, Edit, Scale, Ruler, Shield } from "lucide-react";
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
+import Image from "next/image";
+import Link from "next/link";
+import type { Tables } from "@/integrations/supabase/types";
 
 export function ProfileView() {
   const router = useRouter();
@@ -243,6 +246,17 @@ export function ProfileView() {
               <Button variant="outline" onClick={() => router.push("/my-catches")} className="hidden sm:inline-flex">
                 Moje úlovky
               </Button>
+
+              {/* Admin button - only for vlk.miroslav@gmail.com */}
+              {user?.email === "vlk.miroslav@gmail.com" && (
+                <Link href="/admin">
+                  <Button variant="outline" className="gap-2">
+                    <Shield className="h-4 w-4" />
+                    Admin
+                  </Button>
+                </Link>
+              )}
+
               <Button variant="outline" onClick={handleLogout} className="gap-2">
                 <LogOut className="h-4 w-4" />
                 <span className="hidden sm:inline">Odhlásit se</span>
