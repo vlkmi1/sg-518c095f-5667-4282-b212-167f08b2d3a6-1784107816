@@ -96,15 +96,25 @@ export default function AdminPage() {
 
   async function loadData() {
     try {
-      const [usersData, catchesData] = await Promise.all([
-        adminService.getAllUsers(),
-        adminService.getAllCatches(),
-      ]);
+      setIsLoading(true);
 
+      // Get all users
+      const usersData = await adminService.getAllUsers();
+      console.log("📊 [Admin] Users loaded:", usersData.length);
       setUsers(usersData);
+
+      // Get all catches
+      const catchesData = await adminService.getAllCatches();
+      console.log("📊 [Admin] Catches loaded:", catchesData.length);
+      console.log("📊 [Admin] First catch sample:", catchesData[0]);
       setCatches(catchesData);
+
+      // Get statistics
+      const stats = await adminService.getStatistics();
+      console.log("📊 [Admin] Statistics:", stats);
+      setStatistics(stats);
     } catch (error) {
-      console.error("Load data error:", error);
+      console.error("❌ [Admin] Load data error:", error);
       toast({
         title: "Chyba",
         description: "Nepodařilo se načíst data",
@@ -293,6 +303,8 @@ export default function AdminPage() {
         updates.caught_at = caughtAt.toISOString();
       }
 
+      console.log("💾 [Admin] Updating catch:", { catchId: catchToEdit.id, updates });
+
       if (Object.keys(updates).length === 0) {
         toast({
           title: "Žádné změny",
@@ -305,6 +317,8 @@ export default function AdminPage() {
 
       const { error } = await catchService.updateCatch(catchToEdit.id, updates);
 
+      console.log("💾 [Admin] Update result:", { error });
+
       if (error) {
         throw error;
       }
@@ -315,9 +329,12 @@ export default function AdminPage() {
       });
 
       setEditDialogOpen(false);
-      loadData();
+      
+      console.log("🔄 [Admin] Reloading data...");
+      await loadData();
+      console.log("✅ [Admin] Data reloaded");
     } catch (error: any) {
-      console.error("Update catch error:", error);
+      console.error("❌ [Admin] Update catch error:", error);
       toast({
         title: "Chyba",
         description: error.message || "Nepodařilo se upravit úlovek",
