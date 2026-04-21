@@ -140,14 +140,38 @@ export function HallOfFame() {
   async function loadTopCatches() {
     setIsLoading(true);
     try {
-      const catches = await catchService.getTopCatchesBySpeciesAndPeriod(
-        selectedSpecies || "Kapr", 
-        selectedPeriod,
-        3
-      );
-      setTopCatches(catches as TopCatch[]);
+      // Get top 3 catches for each species
+      const topCatchesBySpecies: Record<string, Tables<"catches">[]> = {};
+
+      for (const species of FISH_SPECIES) {
+        // For heavy fish (carp, grass carp), sort by weight; others by length
+        const isHeavyFish = species === "Kapr obecný" || species === "Amur bílý";
+        const sortColumn = isHeavyFish ? "weight_kg" : "length_cm";
+        
+        const { data, error } = await supabase
+          .from("catches")
+          .select(`
+            *,
+            profiles!catches_user_id_fkey(nick)
+          `)
+          .eq("species", species)
+          .not(sortColumn, "is", null)
+          .order(sortColumn, { ascending: false })
+          .limit(3);
+
+        console.log(`Top catches for ${species} (sorted by ${sortColumn}):`, { data, error });
+
+        if (error) {
+          console.error(`Error loading top catches for ${species}:`, error);
+          continue;
+        }
+
+        topCatchesBySpecies[species] = Array.isArray(data) ? data : [];
+      }
+
+      setTopCatches(topCatchesBySpecies);
     } catch (error) {
-      console.error("Error loading top catches:", error);
+      console.error("Error in loadTopCatches:", error);
     } finally {
       setIsLoading(false);
     }
