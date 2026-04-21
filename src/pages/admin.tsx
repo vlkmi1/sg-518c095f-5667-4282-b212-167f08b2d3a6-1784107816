@@ -95,6 +95,7 @@ export default function AdminPage() {
   }
 
   async function loadData() {
+    console.log("🔄 [Admin] loadData() called");
     try {
       setIsLoading(true);
 
@@ -326,9 +327,13 @@ export default function AdminPage() {
 
       setEditDialogOpen(false);
       
-      console.log("🔄 [Admin] Reloading data...");
-      await loadData();
-      console.log("✅ [Admin] Data reloaded");
+      console.log("🔄 [Admin] Starting data reload...");
+      try {
+        await loadData();
+        console.log("✅ [Admin] Data reload completed");
+      } catch (reloadError) {
+        console.error("❌ [Admin] Data reload failed:", reloadError);
+      }
     } catch (error: any) {
       console.error("❌ [Admin] Update catch error:", error);
       toast({
