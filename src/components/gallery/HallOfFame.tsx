@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
 import { catchService } from "@/services/catchService";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -140,38 +142,74 @@ export function HallOfFame() {
   async function loadTopCatches() {
     setIsLoading(true);
     try {
-      // Get top 3 catches for each species
-      const topCatchesBySpecies: Record<string, Tables<"catches">[]> = {};
-
-      for (const species of FISH_SPECIES) {
-        // For heavy fish (carp, grass carp), sort by weight; others by length
-        const isHeavyFish = species === "Kapr obecný" || species === "Amur bílý";
-        const sortColumn = isHeavyFish ? "weight_kg" : "length_cm";
-        
-        const { data, error } = await supabase
-          .from("catches")
-          .select(`
-            *,
-            profiles!catches_user_id_fkey(nick)
-          `)
-          .eq("species", species)
-          .not(sortColumn, "is", null)
-          .order(sortColumn, { ascending: false })
-          .limit(3);
-
-        console.log(`Top catches for ${species} (sorted by ${sortColumn}):`, { data, error });
-
-        if (error) {
-          console.error(`Error loading top catches for ${species}:`, error);
-          continue;
-        }
-
-        topCatchesBySpecies[species] = Array.isArray(data) ? data : [];
+      // Get top 3 catches for the selected species only
+      if (!selectedSpecies) {
+        setTopCatches([]);
+        return;
       }
 
-      setTopCatches(topCatchesBySpecies);
+      // For heavy fish (carp, grass carp), sort by weight; others by length
+      const isHeavyFish = selectedSpecies === "Kapr" || selectedSpecies === "Amur";
+      const sortColumn = isHeavyFish ? "weight_kg" : "length_cm";
+      
+      let query = supabase
+        .from("catches")
+        .select(`
+          *,
+          profiles:user_id(nickname)
+        `)
+        .eq("species", selectedSpecies)
+        .not(sortColumn, "is", null)
+        .order(sortColumn, { ascending: false })
+        .limit(3);
+
+      // Add time period filter
+      if (selectedPeriod !== "all") {
+        const now = new Date();
+        const startDate = new Date();
+        
+        if (selectedPeriod === "week") {
+          startDate.setDate(now.getDate() - 7);
+        } else if (selectedPeriod === "month") {
+          startDate.setMonth(now.getMonth() - 1);
+        } else if (selectedPeriod === "year") {
+          startDate.setFullYear(now.getFullYear() - 1);
+        }
+        
+        query = query.gte("caught_at", startDate.toISOString());
+      }
+
+      const { data, error } = await query;
+
+      console.log(`Top catches for ${selectedSpecies} (sorted by ${sortColumn}):`, { data, error });
+
+      if (error) {
+        console.error(`Error loading top catches for ${selectedSpecies}:`, error);
+        setTopCatches([]);
+        return;
+      }
+
+      // Transform data to match TopCatch interface
+      const formattedCatches: TopCatch[] = (data || []).map((catchRecord: any) => ({
+        id: catchRecord.id,
+        species: catchRecord.species,
+        length_cm: catchRecord.length_cm,
+        weight_kg: catchRecord.weight_kg,
+        photo_url: catchRecord.photo_url,
+        caught_at: catchRecord.caught_at,
+        country: catchRecord.country,
+        region: catchRecord.region,
+        district: catchRecord.district,
+        fishing_area: catchRecord.fishing_area,
+        profiles: {
+          nickname: catchRecord.profiles?.nickname || "Anonym"
+        }
+      }));
+
+      setTopCatches(formattedCatches);
     } catch (error) {
       console.error("Error in loadTopCatches:", error);
+      setTopCatches([]);
     } finally {
       setIsLoading(false);
     }
@@ -244,22 +282,38 @@ export function HallOfFame() {
                   <p className="font-serif font-semibold text-sm sm:text-base">
                     {catchData.profiles?.nickname || "Anonym"}
                   </p>
-                  <div className="flex items-center justify-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                    {catchData.length_cm && (
-                      <Badge variant="secondary" className="gap-1">
-                        <span className="text-xs">📏</span>
-                        {catchData.length_cm} cm
-                      </Badge>
-                    )}
-                    {catchData.weight_kg && (
-                      <Badge variant="secondary" className="gap-1">
-                        <span className="text-xs">⚖️</span>
-                        {catchData.weight_kg} kg
-                      </Badge>
+                  <div className="flex flex-col items-center justify-center gap-1 text-xs sm:text-sm text-muted-foreground mt-1">
+                    {/* For heavy fish (Kapr, Amur) show weight prominently, for others show length */}
+                    {(selectedSpecies === "Kapr" || selectedSpecies === "Amur") ? (
+                      <>
+                        {catchData.weight_kg && (
+                          <Badge variant="default" className="gap-1 font-bold text-sm bg-primary/90">
+                            <span>⚖️</span> {catchData.weight_kg.toFixed(2)} kg
+                          </Badge>
+                        )}
+                        {catchData.length_cm && (
+                          <Badge variant="outline" className="gap-1 text-[10px] h-5 opacity-70">
+                            <span>📏</span> {catchData.length_cm} cm
+                          </Badge>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        {catchData.length_cm && (
+                          <Badge variant="default" className="gap-1 font-bold text-sm bg-primary/90">
+                            <span>📏</span> {catchData.length_cm} cm
+                          </Badge>
+                        )}
+                        {catchData.weight_kg && (
+                          <Badge variant="outline" className="gap-1 text-[10px] h-5 opacity-70">
+                            <span>⚖️</span> {catchData.weight_kg.toFixed(2)} kg
+                          </Badge>
+                        )}
+                      </>
                     )}
                   </div>
                   {catchData.fishing_area && (
-                    <p className="text-xs text-muted-foreground truncate">
+                    <p className="text-[10px] sm:text-xs text-muted-foreground truncate mt-2">
                       📍 {catchData.fishing_area}
                     </p>
                   )}
