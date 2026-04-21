@@ -13,6 +13,9 @@ export function LoginForm() {
   const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  
   const router = useRouter();
   const { toast } = useToast();
 
@@ -30,8 +33,8 @@ export function LoginForm() {
         const { data: profile } = await profileService.getProfileByNickname(loginId);
         if (!profile) {
           toast({
-            title: "Chyba",
-            description: "Uživatel s tímto nickem nebyl nalezen",
+            title: "Chyba přihlášení",
+            description: "Uživatel s tímto nickem nebyl nalezen.",
             variant: "destructive",
           });
           setLoading(false);
@@ -44,14 +47,21 @@ export function LoginForm() {
       const { error } = await authService.signIn(email, password);
 
       if (error) {
+        let errorMessage = "Neplatný email nebo heslo.";
+        if (error.message.includes("Invalid login credentials")) {
+          errorMessage = "Nesprávný email/nick nebo heslo.";
+        } else if (error.message.includes("Email not confirmed")) {
+          errorMessage = "Potvrďte prosím svůj email.";
+        }
+        
         toast({
-          title: "Chyba při přihlášení",
-          description: error.message,
+          title: "Chyba přihlášení",
+          description: errorMessage,
           variant: "destructive",
         });
       } else {
         toast({
-          title: "Úspěšně přihlášen",
+          title: "Úspěšně přihlášeni",
           description: "Vítejte zpět!",
         });
         router.push("/profile");
@@ -59,7 +69,39 @@ export function LoginForm() {
     } catch (err) {
       toast({
         title: "Chyba",
-        description: "Něco se pokazilo",
+        description: "Něco se pokazilo. Zkuste to prosím znovu.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetEmail) return;
+    
+    setLoading(true);
+    try {
+      const { error } = await authService.resetPassword(resetEmail);
+      if (error) {
+        toast({
+          title: "Chyba",
+          description: "Nepodařilo se odeslat odkaz pro obnovu hesla.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "✅ Email odeslán",
+          description: "Zkontrolujte svou emailovou schránku a postupujte podle instrukcí.",
+        });
+        setShowResetPassword(false);
+        setResetEmail("");
+      }
+    } catch (err) {
+      toast({
+        title: "Chyba",
+        description: "Něco se pokazilo. Zkuste to prosím znovu.",
         variant: "destructive",
       });
     } finally {
@@ -72,20 +114,20 @@ export function LoginForm() {
       <CardHeader>
         <CardTitle className="font-serif text-3xl text-center">Přihlášení</CardTitle>
         <CardDescription className="text-center">
-          Přihlaste se ke svému účtu
+          {!showResetPassword ? "Přihlaste se ke svému účtu" : "Obnova zapomenutého hesla"}
         </CardDescription>
       </CardHeader>
       <CardContent>
         {!showResetPassword ? (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="loginId">Email nebo Nick</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="vas@email.cz"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                id="loginId"
+                type="text"
+                placeholder="vas@email.cz nebo nick"
+                value={loginId}
+                onChange={(e) => setLoginId(e.target.value)}
                 required
               />
             </div>
@@ -95,8 +137,8 @@ export function LoginForm() {
                 id="password"
                 type="password"
                 placeholder="••••••••"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 required
               />
             </div>
@@ -108,10 +150,10 @@ export function LoginForm() {
             >
               Zapomenuté heslo?
             </Button>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Přihlašování..." : "Přihlásit se"}
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Přihlašování..." : "Přihlásit se"}
             </Button>
-            <div className="text-center text-sm">
+            <div className="text-center text-sm mt-4">
               <span className="text-muted-foreground">Nemáte účet? </span>
               <Link href="/auth/register" className="text-primary hover:underline">
                 Zaregistrujte se
@@ -121,7 +163,7 @@ export function LoginForm() {
         ) : (
           <form onSubmit={handleResetPassword} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="reset-email">Email</Label>
+              <Label htmlFor="reset-email">Váš Email</Label>
               <Input
                 id="reset-email"
                 type="email"
@@ -131,7 +173,7 @@ export function LoginForm() {
                 required
               />
               <p className="text-sm text-muted-foreground">
-                Zašleme vám odkaz pro reset hesla
+                Zašleme vám odkaz pro obnovu hesla.
               </p>
             </div>
             <div className="flex gap-2">
@@ -140,12 +182,12 @@ export function LoginForm() {
                 variant="outline"
                 className="flex-1"
                 onClick={() => setShowResetPassword(false)}
-                disabled={isLoading}
+                disabled={loading}
               >
                 Zpět
               </Button>
-              <Button type="submit" className="flex-1" disabled={isLoading}>
-                {isLoading ? "Odesílání..." : "Odeslat email"}
+              <Button type="submit" className="flex-1" disabled={loading}>
+                {loading ? "Odesílání..." : "Odeslat odkaz"}
               </Button>
             </div>
           </form>
