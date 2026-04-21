@@ -1,3 +1,38 @@
+export const APP_NAME = "Ukaž Rybu";
+export const APP_DESCRIPTION = "Platforma pro rybáře k přehlednému sdílení fotografií svých úlovků";
+
+export const COUNTRIES = [
+  "Česká republika",
+  "Slovensko",
+  "Polsko",
+  "Rakousko",
+  "Německo",
+  "Maďarsko",
+  "Chorvatsko",
+  "Itálie",
+  "Norsko",
+  "Španělsko",
+  "Francie",
+  "Švédsko",
+];
+
+export const CZECH_REGIONS = [
+  "Hlavní město Praha",
+  "Středočeský kraj",
+  "Jihočeský kraj",
+  "Plzeňský kraj",
+  "Karlovarský kraj",
+  "Ústecký kraj",
+  "Liberecký kraj",
+  "Královéhradecký kraj",
+  "Pardubický kraj",
+  "Kraj Vysočina",
+  "Jihomoravský kraj",
+  "Olomoucký kraj",
+  "Zlínský kraj",
+  "Moravskoslezský kraj",
+];
+
 export const FISH_SPECIES = [
   { value: "Kapr", label: "Kapr obecný", image: "/Kapr.webp" },
   { value: "Štika", label: "Štika obecná", image: "/Stika.webp" },

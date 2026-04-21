@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { Header } from "@/components/layout/Header";
 import { SEO } from "@/components/SEO";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,6 +35,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { authService } from "@/services/authService";
 import { catchService } from "@/services/catchService";
+import { storageService } from "@/services/storageService";
 import { useToast } from "@/hooks/use-toast";
 import { Fish, MapPin, Calendar, Trash2, Plus, Edit } from "lucide-react";
 import { format } from "date-fns";
@@ -172,7 +173,7 @@ export default function MyCatchesPage() {
       });
 
       setEditDialogOpen(false);
-      loadCatches(); // Reload catches
+      loadUserCatches(); // Reload catches
     } catch (error: any) {
       console.error("Update catch error:", error);
       toast({
