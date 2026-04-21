@@ -46,6 +46,47 @@ export function ProfileView() {
     loadProfile();
   }, []);
 
+  // Show install guide toast if app is not installed
+  useEffect(() => {
+    // Check if app is already installed (standalone mode)
+    const isStandalone = window.matchMedia("(display-mode: standalone)").matches ||
+                         (window.navigator as any).standalone === true;
+
+    if (!isStandalone) {
+      // Check if user has already seen the install guide
+      const hasSeenInstallGuide = localStorage.getItem("hasSeenInstallGuide");
+
+      if (!hasSeenInstallGuide) {
+        // Detect platform
+        const userAgent = navigator.userAgent.toLowerCase();
+        const isIOS = /iphone|ipad|ipod/.test(userAgent);
+        const isAndroid = /android/.test(userAgent);
+
+        let installGuide = "";
+
+        if (isIOS) {
+          installGuide = "💡 Tip: Nainstalujte aplikaci na plochu! Safari → Sdílet → Přidat na plochu";
+        } else if (isAndroid) {
+          installGuide = "💡 Tip: Nainstalujte aplikaci na plochu! Menu (⋮) → Nainstalovat aplikaci";
+        } else {
+          installGuide = "💡 Tip: Nainstalujte aplikaci na plochu! Klikněte na ikonu instalace v adresním řádku";
+        }
+
+        // Show toast after a short delay
+        setTimeout(() => {
+          toast({
+            title: "Ukaž Rybu na vaší ploše",
+            description: installGuide,
+            duration: 10000, // 10 seconds
+          });
+
+          // Mark as seen
+          localStorage.setItem("hasSeenInstallGuide", "true");
+        }, 2000);
+      }
+    }
+  }, [toast]);
+
   async function loadProfile() {
     try {
       const currentUser = await authService.getCurrentUser();
