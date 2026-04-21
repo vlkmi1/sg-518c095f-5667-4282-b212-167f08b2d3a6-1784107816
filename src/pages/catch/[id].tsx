@@ -33,11 +33,13 @@ export default function CatchDetailPage() {
   async function loadCatchDetail(catchId: string) {
     setIsLoading(true);
     try {
-      const data = await catchService.getCatchById(catchId);
+      const { data, error } = await catchService.getCatchById(catchId);
       
+      if (error) throw error;
+
       if (data) {
-        setCatchData(data.catch);
-        setProfile(data.profile);
+        setCatchData(data);
+        setProfile({ nick: data.profiles?.nickname || "Anonym" });
       }
     } catch (error) {
       console.error("Error loading catch:", error);
