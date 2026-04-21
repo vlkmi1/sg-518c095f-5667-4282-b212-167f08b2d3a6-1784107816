@@ -286,17 +286,21 @@ export const catchService = {
     return { countries, regions, districts, species };
   },
 
-  // Update catch
-  async updateCatch(catchId: string, updates: any): Promise<{ data: any; error: any }> {
-    const { data, error } = await supabase
-      .from("catches")
-      .update(updates)
-      .eq("id", catchId)
-      .select()
-      .single();
+  // Update a catch
+  async updateCatch(catchId: string, updates: any): Promise<{ error: any }> {
+    try {
+      const { error } = await supabase
+        .from("catches")
+        .update(updates)
+        .eq("id", catchId);
 
-    console.log("updateCatch:", { data, error });
-    return { data, error };
+      console.log("updateCatch:", { catchId, updates, error });
+      
+      return { error };
+    } catch (error) {
+      console.error("updateCatch error:", error);
+      return { error };
+    }
   },
 
   // Delete catch
