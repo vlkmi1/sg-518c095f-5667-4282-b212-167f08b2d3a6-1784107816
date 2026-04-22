@@ -548,7 +548,7 @@ export default function CompetitionDetailPage() {
 
               {/* Add Catch Button - Only for participants during competition */}
               {isUserParticipant && isCompetitionOngoing && (
-                <div className="pt-4 border-t">
+                <div id="add-catch-section" className="pt-4 border-t transition-all duration-300 scroll-mt-20">
                   <AddCompetitionCatch
                     competitionId={competition.id}
                     scoringType={competition.scoring_type}
