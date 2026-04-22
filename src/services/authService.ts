@@ -94,6 +94,20 @@ export const authService = {
         return { user: null, error: { message: error.message, code: error.status?.toString() } };
       }
 
+      // Check if email is confirmed
+      if (data.user && !data.user.email_confirmed_at) {
+        // Sign out the user immediately
+        await supabase.auth.signOut();
+        
+        return { 
+          user: null, 
+          error: { 
+            message: "Email není ověřen. Zkontrolujte prosím svou emailovou schránku a ověřte svůj email před přihlášením.", 
+            code: "email_not_confirmed" 
+          } 
+        };
+      }
+
       const authUser = data.user ? {
         id: data.user.id,
         email: data.user.email || "",
