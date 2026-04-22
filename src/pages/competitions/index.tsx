@@ -66,9 +66,28 @@ export default function CompetitionsPage() {
         return;
       }
 
+      // Get current user
+      const currentUser = await authService.getCurrentUser();
+
+      // Filter competitions based on is_public flag
+      let filteredCompetitions = data || [];
+      
+      if (currentUser) {
+        // For logged-in users: show public competitions + private competitions where user is participant
+        const participantCompetitions = await competitionService.getUserCompetitions(currentUser.id);
+        const participantCompIds = new Set(participantCompetitions.map((c: any) => c.id));
+        
+        filteredCompetitions = (data || []).filter((comp: any) => 
+          comp.is_public || participantCompIds.has(comp.id)
+        );
+      } else {
+        // For anonymous users: show only public competitions
+        filteredCompetitions = (data || []).filter((comp: any) => comp.is_public);
+      }
+
       // Load participant counts and winners for each competition
       const competitionsWithCounts = await Promise.all(
-        (data || []).map(async (comp: any) => {
+        filteredCompetitions.map(async (comp: any) => {
           const participants = await competitionService.getCompetitionParticipants(comp.id);
           
           // For past competitions, load the winner
@@ -336,7 +355,14 @@ export default function CompetitionsPage() {
                       <CardHeader>
                         <div className="flex items-start justify-between gap-2">
                           <CardTitle className="font-serif text-lg">{comp.name}</CardTitle>
-                          <Badge className="bg-green-600">Probíhá</Badge>
+                          <div className="flex gap-1">
+                            <Badge className="bg-green-600">Probíhá</Badge>
+                            {comp.is_public ? (
+                              <Badge variant="outline" className="text-xs">🌐</Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-xs">🔒</Badge>
+                            )}
+                          </div>
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-2">
@@ -384,7 +410,14 @@ export default function CompetitionsPage() {
                       <CardHeader>
                         <div className="flex items-start justify-between gap-2">
                           <CardTitle className="font-serif text-lg">{comp.name}</CardTitle>
-                          <Badge variant="secondary">Nadcházející</Badge>
+                          <div className="flex gap-1">
+                            <Badge variant="secondary">Nadcházející</Badge>
+                            {comp.is_public ? (
+                              <Badge variant="outline" className="text-xs">🌐</Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-xs">🔒</Badge>
+                            )}
+                          </div>
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-2">
@@ -432,7 +465,14 @@ export default function CompetitionsPage() {
                       <CardHeader>
                         <div className="flex items-start justify-between gap-2">
                           <CardTitle className="font-serif text-lg">{comp.name}</CardTitle>
-                          <Badge variant="outline">Ukončen</Badge>
+                          <div className="flex gap-1">
+                            <Badge variant="outline">Ukončen</Badge>
+                            {comp.is_public ? (
+                              <Badge variant="outline" className="text-xs">🌐</Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-xs">🔒</Badge>
+                            )}
+                          </div>
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-2">
