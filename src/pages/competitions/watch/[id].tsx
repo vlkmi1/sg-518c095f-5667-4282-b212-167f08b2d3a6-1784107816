@@ -5,9 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { competitionService } from "@/services/competitionService";
 import { supabase } from "@/integrations/supabase/client";
-import { Trophy, Users, Calendar, Fish, User, Eye } from "lucide-react";
+import { Trophy, Users, Calendar, Fish, User, Eye, ChevronDown, ChevronUp } from "lucide-react";
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
 import { CompetitionCountdown } from "@/components/competitions/CompetitionCountdown";
@@ -20,6 +21,7 @@ export default function CompetitionWatchPage() {
   const [participants, setParticipants] = useState<any[]>([]);
   const [catches, setCatches] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isHeaderOpen, setIsHeaderOpen] = useState(true);
 
   const isCompetitionEnded = competition && new Date(competition.end_date) < new Date();
   const isCompetitionOngoing = competition && 
@@ -272,113 +274,129 @@ export default function CompetitionWatchPage() {
 
           {/* Competition Header */}
           <Card>
-            <CardHeader>
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <CardTitle className="font-serif text-3xl mb-2">
-                    {competition.name}
-                  </CardTitle>
+            <Collapsible open={isHeaderOpen} onOpenChange={setIsHeaderOpen}>
+              <CardHeader>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="font-serif text-3xl mb-2">
+                      {competition.name}
+                    </CardTitle>
+                    
+                    {/* Countdown - Always visible */}
+                    <div className="mt-3">
+                      <CompetitionCountdown
+                        startDate={competition.start_date}
+                        endDate={competition.end_date}
+                        terminatedEarly={competition.terminated_early}
+                        totalCatches={catches.length}
+                        totalParticipants={participants.length}
+                        winner={leaderboard[0] ? {
+                          nickname: leaderboard[0].profiles?.nickname || "Rybář",
+                          avatar_url: leaderboard[0].profiles?.avatar_url,
+                          score: leaderboard[0].score,
+                          catchCount: leaderboard[0].catchCount
+                        } : undefined}
+                        topSpecies={getTopSpecies()}
+                        scoringType={competition.scoring_type}
+                      />
+                    </div>
+                  </div>
+                  
+                  <CollapsibleTrigger asChild>
+                    <button className="flex-shrink-0 p-2 hover:bg-muted rounded-lg transition-colors">
+                      {isHeaderOpen ? (
+                        <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                      ) : (
+                        <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                      )}
+                    </button>
+                  </CollapsibleTrigger>
+                </div>
+              </CardHeader>
+              
+              <CollapsibleContent>
+                <CardContent className="space-y-4">
                   {competition.description && (
                     <p className="text-muted-foreground">{competition.description}</p>
                   )}
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="flex items-center gap-2 text-sm">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium text-xs text-muted-foreground">Začátek:</p>
-                    <p className="font-medium" suppressHydrationWarning>
-                      {format(new Date(competition.start_date), "d. MMM yyyy", { locale: cs })}
-                    </p>
-                    <p className="text-xs text-muted-foreground" suppressHydrationWarning>
-                      {format(new Date(competition.start_date), "HH:mm", { locale: cs })}
-                    </p>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="font-medium text-xs text-muted-foreground">Začátek:</p>
+                        <p className="font-medium" suppressHydrationWarning>
+                          {format(new Date(competition.start_date), "d. MMM yyyy", { locale: cs })}
+                        </p>
+                        <p className="text-xs text-muted-foreground" suppressHydrationWarning>
+                          {format(new Date(competition.start_date), "HH:mm", { locale: cs })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="font-medium text-xs text-muted-foreground">Konec:</p>
+                        <p className="font-medium" suppressHydrationWarning>
+                          {format(new Date(competition.end_date), "d. MMM yyyy", { locale: cs })}
+                        </p>
+                        <p className="text-xs text-muted-foreground" suppressHydrationWarning>
+                          {format(new Date(competition.end_date), "HH:mm", { locale: cs })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="font-medium">{participants.length} účastníků</p>
+                        <p className="text-xs text-muted-foreground">
+                          {isCompetitionEnded ? "Ukončen" : isCompetitionOngoing ? "Probíhá" : "Nadcházející"}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium text-xs text-muted-foreground">Konec:</p>
-                    <p className="font-medium" suppressHydrationWarning>
-                      {format(new Date(competition.end_date), "d. MMM yyyy", { locale: cs })}
-                    </p>
-                    <p className="text-xs text-muted-foreground" suppressHydrationWarning>
-                      {format(new Date(competition.end_date), "HH:mm", { locale: cs })}
-                    </p>
+                  
+                  <div className="flex flex-wrap items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <Fish className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">
+                        {catches.length} {catches.length === 1 ? "úlovek" : "úlovků"}
+                      </span>
+                    </div>
+                    <div>
+                      {competition.scoring_type === "points" ? (
+                        <Badge variant="secondary" className="gap-1">
+                          🏆 Bodování podle druhu
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="gap-1">
+                          📏 {
+                            competition.measurement_type === "weight" ? "Váha" :
+                            competition.measurement_type === "length" ? "Délka" :
+                            "Délka + váha"
+                          }
+                          {competition.top_catches_count && ` (top ${competition.top_catches_count})`}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium">{participants.length} účastníků</p>
-                    <p className="text-xs text-muted-foreground">
-                      {isCompetitionEnded ? "Ukončen" : isCompetitionOngoing ? "Probíhá" : "Nadcházející"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex flex-wrap items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <Fish className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">
-                    {catches.length} {catches.length === 1 ? "úlovek" : "úlovků"}
-                  </span>
-                </div>
-                <div>
-                  {competition.scoring_type === "points" ? (
-                    <Badge variant="secondary" className="gap-1">
-                      🏆 Bodování podle druhu
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary" className="gap-1">
-                      📏 {
-                        competition.measurement_type === "weight" ? "Váha" :
-                        competition.measurement_type === "length" ? "Délka" :
-                        "Délka + váha"
-                      }
-                      {competition.top_catches_count && ` (top ${competition.top_catches_count})`}
-                    </Badge>
+
+                  {/* Show scoring rules */}
+                  {competition.scoring_type === "points" && competition.fish_points && (
+                    <div className="pt-2 border-t">
+                      <p className="text-sm font-medium mb-2">Bodování druhů:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {Object.entries(competition.fish_points).map(([species, points]) => (
+                          <Badge key={species} variant="outline" className="text-xs">
+                            {species}: {points as number} {(points as number) === 1 ? "bod" : "body"}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
                   )}
-                </div>
-              </div>
-
-              {/* Show scoring rules */}
-              {competition.scoring_type === "points" && competition.fish_points && (
-                <div className="pt-2 border-t">
-                  <p className="text-sm font-medium mb-2">Bodování druhů:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {Object.entries(competition.fish_points).map(([species, points]) => (
-                      <Badge key={species} variant="outline" className="text-xs">
-                        {species}: {points as number} {(points as number) === 1 ? "bod" : "body"}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Countdown Timer */}
-              <div className="pt-4">
-                <CompetitionCountdown
-                  startDate={competition.start_date}
-                  endDate={competition.end_date}
-                  terminatedEarly={competition.terminated_early}
-                  totalCatches={catches.length}
-                  totalParticipants={participants.length}
-                  winner={leaderboard[0] ? {
-                    nickname: leaderboard[0].profiles?.nickname || "Rybář",
-                    avatar_url: leaderboard[0].profiles?.avatar_url,
-                    score: leaderboard[0].score,
-                    catchCount: leaderboard[0].catchCount
-                  } : undefined}
-                  topSpecies={getTopSpecies()}
-                  scoringType={competition.scoring_type}
-                />
-              </div>
-            </CardContent>
+                </CardContent>
+              </CollapsibleContent>
+            </Collapsible>
           </Card>
 
           {/* Recent Catches */}
