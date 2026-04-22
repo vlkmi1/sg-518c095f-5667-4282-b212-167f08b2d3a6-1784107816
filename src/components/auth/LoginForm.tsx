@@ -4,10 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { authService } from "@/services/authService";
 import { profileService } from "@/services/profileService";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
+import { LogIn, Mail, AlertCircle } from "lucide-react";
 
 export function LoginForm() {
   const [loginId, setLoginId] = useState("");
@@ -47,15 +49,21 @@ export function LoginForm() {
       const { error } = await authService.signIn(email, password);
 
       if (error) {
-        let errorMessage = "Neplatný email nebo heslo.";
+        let errorTitle = "Chyba přihlášení";
+        let errorMessage = "Nesprávný email/nick nebo heslo.";
+        
         if (error.message.includes("Invalid login credentials")) {
-          errorMessage = "Nesprávný email/nick nebo heslo.";
+          errorMessage = "Nesprávný email/nick nebo heslo. Zkontrolujte prosím své přihlašovací údaje.";
         } else if (error.message.includes("Email not confirmed")) {
-          errorMessage = "Potvrďte prosím svůj email.";
+          errorTitle = "Email není ověřený";
+          errorMessage = "Váš účet ještě nebyl aktivován. Zkontrolujte svou emailovou schránku a klikněte na ověřovací odkaz.";
+        } else if (error.message.includes("email") && error.message.toLowerCase().includes("confirm")) {
+          errorTitle = "Email není ověřený";
+          errorMessage = "Před přihlášením musíte ověřit svůj email. Zkontrolujte svou emailovou schránku a klikněte na ověřovací odkaz.";
         }
         
         toast({
-          title: "Chyba přihlášení",
+          title: errorTitle,
           description: errorMessage,
           variant: "destructive",
         });
@@ -110,56 +118,80 @@ export function LoginForm() {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle className="font-serif text-3xl text-center">Přihlášení</CardTitle>
-        <CardDescription className="text-center">
-          {!showResetPassword ? "Přihlaste se ke svému účtu" : "Obnova zapomenutého hesla"}
-        </CardDescription>
+    <Card className="w-full max-w-md mx-auto border-primary/20 shadow-lg">
+      <CardHeader className="space-y-1 text-center">
+        {!showResetPassword ? (
+          <>
+            <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-2">
+              <LogIn className="h-6 w-6 text-primary" />
+            </div>
+            <CardTitle className="font-serif text-3xl">Přihlášení</CardTitle>
+            <CardDescription>Přihlaste se ke svému účtu</CardDescription>
+          </>
+        ) : (
+          <>
+            <div className="mx-auto w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center mb-2">
+              <Mail className="h-6 w-6 text-accent" />
+            </div>
+            <CardTitle className="font-serif text-3xl">Obnova hesla</CardTitle>
+            <CardDescription>Zašleme vám odkaz pro obnovení</CardDescription>
+          </>
+        )}
       </CardHeader>
       <CardContent>
         {!showResetPassword ? (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="loginId">Email nebo Nick</Label>
-              <Input
-                id="loginId"
-                type="text"
-                placeholder="vas@email.cz nebo nick"
-                value={loginId}
-                onChange={(e) => setLoginId(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Heslo</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            <Button
-              type="button"
-              variant="link"
-              className="p-0 h-auto text-sm text-primary"
-              onClick={() => setShowResetPassword(true)}
-            >
-              Zapomenuté heslo?
-            </Button>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Přihlašování..." : "Přihlásit se"}
-            </Button>
-            <div className="text-center text-sm mt-4">
-              <span className="text-muted-foreground">Nemáte účet? </span>
-              <Link href="/auth/register" className="text-primary hover:underline">
-                Zaregistrujte se
-              </Link>
-            </div>
-          </form>
+          <>
+            <Alert className="mb-4 bg-primary/5 border-primary/20">
+              <AlertCircle className="h-4 w-4 text-primary" />
+              <AlertDescription className="text-sm">
+                Po registraci je nutné nejprve <strong>ověřit email</strong> kliknutím na odkaz v e-mailu. Teprve poté se můžete přihlásit.
+              </AlertDescription>
+            </Alert>
+            
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="loginId">Email nebo Nick</Label>
+                <Input
+                  id="loginId"
+                  type="text"
+                  placeholder="vas@email.cz nebo nick"
+                  value={loginId}
+                  onChange={(e) => setLoginId(e.target.value)}
+                  required
+                  disabled={loading}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Heslo</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={loading}
+                />
+              </div>
+              <Button
+                type="button"
+                variant="link"
+                className="p-0 h-auto text-sm text-primary"
+                onClick={() => setShowResetPassword(true)}
+              >
+                Zapomenuté heslo?
+              </Button>
+              <Button type="submit" className="w-full" disabled={loading} size="lg">
+                {loading ? "Přihlašování..." : "Přihlásit se"}
+              </Button>
+              <p className="text-center text-sm text-muted-foreground mt-4">
+                Nemáte účet?{" "}
+                <Link href="/auth/register" className="text-primary hover:underline font-medium">
+                  Zaregistrujte se
+                </Link>
+              </p>
+            </form>
+          </>
         ) : (
           <form onSubmit={handleResetPassword} className="space-y-4">
             <div className="space-y-2">
@@ -171,6 +203,7 @@ export function LoginForm() {
                 value={resetEmail}
                 onChange={(e) => setResetEmail(e.target.value)}
                 required
+                disabled={loading}
               />
               <p className="text-sm text-muted-foreground">
                 Zašleme vám odkaz pro obnovu hesla.
