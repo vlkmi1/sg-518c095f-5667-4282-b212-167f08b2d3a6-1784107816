@@ -205,23 +205,25 @@ export default function CompetitionDetailPage() {
   async function handleShare() {
     if (!competition) return;
 
-    const shareUrl = `${window.location.origin}/competitions/join/${competition.join_code || competition.invite_code}`;
+    const joinCode = competition.join_code || competition.invite_code;
+    const shareUrl = `${window.location.origin}/competitions/${competition.id}`;
 
     if (navigator.share) {
       try {
         await navigator.share({
           title: competition.name,
-          text: `Připoj se k závodu "${competition.name}"!`,
+          text: `Připoj se k závodu "${competition.name}"!\n\nKód závodu je: ${joinCode}\n\nZadej kód v aplikaci Ukaž Rybu v záložce Závody → Přidat se k závodu`,
           url: shareUrl,
         });
       } catch (error) {
         console.error("Share error:", error);
       }
     } else {
-      navigator.clipboard.writeText(shareUrl);
+      const shareText = `Připoj se k závodu "${competition.name}"!\n\nKód závodu je: ${joinCode}\n\n${shareUrl}`;
+      navigator.clipboard.writeText(shareText);
       toast({
-        title: "✅ Odkaz zkopírován",
-        description: "Odkaz na závod byl zkopírován do schránky",
+        title: "✅ Text zkopírován",
+        description: "Informace o závodu byly zkopírovány do schránky",
       });
     }
   }
