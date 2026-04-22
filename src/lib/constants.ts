@@ -52,3 +52,8 @@ export const FISH_SPECIES = [
   { value: "Plotice", label: "Plotice obecná", image: "/plotice.webp" },
   { value: "Jeseter", label: "Jeseter", image: "/Jeseter.webp" },
 ];
+
+export const FISH_SPECIES_CZ: Record<string, string> = FISH_SPECIES.reduce((acc, curr) => {
+  acc[curr.value] = curr.label;
+  return acc;
+}, {} as Record<string, string>);
