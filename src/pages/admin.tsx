@@ -268,6 +268,9 @@ export default function AdminPage() {
         ...prev,
         email_confirmed_at: new Date().toISOString()
       }));
+
+      // Reload all users to update the main list
+      await loadData();
     } catch (error: any) {
       toast({
         title: "Chyba",
