@@ -35,6 +35,9 @@ export default function CompetitionWatchPage() {
   useEffect(() => {
     if (!id) return;
 
+    console.log("=== SETTING UP REALTIME SUBSCRIPTIONS ===");
+    console.log("Competition ID:", id);
+
     // Subscribe to catches changes
     const catchesChannel = supabase
       .channel(`watch-competition-${id}-catches`)
@@ -47,11 +50,20 @@ export default function CompetitionWatchPage() {
           filter: `competition_id=eq.${id}`,
         },
         (payload) => {
-          console.log("Real-time catch update:", payload);
+          console.log("✅ Real-time catch update received:", payload);
           loadCompetitionCatches();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("Catches channel status:", status);
+        if (status === "SUBSCRIBED") {
+          console.log("✅ Catches channel subscribed successfully");
+        } else if (status === "CHANNEL_ERROR") {
+          console.error("❌ Catches channel error");
+        } else if (status === "TIMED_OUT") {
+          console.error("❌ Catches channel timed out");
+        }
+      });
 
     // Subscribe to participants changes
     const participantsChannel = supabase
@@ -65,13 +77,23 @@ export default function CompetitionWatchPage() {
           filter: `competition_id=eq.${id}`,
         },
         (payload) => {
-          console.log("Real-time participant update:", payload);
+          console.log("✅ Real-time participant update received:", payload);
           loadCompetitionParticipants();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("Participants channel status:", status);
+        if (status === "SUBSCRIBED") {
+          console.log("✅ Participants channel subscribed successfully");
+        } else if (status === "CHANNEL_ERROR") {
+          console.error("❌ Participants channel error");
+        } else if (status === "TIMED_OUT") {
+          console.error("❌ Participants channel timed out");
+        }
+      });
 
     return () => {
+      console.log("=== CLEANING UP REALTIME SUBSCRIPTIONS ===");
       supabase.removeChannel(catchesChannel);
       supabase.removeChannel(participantsChannel);
     };
