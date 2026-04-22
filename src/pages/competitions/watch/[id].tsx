@@ -290,12 +290,19 @@ export default function CompetitionWatchPage() {
                         terminatedEarly={competition.terminated_early}
                         totalCatches={catches.length}
                         totalParticipants={participants.length}
-                        winner={leaderboard[0] ? {
-                          nickname: leaderboard[0].profiles?.nickname || "Rybář",
-                          avatar_url: leaderboard[0].profiles?.avatar_url,
-                          score: leaderboard[0].score,
-                          catchCount: leaderboard[0].catchCount
-                        } : undefined}
+                        topThree={leaderboard.slice(0, 3).map(p => ({
+                          nickname: p.profiles?.nickname || "Rybář",
+                          avatar_url: p.profiles?.avatar_url,
+                          score: p.score,
+                          catchCount: p.catchCount
+                        }))}
+                        allParticipants={leaderboard.map((p, index) => ({
+                          nickname: p.profiles?.nickname || "Rybář",
+                          avatar_url: p.profiles?.avatar_url,
+                          score: p.score,
+                          catchCount: p.catchCount,
+                          rank: index + 1
+                        }))}
                         topSpecies={getTopSpecies()}
                         scoringType={competition.scoring_type}
                       />
