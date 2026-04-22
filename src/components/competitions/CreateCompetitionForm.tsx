@@ -28,6 +28,7 @@ export function CreateCompetitionForm() {
   const [scoringType, setScoringType] = useState<"points" | "measurements">("points");
   const [autoJoin, setAutoJoin] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPublic, setIsPublic] = useState(false);
 
   // Points scoring configuration
   const [selectedFish, setSelectedFish] = useState("");
@@ -147,7 +148,7 @@ export function CreateCompetitionForm() {
         fish_points: fishPointsJson,
         top_catches_count: scoringType === "measurements" ? (topCatchesCount || null) : null,
         creator_id: user.id, // Use creator_id not created_by
-        is_public: true,
+        is_public: isPublic,
       });
 
       if (error) {
@@ -455,6 +456,35 @@ export function CreateCompetitionForm() {
               </div>
             </div>
           )}
+
+          {/* Public/Private Toggle */}
+          <div className="space-y-3 p-4 bg-muted/30 rounded-lg">
+            <Label>Viditelnost závodu</Label>
+            <RadioGroup value={isPublic ? "public" : "private"} onValueChange={(v) => setIsPublic(v === "public")}>
+              <div className="flex items-start space-x-2">
+                <RadioGroupItem value="private" id="private" />
+                <div className="space-y-1">
+                  <Label htmlFor="private" className="font-normal cursor-pointer">
+                    🔒 Soukromý závod
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Zobrazuje se pouze účastníkům. Kdokoli se může připojit pomocí kódu.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-2">
+                <RadioGroupItem value="public" id="public" />
+                <div className="space-y-1">
+                  <Label htmlFor="public" className="font-normal cursor-pointer">
+                    🌐 Veřejný závod
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Viditelný pro všechny v seznamu závodů. Žádosti o připojení musíte schválit.
+                  </p>
+                </div>
+              </div>
+            </RadioGroup>
+          </div>
 
           {/* Auto-join Checkbox */}
           <div className="flex items-center space-x-2 p-4 bg-muted/30 rounded-lg">

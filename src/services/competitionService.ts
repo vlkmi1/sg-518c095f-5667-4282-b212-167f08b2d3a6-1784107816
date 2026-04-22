@@ -163,6 +163,135 @@ export const competitionService = {
     console.log("joinCompetition success:", { competitionId, userId });
   },
 
+  // Submit join request for public competition
+  async submitJoinRequest(competitionId: string, userId: string): Promise<{ error: any }> {
+    try {
+      const { error } = await supabase
+        .from("competition_join_requests")
+        .insert({
+          competition_id: competitionId,
+          user_id: userId,
+          status: "pending",
+        });
+
+      if (error) {
+        console.error("submitJoinRequest error:", error);
+        return { error };
+      }
+
+      return { error: null };
+    } catch (error: any) {
+      console.error("submitJoinRequest error:", error);
+      return { error };
+    }
+  },
+
+  // Get pending join requests for competition (for creator)
+  async getPendingRequests(competitionId: string): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from("competition_join_requests")
+        .select(`
+          *,
+          profiles:user_id (
+            id,
+            nickname,
+            avatar_url
+          )
+        `)
+        .eq("competition_id", competitionId)
+        .eq("status", "pending")
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        console.error("getPendingRequests error:", error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error("getPendingRequests error:", error);
+      return [];
+    }
+  },
+
+  // Approve join request
+  async approveJoinRequest(requestId: string, competitionId: string, userId: string): Promise<{ error: any }> {
+    try {
+      // Update request status to approved
+      const { error: updateError } = await supabase
+        .from("competition_join_requests")
+        .update({ status: "approved", updated_at: new Date().toISOString() })
+        .eq("id", requestId);
+
+      if (updateError) {
+        console.error("approveJoinRequest update error:", updateError);
+        return { error: updateError };
+      }
+
+      // Add user as participant
+      const { error: insertError } = await supabase
+        .from("competition_participants")
+        .insert({
+          competition_id: competitionId,
+          user_id: userId,
+        });
+
+      if (insertError) {
+        console.error("approveJoinRequest insert error:", insertError);
+        return { error: insertError };
+      }
+
+      return { error: null };
+    } catch (error: any) {
+      console.error("approveJoinRequest error:", error);
+      return { error };
+    }
+  },
+
+  // Reject join request
+  async rejectJoinRequest(requestId: string): Promise<{ error: any }> {
+    try {
+      const { error } = await supabase
+        .from("competition_join_requests")
+        .update({ status: "rejected", updated_at: new Date().toISOString() })
+        .eq("id", requestId);
+
+      if (error) {
+        console.error("rejectJoinRequest error:", error);
+        return { error };
+      }
+
+      return { error: null };
+    } catch (error: any) {
+      console.error("rejectJoinRequest error:", error);
+      return { error };
+    }
+  },
+
+  // Check if user has pending request
+  async hasPendingRequest(competitionId: string, userId: string): Promise<boolean> {
+    try {
+      const { data, error } = await supabase
+        .from("competition_join_requests")
+        .select("id")
+        .eq("competition_id", competitionId)
+        .eq("user_id", userId)
+        .eq("status", "pending")
+        .maybeSingle();
+
+      if (error) {
+        console.error("hasPendingRequest error:", error);
+        return false;
+      }
+
+      return !!data;
+    } catch (error) {
+      console.error("hasPendingRequest error:", error);
+      return false;
+    }
+  },
+
   // Get competitions user is part of (created OR participating)
   async getUserCompetitions(userId: string): Promise<Competition[]> {
     // Get competitions where user is creator/organizer
