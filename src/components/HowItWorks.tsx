@@ -552,6 +552,69 @@ export function HowItWorks() {
             </Card>
           </AccordionContent>
         </AccordionItem>
+
+        {/* Pricing Section */}
+        <AccordionItem value="pricing" className="border-l-4 border-l-primary/30">
+          <AccordionTrigger className="hover:no-underline px-6 py-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Award className="h-5 w-5 text-primary" />
+              </div>
+              <span className="text-lg font-semibold text-left">
+                💰 Kolik stojí ukažrybu.cz?
+              </span>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-6 pb-6">
+            <Card className="bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
+              <CardContent className="pt-6">
+                <div className="text-center space-y-4">
+                  <div className="text-6xl font-bold text-primary">
+                    0 Kč
+                  </div>
+                  <p className="text-xl font-semibold text-foreground">
+                    Nic, aplikace a její užívání je zcela ZDARMA!
+                  </p>
+                  <div className="space-y-2 text-left max-w-lg mx-auto pt-4">
+                    <div className="flex items-start gap-3">
+                      <span className="text-primary text-xl">✓</span>
+                      <span className="text-muted-foreground">
+                        Vystavování úlovků bez omezení
+                      </span>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <span className="text-primary text-xl">✓</span>
+                      <span className="text-muted-foreground">
+                        Kamarádské závody a jejich funkce
+                      </span>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <span className="text-primary text-xl">✓</span>
+                      <span className="text-muted-foreground">
+                        Získávání trofejí a statistik
+                      </span>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <span className="text-primary text-xl">✓</span>
+                      <span className="text-muted-foreground">
+                        Síň slávy a žebříčky
+                      </span>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <span className="text-primary text-xl">✓</span>
+                      <span className="text-muted-foreground">
+                        Vše pro rybáře zcela zdarma
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground italic pt-4">
+                    Naším cílem je vytvořit komunitu rybářů, kde se každý může svobodně sdílet a soutěžit.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </AccordionContent>
+        </AccordionItem>
       </Accordion>
     </div>
   );
