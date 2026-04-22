@@ -324,30 +324,60 @@ export function AddCompetitionCatch({
           {/* Fish Species */}
           <div className="space-y-2">
             <Label htmlFor="species">Druh ryby *</Label>
-            <Select value={species} onValueChange={setSpecies}>
-              <SelectTrigger>
-                <SelectValue placeholder="Vyberte druh" />
-              </SelectTrigger>
-              <SelectContent>
+            
+            {scoringType === "points" ? (
+              // Tlačítka pro závody na body
+              <div className="grid grid-cols-2 gap-3">
                 {availableFish.map((fish) => (
-                  <SelectItem key={fish.value} value={fish.value}>
-                    <div className="flex items-center gap-2">
-                      <img
-                        src={fish.image}
-                        alt={fish.label}
-                        className="h-5 w-5 object-cover rounded-full"
-                      />
-                      {fish.label}
-                      {scoringType === "points" && fishPointsMemo[fish.value] && (
-                        <span className="text-xs text-muted-foreground ml-2">
-                          ({fishPointsMemo[fish.value]} {fishPointsMemo[fish.value] === 1 ? "bod" : fishPointsMemo[fish.value] < 5 ? "body" : "bodů"})
-                        </span>
-                      )}
-                    </div>
-                  </SelectItem>
+                  <button
+                    key={fish.value}
+                    type="button"
+                    onClick={() => setSpecies(fish.value)}
+                    className={`
+                      flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all
+                      ${species === fish.value 
+                        ? 'border-primary bg-primary/10 shadow-md' 
+                        : 'border-border bg-card hover:border-primary/50 hover:bg-accent/5'
+                      }
+                    `}
+                  >
+                    <img
+                      src={fish.image}
+                      alt={fish.label}
+                      className="h-12 w-12 object-cover rounded-full"
+                    />
+                    <span className="text-sm font-medium text-center">{fish.label}</span>
+                    {fishPointsMemo[fish.value] && (
+                      <span className="text-xs text-primary font-bold">
+                        {fishPointsMemo[fish.value]} {fishPointsMemo[fish.value] === 1 ? "bod" : fishPointsMemo[fish.value] < 5 ? "body" : "bodů"}
+                      </span>
+                    )}
+                  </button>
                 ))}
-              </SelectContent>
-            </Select>
+              </div>
+            ) : (
+              // Select pro závody na míry
+              <Select value={species} onValueChange={setSpecies}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Vyberte druh" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableFish.map((fish) => (
+                    <SelectItem key={fish.value} value={fish.value}>
+                      <div className="flex items-center gap-2">
+                        <img
+                          src={fish.image}
+                          alt={fish.label}
+                          className="h-5 w-5 object-cover rounded-full"
+                        />
+                        {fish.label}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            
             {scoringType === "points" && species && fishPointsMemo[species] && (
               <p className="text-sm text-muted-foreground">
                 💎 Body za tento úlovek: <span className="font-bold text-primary">{fishPointsMemo[species]}</span>
