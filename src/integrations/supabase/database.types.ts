@@ -481,7 +481,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      admin_update_user_password: {
+        Args: { new_password: string; target_user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

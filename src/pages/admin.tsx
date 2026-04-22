@@ -21,7 +21,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { authService } from "@/services/authService";
 import { adminService } from "@/services/adminService";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, Users, Fish, Ban, CheckCircle, Eye, EyeOff, Trash2, User, Edit } from "lucide-react";
+import { Shield, Users, Fish, Ban, CheckCircle, Eye, EyeOff, Trash2, User, Edit, Trophy, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
 import { FISH_SPECIES, COUNTRIES, CZECH_REGIONS } from "@/lib/constants";
@@ -61,6 +61,14 @@ export default function AdminPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [catches, setCatches] = useState<any[]>([]);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [userDetailOpen, setUserDetailOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [userDetail, setUserDetail] = useState<any>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
 
   useEffect(() => {
     checkAdminAccess();
@@ -212,6 +220,76 @@ export default function AdminPage() {
       });
     } finally {
       setIsDeleting(false);
+    }
+  }
+
+  async function handleOpenUserDetail(user: any) {
+    setSelectedUser(user);
+    setUserDetailOpen(true);
+    setLoadingDetail(true);
+    
+    try {
+      const detail = await adminService.getUserDetail(user.id);
+      setUserDetail(detail);
+    } catch (error: any) {
+      toast({
+        title: "Chyba",
+        description: error.message || "Nepodařilo se načíst detail uživatele",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingDetail(false);
+    }
+  }
+
+  function handleOpenPasswordDialog() {
+    setNewPassword("");
+    setNewPasswordConfirm("");
+    setPasswordDialogOpen(true);
+  }
+
+  async function handleChangePassword() {
+    if (!selectedUser) return;
+
+    // Validation
+    if (!newPassword || newPassword.length < 6) {
+      toast({
+        title: "Chyba",
+        description: "Heslo musí mít alespoň 6 znaků",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newPassword !== newPasswordConfirm) {
+      toast({
+        title: "Chyba",
+        description: "Hesla se neshodují",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      await adminService.changeUserPassword(selectedUser.id, newPassword);
+      
+      toast({
+        title: "✅ Heslo změněno",
+        description: "Heslo uživatele bylo úspěšně změněno",
+      });
+      
+      setPasswordDialogOpen(false);
+      setNewPassword("");
+      setNewPasswordConfirm("");
+    } catch (error: any) {
+      toast({
+        title: "Chyba",
+        description: error.message || "Nepodařilo se změnit heslo",
+        variant: "destructive",
+      });
+    } finally {
+      setChangingPassword(false);
     }
   }
 
@@ -463,27 +541,38 @@ export default function AdminPage() {
                             </p>
                           </div>
                         </div>
-                        {!user.is_admin && (
+                        <div className="flex gap-2">
                           <Button
-                            variant={user.is_blocked ? "outline" : "destructive"}
+                            variant="outline"
                             size="sm"
-                            onClick={() => handleToggleUserBlock(user.id, user.is_blocked)}
-                            disabled={processingId === user.id}
+                            onClick={() => handleOpenUserDetail(user)}
                             className="gap-2"
                           >
-                            {user.is_blocked ? (
-                              <>
-                                <CheckCircle className="h-4 w-4" />
-                                Odblokovat
-                              </>
-                            ) : (
-                              <>
-                                <Ban className="h-4 w-4" />
-                                Zablokovat
-                              </>
-                            )}
+                            <Eye className="h-4 w-4" />
+                            Detail
                           </Button>
-                        )}
+                          {!user.is_admin && (
+                            <Button
+                              variant={user.is_blocked ? "outline" : "destructive"}
+                              size="sm"
+                              onClick={() => handleToggleUserBlock(user.id, user.is_blocked)}
+                              disabled={processingId === user.id}
+                              className="gap-2"
+                            >
+                              {user.is_blocked ? (
+                                <>
+                                  <CheckCircle className="h-4 w-4" />
+                                  Odblokovat
+                                </>
+                              ) : (
+                                <>
+                                  <Ban className="h-4 w-4" />
+                                  Zablokovat
+                                </>
+                              )}
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -834,6 +923,186 @@ export default function AdminPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* User Detail Dialog */}
+      <Dialog open={userDetailOpen} onOpenChange={setUserDetailOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-2xl">Detail uživatele</DialogTitle>
+            <DialogDescription>
+              Podrobné informace a statistiky uživatele
+            </DialogDescription>
+          </DialogHeader>
+
+          {loadingDetail ? (
+            <div className="py-8 text-center">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+              <p className="text-sm text-muted-foreground mt-4">Načítám detail...</p>
+            </div>
+          ) : userDetail && selectedUser ? (
+            <div className="space-y-6">
+              {/* User Info */}
+              <div className="flex items-center gap-4">
+                <Avatar className="h-20 w-20">
+                  <AvatarImage src={selectedUser.avatar_url || undefined} />
+                  <AvatarFallback className="bg-primary/10 text-primary text-2xl">
+                    <User className="h-10 w-10" />
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="text-xl font-semibold">{selectedUser.nickname}</h3>
+                    {selectedUser.is_admin && (
+                      <Badge variant="secondary" className="gap-1">
+                        <Shield className="h-3 w-3" />
+                        Admin
+                      </Badge>
+                    )}
+                    {selectedUser.is_blocked && (
+                      <Badge variant="destructive" className="gap-1">
+                        <Ban className="h-3 w-3" />
+                        Zablokován
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground">{selectedUser.email}</p>
+                  {selectedUser.full_name && (
+                    <p className="text-sm text-muted-foreground">{selectedUser.full_name}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Statistics */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Statistiky</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center p-4 bg-primary/5 rounded-lg">
+                      <Fish className="h-6 w-6 mx-auto mb-2 text-primary" />
+                      <p className="text-2xl font-bold text-primary">{userDetail.stats.catchesCount}</p>
+                      <p className="text-xs text-muted-foreground">Úlovků</p>
+                    </div>
+                    <div className="text-center p-4 bg-accent/5 rounded-lg">
+                      <Users className="h-6 w-6 mx-auto mb-2 text-accent" />
+                      <p className="text-2xl font-bold text-accent">{userDetail.stats.competitionsCount}</p>
+                      <p className="text-xs text-muted-foreground">Závodů</p>
+                    </div>
+                    <div className="text-center p-4 bg-secondary/5 rounded-lg">
+                      <Trophy className="h-6 w-6 mx-auto mb-2 text-secondary" />
+                      <p className="text-2xl font-bold text-secondary">{userDetail.stats.trophiesCount}</p>
+                      <p className="text-xs text-muted-foreground">Trofejí</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Account Details */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Detaily účtu</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">ID:</p>
+                      <p className="font-mono text-xs">{selectedUser.id}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Registrace:</p>
+                      <p suppressHydrationWarning>
+                        {format(new Date(selectedUser.created_at), "d. MMMM yyyy HH:mm", { locale: cs })}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Email ověřen:</p>
+                      <p>{selectedUser.email_confirmed_at ? "✅ Ano" : "❌ Ne"}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Administrátor:</p>
+                      <p>{selectedUser.is_admin ? "✅ Ano" : "❌ Ne"}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-4">
+                <Button
+                  onClick={handleOpenPasswordDialog}
+                  className="flex-1 gap-2"
+                  variant="outline"
+                >
+                  <Edit className="h-4 w-4" />
+                  Změnit heslo
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setUserDetailOpen(false)}
+                >
+                  Zavřít
+                </Button>
+              </div>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
+
+      {/* Change Password Dialog */}
+      <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Změnit heslo uživatele</DialogTitle>
+            <DialogDescription>
+              Nastavte nové heslo pro uživatele <strong>{selectedUser?.nickname}</strong>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-password">Nové heslo *</Label>
+              <Input
+                id="new-password"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Minimálně 6 znaků"
+                disabled={changingPassword}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">Potvrzení hesla *</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                value={newPasswordConfirm}
+                onChange={(e) => setNewPasswordConfirm(e.target.value)}
+                placeholder="Zadejte heslo znovu"
+                disabled={changingPassword}
+              />
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button
+                onClick={handleChangePassword}
+                disabled={changingPassword}
+                className="flex-1"
+              >
+                {changingPassword ? "Měním..." : "Změnit heslo"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setPasswordDialogOpen(false)}
+                disabled={changingPassword}
+              >
+                Zrušit
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
