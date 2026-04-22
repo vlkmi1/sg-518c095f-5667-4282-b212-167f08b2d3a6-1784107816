@@ -27,6 +27,7 @@ import { Trophy, Users, Calendar, Share2, Fish, User, Trash2, Loader2, ArrowLeft
 import { format, isBefore, startOfDay } from "date-fns";
 import { cs } from "date-fns/locale";
 import { AddCompetitionCatch } from "@/components/competitions/AddCompetitionCatch";
+import { CompetitionCountdown } from "@/components/competitions/CompetitionCountdown";
 
 export default function CompetitionDetailPage() {
   const router = useRouter();
@@ -634,6 +635,15 @@ export default function CompetitionDetailPage() {
                   </div>
                 </div>
               )}
+
+              {/* Countdown Timer */}
+              <div className="pt-4">
+                <CompetitionCountdown
+                  startDate={competition.start_date}
+                  endDate={competition.end_date}
+                  terminatedEarly={competition.terminated_early}
+                />
+              </div>
 
               {/* Add Catch Button - Only for participants during competition */}
               {isUserParticipant && isCompetitionOngoing && (
