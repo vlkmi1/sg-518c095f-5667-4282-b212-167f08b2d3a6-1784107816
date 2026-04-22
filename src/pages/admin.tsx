@@ -578,7 +578,7 @@ export default function AdminPage() {
                             className="gap-2"
                           >
                             <Eye className="h-4 w-4" />
-                            Detail
+                            <span className="hidden sm:inline">Detail</span>
                           </Button>
                           {!user.is_admin && (
                             <Button
@@ -591,12 +591,12 @@ export default function AdminPage() {
                               {user.is_blocked ? (
                                 <>
                                   <CheckCircle className="h-4 w-4" />
-                                  Odblokovat
+                                  <span className="hidden sm:inline">Odblokovat</span>
                                 </>
                               ) : (
                                 <>
                                   <Ban className="h-4 w-4" />
-                                  Zablokovat
+                                  <span className="hidden sm:inline">Zablokovat</span>
                                 </>
                               )}
                             </Button>
@@ -649,7 +649,7 @@ export default function AdminPage() {
                             className="gap-2"
                           >
                             <Edit className="h-4 w-4" />
-                            Upravit
+                            <span className="hidden sm:inline">Upravit</span>
                           </Button>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
@@ -660,7 +660,7 @@ export default function AdminPage() {
                                 className="gap-2"
                               >
                                 <Trash2 className="h-4 w-4" />
-                                Odstranit
+                                <span className="hidden sm:inline">Odstranit</span>
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
@@ -917,14 +917,25 @@ export default function AdminPage() {
                 disabled={isSubmitting}
                 className="flex-1"
               >
-                {isSubmitting ? "Ukládám..." : "Uložit změny"}
+                {isSubmitting ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="hidden sm:inline">Ukládám...</span>
+                  </span>
+                ) : (
+                  <>
+                    <span className="hidden sm:inline">Uložit změny</span>
+                    <span className="sm:hidden">Uložit</span>
+                  </>
+                )}
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setEditDialogOpen(false)}
                 disabled={isSubmitting}
               >
-                Zrušit
+                <span className="hidden sm:inline">Zrušit</span>
+                <span className="sm:hidden">✕</span>
               </Button>
             </div>
           </div>
@@ -1079,13 +1090,14 @@ export default function AdminPage() {
                   variant="outline"
                 >
                   <Edit className="h-4 w-4" />
-                  Změnit heslo
+                  <span className="hidden sm:inline">Změnit heslo</span>
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => setUserDetailOpen(false)}
                 >
-                  Zavřít
+                  <span className="hidden sm:inline">Zavřít</span>
+                  <span className="sm:hidden">✕</span>
                 </Button>
               </div>
             </div>
@@ -1134,14 +1146,26 @@ export default function AdminPage() {
                 disabled={changingPassword}
                 className="flex-1"
               >
-                {changingPassword ? "Měním..." : "Změnit heslo"}
+                {changingPassword ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="hidden sm:inline">Měním...</span>
+                  </span>
+                ) : (
+                  <>
+                    <Edit className="h-4 w-4 sm:hidden" />
+                    <span className="hidden sm:inline">Změnit heslo</span>
+                    <span className="sm:hidden">Změnit</span>
+                  </>
+                )}
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setPasswordDialogOpen(false)}
                 disabled={changingPassword}
               >
-                Zrušit
+                <span className="hidden sm:inline">Zrušit</span>
+                <span className="sm:hidden">✕</span>
               </Button>
             </div>
           </div>
