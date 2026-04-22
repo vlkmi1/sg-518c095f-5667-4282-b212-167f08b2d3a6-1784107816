@@ -65,12 +65,38 @@ export default function JoinCompetitionPage() {
         return;
       }
 
-      await competitionService.joinCompetition(competition.id, user.id);
+      // Check if competition is public - if so, submit join request
+      if (competition.is_public) {
+        // Check if user already has pending request
+        const hasPending = await competitionService.hasPendingRequest(competition.id, user.id);
+        
+        if (hasPending) {
+          toast({
+            title: "Žádost již odeslána",
+            description: "Vyčkejte na schválení zakladatelem závodu",
+          });
+          router.push(`/competitions/${competition.id}`);
+          return;
+        }
 
-      toast({
-        title: "✅ Připojeno!",
-        description: "Úspěšně jste se připojili k závodu",
-      });
+        // Submit join request
+        const { error } = await competitionService.submitJoinRequest(competition.id, user.id);
+        
+        if (error) throw error;
+
+        toast({
+          title: "✅ Žádost odeslána",
+          description: "Vyčkejte na schválení zakladatelem závodu",
+        });
+      } else {
+        // Private competition - join directly
+        await competitionService.joinCompetition(competition.id, user.id);
+
+        toast({
+          title: "✅ Připojeno!",
+          description: "Úspěšně jste se připojili k závodu",
+        });
+      }
 
       router.push(`/competitions/${competition.id}`);
     } catch (error: any) {
@@ -132,6 +158,11 @@ export default function JoinCompetitionPage() {
                     <Badge variant={isActive ? "default" : "secondary"}>
                       {isActive ? "Probíhá" : "Ukončeno"}
                     </Badge>
+                    {competition.is_public ? (
+                      <Badge variant="outline">🌐 Veřejný</Badge>
+                    ) : (
+                      <Badge variant="outline">🔒 Soukromý</Badge>
+                    )}
                     {competition.prize_type === "beer" && <Badge variant="outline">🍺 O pivo</Badge>}
                     {competition.prize_type === "bottle" && <Badge variant="outline">🍾 O láhev</Badge>}
                     {competition.prize_type === "none" && <Badge variant="outline">O čest</Badge>}
@@ -202,9 +233,9 @@ export default function JoinCompetitionPage() {
                       disabled={isJoining || !isActive}
                     >
                       {isJoining ? (
-                        <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Připojuji...</>
+                        <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> {competition.is_public ? "Odesílám žádost..." : "Připojuji..."}</>
                       ) : (
-                        <><Users className="h-5 w-5 mr-2" /> Připojit se k závodu</>
+                        <><Users className="h-5 w-5 mr-2" /> {competition.is_public ? "Poslat žádost o připojení" : "Připojit se k závodu"}</>
                       )}
                     </Button>
                     <Button 
