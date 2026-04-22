@@ -59,7 +59,7 @@ export const storageService = {
   async uploadCatchImage(file: File, userId: string): Promise<UploadResult> {
     try {
       // Compress image before upload
-      const compressedBlob = await compressImage(file, 1920, 0.85);
+      const compressedBlob = await compressImage(file, 1000, 0.85);
       
       // Generate unique filename
       const fileExt = "jpg"; // Always save as JPEG after compression
@@ -161,8 +161,8 @@ export const storageService = {
         userId
       });
 
-      // Compress image before upload (max 1920px width, 85% quality)
-      const compressedBlob = await compressImage(file, 1920, 0.85);
+      // Compress image before upload (max 1000px width, 85% quality)
+      const compressedBlob = await compressImage(file, 1000, 0.85);
       
       console.log("Image compressed:", {
         originalSize: file.size,
