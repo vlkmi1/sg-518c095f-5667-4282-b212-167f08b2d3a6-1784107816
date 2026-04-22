@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
+import { FISH_SPECIES_CZ } from "@/lib/constants";
 
 type Trophy = Database["public"]["Tables"]["trophies"]["Row"];
 type TrophyNotification = Database["public"]["Tables"]["trophy_notifications"]["Row"];
@@ -140,20 +141,38 @@ export function formatPeriodType(periodType: string): string {
 }
 
 /**
+ * Získat číslo týdne v roce
+ */
+function getWeekNumber(date: Date): number {
+  const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+  const pastDaysOfYear = (date.getTime() - firstDayOfYear.getTime()) / 86400000;
+  return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+}
+
+/**
  * Formátování data období
  */
 export function formatPeriodDate(date: string, periodType: string): string {
   const d = new Date(date);
   
   if (periodType === "weekly") {
-    const weekStart = new Date(d);
-    weekStart.setDate(d.getDate() - d.getDay() + 1);
-    return `${weekStart.getDate()}.${weekStart.getMonth() + 1}.${weekStart.getFullYear()}`;
+    const weekNumber = getWeekNumber(d);
+    return `${weekNumber}. týdne`;
   }
   
   if (periodType === "monthly") {
-    return `${d.getMonth() + 1}/${d.getFullYear()}`;
+    return `${d.getMonth() + 1}. měsíce`;
   }
   
-  return d.getFullYear().toString();
+  return `roku ${d.getFullYear()}`;
+}
+
+/**
+ * Formátování úplného názvu trofeje
+ */
+export function formatTrophyTitle(fishSpecies: string, periodType: string, periodEndDate: string, position: number): string {
+  const speciesName = FISH_SPECIES_CZ[fishSpecies] || fishSpecies;
+  const period = formatPeriodDate(periodEndDate, periodType);
+  
+  return `Trofej ${period} v kategorii ${speciesName} ${position}. místo`;
 }

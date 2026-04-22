@@ -21,7 +21,7 @@ import { authService } from "@/services/authService";
 import { profileService } from "@/services/profileService";
 import { catchService } from "@/services/catchService";
 import { competitionService } from "@/services/competitionService";
-import { getUserTrophies, getTrophyStats, formatPeriodType, formatPeriodDate } from "@/services/trophyService";
+import { getUserTrophies, getTrophyStats, formatTrophyTitle } from "@/services/trophyService";
 import { useToast } from "@/hooks/use-toast";
 import { User, Fish, Trophy, LogOut, Plus, Users, Loader2, Edit, Scale, Ruler, Shield, Medal, Award } from "lucide-react";
 import { format } from "date-fns";
@@ -436,15 +436,8 @@ export function ProfileView() {
                     </div>
                     <div>
                       <p className="font-semibold text-foreground">
-                        {trophy.position}. místo - {FISH_SPECIES_CZ[trophy.fish_species] || trophy.fish_species}
+                        {formatTrophyTitle(trophy.fish_species, trophy.period_type, trophy.period_end_date, trophy.position)}
                       </p>
-                      <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-                        <Badge variant="secondary" className="text-xs">
-                          {formatPeriodType(trophy.period_type)}
-                        </Badge>
-                        <span>•</span>
-                        <span>{formatPeriodDate(trophy.period_end_date, trophy.period_type)}</span>
-                      </div>
                     </div>
                   </div>
                   <div className="text-right">

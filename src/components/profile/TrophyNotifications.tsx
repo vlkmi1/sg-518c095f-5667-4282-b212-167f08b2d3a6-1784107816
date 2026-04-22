@@ -8,11 +8,9 @@ import {
   getUnreadTrophyNotifications,
   markNotificationAsRead,
   markAllNotificationsAsRead,
-  formatPeriodType,
-  formatPeriodDate,
+  formatTrophyTitle,
   type TrophyWithNotification
 } from "@/services/trophyService";
-import { FISH_SPECIES_CZ } from "@/lib/constants";
 
 interface TrophyNotificationsProps {
   userId: string;
@@ -85,18 +83,12 @@ export function TrophyNotifications({ userId }: TrophyNotificationsProps) {
           <AlertDescription className="flex items-center justify-between">
             <div className="flex-1">
               <p className="font-semibold text-foreground">
-                🎉 Gratulujeme! Získal jsi trofej{" "}
+                🎉 Gratulujeme! Získal jsi{" "}
                 <span className="text-primary">
-                  {trophy.position}. místo {FISH_SPECIES_CZ[trophy.fish_species] || trophy.fish_species}
+                  {formatTrophyTitle(trophy.fish_species, trophy.period_type, trophy.period_end_date, trophy.position)}
                 </span>
               </p>
               <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-                <Badge variant="secondary" className="text-xs">
-                  {formatPeriodType(trophy.period_type)}
-                </Badge>
-                <span>•</span>
-                <span>{formatPeriodDate(trophy.period_end_date, trophy.period_type)}</span>
-                <span>•</span>
                 <span>{trophy.weight_kg} kg</span>
                 <span>•</span>
                 <span>{trophy.length_cm} cm</span>
