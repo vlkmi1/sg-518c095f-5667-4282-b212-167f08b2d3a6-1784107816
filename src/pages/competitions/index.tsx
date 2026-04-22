@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { Header } from "@/components/layout/Header";
 import { SEO } from "@/components/SEO";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -168,7 +167,6 @@ export default function CompetitionsPage() {
       <ProtectedRoute>
         <SEO title="Závody" />
         <div className="min-h-screen bg-background">
-          <Header />
           <main className="container py-8">
             <div className="space-y-4">
               <Skeleton className="h-32 w-full" />
@@ -184,33 +182,7 @@ export default function CompetitionsPage() {
     <ProtectedRoute>
       <SEO title="Závody" />
       <div className="min-h-screen bg-background">
-        <Header />
         <main className="container py-8 space-y-6">
-          {/* Header */}
-          <Card className="border-primary/20 bg-primary/5">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="font-serif text-2xl flex items-center gap-2">
-                  <Trophy className="h-6 w-6 text-primary" />
-                  Rybářské závody
-                </CardTitle>
-                <Button onClick={() => router.push("/competitions/create")} className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  <span className="hidden sm:inline">Vytvořit závod</span>
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-muted-foreground">
-                Vyrazte na ryby s přáteli a udělejte z výpravy soutěž.
-                Snadno uvidíte, kdo co a kdy chytil, porovnáte úlovky a získáte přehled o úspěšnosti jednotlivých míst i období.
-              </p>
-              <p className="text-muted-foreground">
-                Vytvořte si vlastní přátelský rybářský závod a mějte své úlovky i statistiky vždy přehledně na jednom místě.
-              </p>
-            </CardContent>
-          </Card>
-
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-3">

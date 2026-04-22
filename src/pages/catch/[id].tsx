@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { Header } from "@/components/layout/Header";
 import { SEO } from "@/components/SEO";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -104,7 +103,6 @@ export default function CatchDetailPage() {
           title="Načítání úlovku..."
           description="Detail úlovku se načítá"
         />
-        <Header />
         <main className="container mx-auto px-4 py-8 max-w-4xl">
           <Skeleton className="h-96 w-full rounded-lg mb-4" />
           <Skeleton className="h-8 w-3/4 mb-2" />
@@ -121,7 +119,6 @@ export default function CatchDetailPage() {
           title="Úlovek nenalezen"
           description="Požadovaný úlovek nebyl nalezen"
         />
-        <Header />
         <main className="container mx-auto px-4 py-8 max-w-4xl">
           <Card>
             <CardContent className="p-8 text-center">
@@ -147,7 +144,6 @@ export default function CatchDetailPage() {
         description={`${catchData.species}${catchData.length_cm ? ` (${catchData.length_cm} cm)` : ""}${catchData.weight_kg ? ` (${catchData.weight_kg.toFixed(2)} kg)` : ""} - ${catchData.fishing_area || catchData.district || "Ukaž Rybu"}`}
         image={catchData.photo_url}
       />
-      <Header />
       
       <main className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Back button */}

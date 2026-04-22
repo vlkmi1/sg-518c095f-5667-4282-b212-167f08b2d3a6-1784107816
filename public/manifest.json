@@ -1,7 +1,7 @@
 {
   "name": "Ukaž Rybu - Rybářský portál",
   "short_name": "Ukaž Rybu",
-  "version": "1.0.0",
+  "version": "2.5.0",
   "description": "Platforma pro rybáře k přehlednému sdílení fotografií svých úlovků",
   "start_url": "/",
   "display": "standalone",
