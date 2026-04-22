@@ -21,6 +21,7 @@ import { authService } from "@/services/authService";
 import { adminService } from "@/services/adminService";
 import { competitionService } from "@/services/competitionService";
 import { catchService } from "@/services/catchService";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Trophy, Users, Calendar, Share2, Fish, User, Trash2, Loader2, ArrowLeft, ExternalLink, Copy, X, Check } from "lucide-react";
 import { format, isBefore, startOfDay } from "date-fns";
@@ -62,6 +63,77 @@ export default function CompetitionDetailPage() {
     }
   }, [id]);
 
+  useEffect(() => {
+    if (!id) return;
+
+    // Subscribe to catches changes
+    const catchesChannel = supabase
+      .channel(`competition-${id}-catches`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "catches",
+          filter: `competition_id=eq.${id}`,
+        },
+        (payload) => {
+          console.log("Real-time catch update:", payload);
+          
+          // Reload catches when any change happens
+          loadCompetitionCatches();
+        }
+      )
+      .subscribe();
+
+    // Subscribe to participants changes
+    const participantsChannel = supabase
+      .channel(`competition-${id}-participants`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "competition_participants",
+          filter: `competition_id=eq.${id}`,
+        },
+        (payload) => {
+          console.log("Real-time participant update:", payload);
+          
+          // Reload participants when any change happens
+          loadCompetitionParticipants();
+        }
+      )
+      .subscribe();
+
+    // Subscribe to join requests changes (for creator)
+    const requestsChannel = supabase
+      .channel(`competition-${id}-requests`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "competition_join_requests",
+          filter: `competition_id=eq.${id}`,
+        },
+        (payload) => {
+          console.log("Real-time join request update:", payload);
+          
+          // Reload pending requests
+          loadPendingRequests();
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscriptions on unmount
+    return () => {
+      supabase.removeChannel(catchesChannel);
+      supabase.removeChannel(participantsChannel);
+      supabase.removeChannel(requestsChannel);
+    };
+  }, [id, competition?.creator_id, currentUserId]);
+
   async function checkUserStatus() {
     const user = await authService.getCurrentUser();
     if (user) {
@@ -85,42 +157,24 @@ export default function CompetitionDetailPage() {
       setCompetition(comp);
 
       // Load participants
-      const participantsData = await competitionService.getCompetitionParticipants(id as string);
-      console.log("=== PARTICIPANTS LOADED ===");
-      console.log("Participants count:", participantsData?.length || 0);
-      console.log("Participants:", participantsData);
-      setParticipants(participantsData || []);
+      await loadCompetitionParticipants();
 
       // Load catches
-      console.log("=== LOADING CATCHES ===");
-      console.log("Looking for catches with competition_id:", id);
-      const { data: catchData, error: catchError } = await competitionService.getCompetitionCatches(id as string);
-      
-      console.log("=== CATCHES LOADED ===");
-      console.log("Catches error:", catchError);
-      console.log("Catches count:", catchData?.length || 0);
-      console.log("Catches data:", catchData);
-      
-      if (catchError) {
-        console.error("Error loading catches:", catchError);
-      }
-      
-      setCatches(catchData || []);
+      await loadCompetitionCatches();
 
       // Check if current user is participant
       const user = await authService.getCurrentUser();
-      if (user && participantsData) {
-        const isParticipant = participantsData.some((p: any) => p.user_id === user.id);
+      if (user) {
+        const participantsData = await competitionService.getCompetitionParticipants(id as string);
+        const isParticipant = participantsData?.some((p: any) => p.user_id === user.id);
         console.log("Current user ID:", user.id);
         console.log("Is user participant:", isParticipant);
         setIsUserParticipant(isParticipant);
-      }
 
-      // Load pending requests if user is creator
-      if (user && comp.creator_id === user.id) {
-        const requests = await competitionService.getPendingRequests(id as string);
-        console.log("Pending requests:", requests);
-        setPendingRequests(requests || []);
+        // Load pending requests if user is creator
+        if (comp.creator_id === user.id) {
+          await loadPendingRequests();
+        }
       }
     } catch (error: any) {
       console.error("Load competition data error:", error);
@@ -133,6 +187,41 @@ export default function CompetitionDetailPage() {
     } finally {
       setIsLoading(false);
     }
+  }
+
+  async function loadCompetitionCatches() {
+    console.log("=== LOADING CATCHES ===");
+    console.log("Looking for catches with competition_id:", id);
+    const { data: catchData, error: catchError } = await competitionService.getCompetitionCatches(id as string);
+    
+    console.log("=== CATCHES LOADED ===");
+    console.log("Catches error:", catchError);
+    console.log("Catches count:", catchData?.length || 0);
+    console.log("Catches data:", catchData);
+    
+    if (catchError) {
+      console.error("Error loading catches:", catchError);
+    }
+    
+    setCatches(catchData || []);
+  }
+
+  async function loadCompetitionParticipants() {
+    const participantsData = await competitionService.getCompetitionParticipants(id as string);
+    console.log("=== PARTICIPANTS LOADED ===");
+    console.log("Participants count:", participantsData?.length || 0);
+    console.log("Participants:", participantsData);
+    setParticipants(participantsData || []);
+  }
+
+  async function loadPendingRequests() {
+    if (!currentUserId || !competition?.creator_id || competition.creator_id !== currentUserId) {
+      return;
+    }
+    
+    const requests = await competitionService.getPendingRequests(id as string);
+    console.log("Pending requests:", requests);
+    setPendingRequests(requests || []);
   }
 
   async function handleApproveRequest(requestId: string, userId: string) {
