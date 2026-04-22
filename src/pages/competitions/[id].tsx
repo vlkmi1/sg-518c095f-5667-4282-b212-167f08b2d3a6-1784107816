@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { Header } from "@/components/layout/Header";
 import { SEO } from "@/components/SEO";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -367,7 +366,6 @@ export default function CompetitionDetailPage() {
       <>
         <SEO title="Načítání..." />
         <div className="min-h-screen bg-background">
-          <Header />
           <main className="container py-8">
             <Skeleton className="h-64 w-full" />
           </main>
@@ -381,7 +379,6 @@ export default function CompetitionDetailPage() {
       <>
         <SEO title="Závod nenalezen" />
         <div className="min-h-screen bg-background">
-          <Header />
           <main className="container py-8">
             <Card>
               <CardContent className="py-12 text-center">
@@ -411,7 +408,6 @@ export default function CompetitionDetailPage() {
         description={`Kód závodu je: ${competition.join_code || competition.invite_code} | ${competition.description || "Rybářský závod na Ukaž Rybu"}`}
       />
       <div className="min-h-screen bg-background">
-        <Header />
         <main className="container py-8 space-y-6">
           {/* Competition Header */}
           <Card>
