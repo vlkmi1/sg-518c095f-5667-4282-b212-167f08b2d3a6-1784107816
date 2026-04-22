@@ -23,7 +23,7 @@ import { adminService } from "@/services/adminService";
 import { competitionService } from "@/services/competitionService";
 import { catchService } from "@/services/catchService";
 import { useToast } from "@/hooks/use-toast";
-import { Trophy, Users, Calendar, Share2, Fish, User, Trash2, Loader2, ArrowLeft, ExternalLink, Copy, X } from "lucide-react";
+import { Trophy, Users, Calendar, Share2, Fish, User, Trash2, Loader2, ArrowLeft, ExternalLink, Copy, X, Check } from "lucide-react";
 import { format, isBefore, startOfDay } from "date-fns";
 import { cs } from "date-fns/locale";
 import { AddCompetitionCatch } from "@/components/competitions/AddCompetitionCatch";
@@ -43,6 +43,7 @@ export default function CompetitionDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isTerminating, setIsTerminating] = useState(false);
+  const [pendingRequests, setPendingRequests] = useState<any[]>([]);
 
   const isCreator = currentUserId && competition?.creator_id === currentUserId;
   
@@ -115,6 +116,13 @@ export default function CompetitionDetailPage() {
         console.log("Is user participant:", isParticipant);
         setIsUserParticipant(isParticipant);
       }
+
+      // Load pending requests if user is creator
+      if (user && comp.creator_id === user.id) {
+        const requests = await competitionService.getPendingRequests(id as string);
+        console.log("Pending requests:", requests);
+        setPendingRequests(requests || []);
+      }
     } catch (error: any) {
       console.error("Load competition data error:", error);
       toast({
@@ -125,6 +133,54 @@ export default function CompetitionDetailPage() {
       router.push("/competitions");
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function handleApproveRequest(requestId: string, userId: string) {
+    try {
+      const { error } = await competitionService.approveJoinRequest(
+        requestId,
+        competition.id,
+        userId
+      );
+
+      if (error) throw error;
+
+      toast({
+        title: "✅ Žádost schválena",
+        description: "Uživatel byl přidán mezi účastníky",
+      });
+
+      // Reload data
+      await loadCompetitionData();
+    } catch (error: any) {
+      toast({
+        title: "Chyba",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  }
+
+  async function handleRejectRequest(requestId: string) {
+    try {
+      const { error } = await competitionService.rejectJoinRequest(requestId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Žádost zamítnuta",
+        description: "Žádost o připojení byla zamítnuta",
+      });
+
+      // Reload data
+      await loadCompetitionData();
+    } catch (error: any) {
+      toast({
+        title: "Chyba",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   }
 
@@ -677,6 +733,65 @@ export default function CompetitionDetailPage() {
                       </div>
                     );
                   })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Pending Join Requests - only visible to creator */}
+          {isCreator && pendingRequests.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-serif text-xl flex items-center gap-2">
+                  <Users className="h-5 w-5 text-orange-600" />
+                  Čekající závodníci ({pendingRequests.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {pendingRequests.map((request) => (
+                    <div
+                      key={request.id}
+                      className="flex items-center justify-between p-3 bg-orange-500/10 border border-orange-500/20 rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={request.profiles?.avatar_url || undefined} />
+                          <AvatarFallback className="bg-primary/10 text-primary">
+                            <User className="h-5 w-5" />
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">
+                            {request.profiles?.nickname || "Anonym"}
+                          </p>
+                          <p className="text-xs text-muted-foreground" suppressHydrationWarning>
+                            Požádal {format(new Date(request.created_at), "d. M. yyyy HH:mm", { locale: cs })}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="default"
+                          onClick={() => handleApproveRequest(request.id, request.user_id)}
+                          className="gap-1"
+                        >
+                          <Check className="h-4 w-4" />
+                          Schválit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleRejectRequest(request.id)}
+                          className="gap-1"
+                        >
+                          <X className="h-4 w-4" />
+                          Zamítnout
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
