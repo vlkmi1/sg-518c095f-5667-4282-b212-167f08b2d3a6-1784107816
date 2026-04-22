@@ -352,7 +352,7 @@ export default function CompetitionDetailPage() {
     <>
       <SEO
         title={competition.name}
-        description={competition.description || "Rybářský závod na Ukaž Rybu"}
+        description={`Kód závodu je: ${competition.join_code || competition.invite_code} | ${competition.description || "Rybářský závod na Ukaž Rybu"}`}
       />
       <div className="min-h-screen bg-background">
         <Header />
