@@ -248,7 +248,11 @@ export default function CompetitionsPage() {
                     Rybářské závody
                   </CardTitle>
                   <p className="text-muted-foreground">
-                    Vytvářejte vlastní závody nebo se připojte k závodům ostatních rybářů
+                    Vyrazte na ryby s přáteli a udělejte z výpravy soutěž.
+                    Snadno uvidíte, kdo co a kdy chytil, porovnáte úlovky a získáte přehled o úspěšnosti jednotlivých míst i období.
+                  </p>
+                  <p className="text-muted-foreground mt-2">
+                    Vytvořte si vlastní přátelský rybářský závod a mějte své úlovky i statistiky vždy přehledně na jednom místě.
                   </p>
                 </div>
                 <div className="flex gap-2 flex-wrap w-full sm:w-auto">
