@@ -16,16 +16,19 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { EditProfileForm } from "@/components/profile/EditProfileForm";
+import { TrophyNotifications } from "@/components/profile/TrophyNotifications";
 import { authService } from "@/services/authService";
 import { profileService } from "@/services/profileService";
 import { catchService } from "@/services/catchService";
 import { competitionService } from "@/services/competitionService";
+import { getUserTrophies, getTrophyStats, formatPeriodType, formatPeriodDate } from "@/services/trophyService";
 import { useToast } from "@/hooks/use-toast";
-import { User, Fish, Trophy, LogOut, Plus, Users, Loader2, Edit, Scale, Ruler, Shield } from "lucide-react";
+import { User, Fish, Trophy, LogOut, Plus, Users, Loader2, Edit, Scale, Ruler, Shield, Medal, Award } from "lucide-react";
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
 import Image from "next/image";
 import Link from "next/link";
+import { FISH_SPECIES_CZ } from "@/lib/constants";
 import type { Tables } from "@/integrations/supabase/types";
 
 export function ProfileView() {
@@ -44,6 +47,8 @@ export function ProfileView() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [joinCode, setJoinCode] = useState("");
   const [isJoining, setIsJoining] = useState(false);
+  const [trophies, setTrophies] = useState<any[]>([]);
+  const [trophyStats, setTrophyStats] = useState<any>(null);
 
   useEffect(() => {
     loadProfile();
@@ -118,6 +123,13 @@ export function ProfileView() {
 
       const wins = await competitionService.getUserWinsCount(currentUser.id);
       setWinsCount(wins);
+
+      // Load trophies
+      const userTrophies = await getUserTrophies(currentUser.id);
+      setTrophies(userTrophies);
+
+      const stats = await getTrophyStats(currentUser.id);
+      setTrophyStats(stats);
     } catch (error) {
       console.error("Error loading profile:", error);
       toast({
@@ -195,6 +207,9 @@ export function ProfileView() {
 
   return (
     <div className="container py-8 space-y-6">
+      {/* Trophy Notifications */}
+      {user && <TrophyNotifications userId={user.id} />}
+
       {/* Profile Header */}
       <Card>
         <CardHeader>
@@ -357,6 +372,91 @@ export function ProfileView() {
         <Fish className="h-6 w-6" />
         Přidat úlovek
       </Button>
+
+      {/* Trophies Section */}
+      {trophies.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-serif text-xl flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-primary" />
+              Získané trofeje
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {/* Trophy Stats Summary */}
+            {trophyStats && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                <div className="text-center p-4 bg-primary/5 rounded-lg border border-primary/10">
+                  <Award className="h-8 w-8 mx-auto mb-2 text-primary" />
+                  <p className="text-3xl font-bold text-primary mb-1">{trophyStats.total}</p>
+                  <p className="text-sm text-muted-foreground">Celkem trofejí</p>
+                </div>
+                <div className="text-center p-4 bg-accent/5 rounded-lg border border-accent/10">
+                  <Medal className="h-8 w-8 mx-auto mb-2 text-accent" />
+                  <p className="text-3xl font-bold text-accent mb-1">{trophyStats.weekly}</p>
+                  <p className="text-sm text-muted-foreground">Týdenní</p>
+                </div>
+                <div className="text-center p-4 bg-accent/5 rounded-lg border border-accent/10">
+                  <Medal className="h-8 w-8 mx-auto mb-2 text-accent" />
+                  <p className="text-3xl font-bold text-accent mb-1">{trophyStats.monthly}</p>
+                  <p className="text-sm text-muted-foreground">Měsíční</p>
+                </div>
+                <div className="text-center p-4 bg-accent/5 rounded-lg border border-accent/10">
+                  <Medal className="h-8 w-8 mx-auto mb-2 text-accent" />
+                  <p className="text-3xl font-bold text-accent mb-1">{trophyStats.yearly}</p>
+                  <p className="text-sm text-muted-foreground">Roční</p>
+                </div>
+              </div>
+            )}
+
+            {/* Trophy List */}
+            <div className="space-y-3">
+              {trophies.map((trophy) => (
+                <div
+                  key={trophy.id}
+                  className="flex items-center justify-between p-4 bg-gradient-to-r from-primary/5 to-accent/5 rounded-lg border border-primary/10"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="flex-shrink-0">
+                      {trophy.position === 1 && (
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center">
+                          <Trophy className="h-6 w-6 text-white" />
+                        </div>
+                      )}
+                      {trophy.position === 2 && (
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-300 to-gray-500 flex items-center justify-center">
+                          <Medal className="h-6 w-6 text-white" />
+                        </div>
+                      )}
+                      {trophy.position === 3 && (
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
+                          <Medal className="h-6 w-6 text-white" />
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-foreground">
+                        {trophy.position}. místo - {FISH_SPECIES_CZ[trophy.fish_species] || trophy.fish_species}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+                        <Badge variant="secondary" className="text-xs">
+                          {formatPeriodType(trophy.period_type)}
+                        </Badge>
+                        <span>•</span>
+                        <span>{formatPeriodDate(trophy.period_end_date, trophy.period_type)}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-medium text-foreground">{trophy.weight_kg} kg</p>
+                    <p className="text-xs text-muted-foreground">{trophy.length_cm} cm</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* My Competitions */}
       <Card>
