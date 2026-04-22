@@ -54,10 +54,10 @@ export default async function handler(
         "Authorization": `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Ukaž Rybu <onboarding@resend.dev>", // You'll need to verify your domain
+        from: "Ukaž Rybu <onboarding@resend.dev>",
         to: ["info@ukazrybu.cz"],
         reply_to: email,
-        subject: `Návrh na vylepšení od ${name}`,
+        subject: `Nový návrh na vylepšení od ${name}`,
         html: `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #186E4E;">Nový návrh na vylepšení - Ukaž Rybu</h2>
