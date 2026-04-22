@@ -1,5 +1,5 @@
 export function Footer() {
-  const version = "2.6.0";
+  const version = "2.7.0";
 
   return (
     <footer className="border-t bg-background">
