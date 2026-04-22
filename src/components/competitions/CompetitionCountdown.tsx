@@ -1,11 +1,26 @@
 import { useState, useEffect } from "react";
-import { Calendar, Clock, Trophy } from "lucide-react";
+import { Calendar, Clock, Trophy, Fish, Users, Award, TrendingUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface CompetitionCountdownProps {
   startDate: string;
   endDate: string;
   terminatedEarly?: boolean;
+  // Statistics for ended competitions
+  totalCatches?: number;
+  totalParticipants?: number;
+  winner?: {
+    nickname: string;
+    avatar_url?: string;
+    score: number;
+    catchCount: number;
+  };
+  topSpecies?: Array<{
+    species: string;
+    count: number;
+  }>;
+  scoringType?: string;
 }
 
 interface TimeRemaining {
@@ -16,7 +31,16 @@ interface TimeRemaining {
   total: number;
 }
 
-export function CompetitionCountdown({ startDate, endDate, terminatedEarly }: CompetitionCountdownProps) {
+export function CompetitionCountdown({ 
+  startDate, 
+  endDate, 
+  terminatedEarly,
+  totalCatches = 0,
+  totalParticipants = 0,
+  winner,
+  topSpecies = [],
+  scoringType = "measurements"
+}: CompetitionCountdownProps) {
   const [timeRemaining, setTimeRemaining] = useState<TimeRemaining | null>(null);
   const [status, setStatus] = useState<"upcoming" | "ongoing" | "ended">("upcoming");
 
@@ -77,10 +101,100 @@ export function CompetitionCountdown({ startDate, endDate, terminatedEarly }: Co
 
   if (status === "ended") {
     return (
-      <div className="bg-muted/50 border rounded-lg p-4">
-        <div className="flex items-center justify-center gap-2 text-muted-foreground">
-          <Trophy className="h-5 w-5" />
-          <span className="font-semibold">Závod skončil</span>
+      <div className="bg-gradient-to-br from-yellow-500/10 via-orange-500/10 to-red-500/10 border border-yellow-500/20 rounded-lg p-6">
+        <div className="space-y-4">
+          {/* Header */}
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Trophy className="h-6 w-6 text-yellow-600" />
+              <h3 className="font-serif text-2xl font-bold text-yellow-700">
+                🏁 Závod ukončen
+              </h3>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Výsledky a statistiky
+            </p>
+          </div>
+
+          {/* Winner Section */}
+          {winner && (
+            <div className="bg-yellow-500/20 border-2 border-yellow-500/40 rounded-lg p-4">
+              <div className="text-center mb-3">
+                <div className="text-4xl mb-2">🥇</div>
+                <p className="text-xs text-yellow-700 font-medium uppercase tracking-wide mb-2">
+                  Vítěz závodu
+                </p>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-12 w-12 ring-2 ring-yellow-500">
+                    <AvatarImage src={winner.avatar_url || undefined} />
+                    <AvatarFallback className="bg-yellow-500/20 text-yellow-700">
+                      <Trophy className="h-6 w-6" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-bold text-lg">{winner.nickname}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {winner.catchCount} {winner.catchCount === 1 ? "úlovek" : winner.catchCount < 5 ? "úlovky" : "úlovků"}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-3xl font-bold text-yellow-700">{winner.score}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {scoringType === "points" ? "bodů" : "skóre"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Statistics Grid */}
+          <div className="grid grid-cols-2 gap-3">
+            {/* Total Catches */}
+            <div className="bg-background/50 rounded-lg p-3 text-center">
+              <Fish className="h-5 w-5 mx-auto mb-2 text-primary" />
+              <p className="text-2xl font-bold text-primary">{totalCatches}</p>
+              <p className="text-xs text-muted-foreground">
+                {totalCatches === 1 ? "úlovek" : totalCatches < 5 ? "úlovky" : "úlovků"}
+              </p>
+            </div>
+
+            {/* Total Participants */}
+            <div className="bg-background/50 rounded-lg p-3 text-center">
+              <Users className="h-5 w-5 mx-auto mb-2 text-primary" />
+              <p className="text-2xl font-bold text-primary">{totalParticipants}</p>
+              <p className="text-xs text-muted-foreground">
+                {totalParticipants === 1 ? "účastník" : totalParticipants < 5 ? "účastníci" : "účastníků"}
+              </p>
+            </div>
+          </div>
+
+          {/* Top Species */}
+          {topSpecies.length > 0 && (
+            <div className="bg-background/50 rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp className="h-4 w-4 text-primary" />
+                <p className="text-sm font-medium">Nejčastější úlovky</p>
+              </div>
+              <div className="space-y-2">
+                {topSpecies.slice(0, 3).map((item, index) => (
+                  <div key={item.species} className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">
+                        {index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉"}
+                      </span>
+                      <span>{item.species}</span>
+                    </div>
+                    <Badge variant="outline" className="text-xs">
+                      {item.count}× uloveno
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );

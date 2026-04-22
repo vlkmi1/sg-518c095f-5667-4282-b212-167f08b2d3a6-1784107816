@@ -430,6 +430,19 @@ export default function CompetitionDetailPage() {
     return participantsWithScores.sort((a, b) => b.score - a.score);
   }
 
+  function getTopSpecies() {
+    const speciesCount = new Map<string, number>();
+    
+    catches.forEach((catchData) => {
+      const species = catchData.species;
+      speciesCount.set(species, (speciesCount.get(species) || 0) + 1);
+    });
+
+    return Array.from(speciesCount.entries())
+      .map(([species, count]) => ({ species, count }))
+      .sort((a, b) => b.count - a.count);
+  }
+
   function calculateCatchScore(catchData: any): number {
     if (!competition) return 0;
 
@@ -642,6 +655,16 @@ export default function CompetitionDetailPage() {
                   startDate={competition.start_date}
                   endDate={competition.end_date}
                   terminatedEarly={competition.terminated_early}
+                  totalCatches={catches.length}
+                  totalParticipants={participants.length}
+                  winner={leaderboard[0] ? {
+                    nickname: leaderboard[0].profiles?.nickname || "Rybář",
+                    avatar_url: leaderboard[0].profiles?.avatar_url,
+                    score: leaderboard[0].score,
+                    catchCount: leaderboard[0].catchCount
+                  } : undefined}
+                  topSpecies={getTopSpecies()}
+                  scoringType={competition.scoring_type}
                 />
               </div>
 
