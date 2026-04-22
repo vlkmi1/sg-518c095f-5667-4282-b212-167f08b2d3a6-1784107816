@@ -213,4 +213,23 @@ export const adminService = {
       throw error;
     }
   },
+
+  // Manually verify user email (admin only)
+  async verifyUserEmail(userId: string): Promise<void> {
+    try {
+      // Call Supabase RPC function to verify email
+      const { error } = await supabase.rpc("admin_verify_user_email", {
+        target_user_id: userId
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      console.log("verifyUserEmail:", { userId });
+    } catch (error) {
+      console.error("verifyUserEmail error:", error);
+      throw error;
+    }
+  },
 };

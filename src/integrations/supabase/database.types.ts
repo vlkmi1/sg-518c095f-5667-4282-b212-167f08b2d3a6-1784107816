@@ -485,6 +485,10 @@ export type Database = {
         Args: { new_password: string; target_user_id: string }
         Returns: undefined
       }
+      admin_verify_user_email: {
+        Args: { target_user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

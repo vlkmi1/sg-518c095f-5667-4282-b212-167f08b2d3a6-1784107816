@@ -248,6 +248,35 @@ export default function AdminPage() {
     setPasswordDialogOpen(true);
   }
 
+  async function handleVerifyEmail() {
+    if (!selectedUser) return;
+
+    try {
+      await adminService.verifyUserEmail(selectedUser.id);
+      
+      toast({
+        title: "✅ Email ověřen",
+        description: "Email uživatele byl úspěšně ověřen a účet aktivován",
+      });
+      
+      // Reload user detail to show updated status
+      const detail = await adminService.getUserDetail(selectedUser.id);
+      setUserDetail(detail);
+      
+      // Update selected user data
+      setSelectedUser((prev: any) => ({
+        ...prev,
+        email_confirmed_at: new Date().toISOString()
+      }));
+    } catch (error: any) {
+      toast({
+        title: "Chyba",
+        description: error.message || "Nepodařilo se ověřit email",
+        variant: "destructive",
+      });
+    }
+  }
+
   async function handleChangePassword() {
     if (!selectedUser) return;
 
@@ -1016,8 +1045,23 @@ export default function AdminPage() {
                       </p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">Email ověřen:</p>
-                      <p>{selectedUser.email_confirmed_at ? "✅ Ano" : "❌ Ne"}</p>
+                      <p className="text-muted-foreground mb-1">Email ověřen:</p>
+                      {selectedUser.email_confirmed_at ? (
+                        <p className="flex items-center gap-1">
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                          <span>Ano</span>
+                        </p>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleVerifyEmail}
+                          className="h-7 text-xs gap-1 text-destructive hover:text-destructive"
+                        >
+                          <Ban className="h-3 w-3" />
+                          <span>Ne - Klikněte pro ověření</span>
+                        </Button>
+                      )}
                     </div>
                     <div>
                       <p className="text-muted-foreground">Administrátor:</p>
