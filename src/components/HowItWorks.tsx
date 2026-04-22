@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Fish, Users, Trophy, Upload, Share2, Eye, EyeOff, Target, Scale, Award } from "lucide-react";
+import { Fish, Users, Trophy, Upload, Share2, Eye, EyeOff, Target, Scale, Award, User } from "lucide-react";
 
 export function HowItWorks() {
   return (
