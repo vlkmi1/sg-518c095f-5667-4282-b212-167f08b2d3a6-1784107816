@@ -23,7 +23,7 @@ import { competitionService } from "@/services/competitionService";
 import { catchService } from "@/services/catchService";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Trophy, Users, Calendar, Share2, Fish, User, Trash2, Loader2, ArrowLeft, ExternalLink, Copy, X, Check } from "lucide-react";
+import { Trophy, Users, Calendar, Share2, Fish, User, Trash2, Loader2, ArrowLeft, ExternalLink, Copy, X, Check, Eye } from "lucide-react";
 import { format, isBefore, startOfDay } from "date-fns";
 import { cs } from "date-fns/locale";
 import { AddCompetitionCatch } from "@/components/competitions/AddCompetitionCatch";
@@ -373,6 +373,30 @@ export default function CompetitionDetailPage() {
     }
   }
 
+  async function handleShareSpectatorLink() {
+    if (!competition) return;
+
+    const spectatorUrl = `${window.location.origin}/competitions/watch/${competition.id}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Sleduj závod: ${competition.name}`,
+          text: `Sleduj živě rybářský závod "${competition.name}"!\n\nProbíhá od ${format(new Date(competition.start_date), "d. M. yyyy", { locale: cs })} do ${format(new Date(competition.end_date), "d. M. yyyy", { locale: cs })}`,
+          url: spectatorUrl,
+        });
+      } catch (error) {
+        console.error("Share error:", error);
+      }
+    } else {
+      navigator.clipboard.writeText(spectatorUrl);
+      toast({
+        title: "✅ Odkaz zkopírován",
+        description: "Odkaz pro diváky byl zkopírován do schránky",
+      });
+    }
+  }
+
   function getLeaderboard() {
     if (!participants.length) return [];
 
@@ -528,6 +552,14 @@ export default function CompetitionDetailPage() {
                   <Button variant="outline" onClick={handleShare} className="gap-2">
                     <Share2 className="h-4 w-4" />
                     <span className="hidden sm:inline">Sdílet</span>
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleShareSpectatorLink} 
+                    className="gap-2 bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/20"
+                  >
+                    <Eye className="h-4 w-4" />
+                    <span className="hidden sm:inline">Odkaz pro diváky</span>
                   </Button>
                   {canDelete && (
                     <AlertDialog>
