@@ -1,16 +1,12 @@
 export function Footer() {
-  const version = "2.7.0";
-
   return (
-    <footer className="border-t bg-background">
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex flex-col md:flex-row items-center justify-center gap-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-4">
-            <span>© {new Date().getFullYear()} Ukaž Rybu</span>
-            <span className="hidden md:inline">•</span>
-            <span className="text-xs">v{version}</span>
-          </div>
-        </div>
+    <footer className="border-t bg-muted/30 py-4 mt-auto">
+      <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+        <p>
+          © {new Date().getFullYear()} Ukaž Rybu
+          {" • "}
+          <span className="font-mono">v3.0.0</span>
+        </p>
       </div>
     </footer>
   );
