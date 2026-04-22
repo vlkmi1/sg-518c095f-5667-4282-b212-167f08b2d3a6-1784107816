@@ -148,7 +148,7 @@ export const storageService = {
         throw new Error("Soubor musí být obrázek");
       }
 
-      // Check file size (max 10MB)
+      // Check file size (max 10MB before compression)
       const maxSize = 10 * 1024 * 1024;
       if (file.size > maxSize) {
         throw new Error("Soubor je příliš velký (max 10MB)");
@@ -156,21 +156,30 @@ export const storageService = {
 
       console.log("Upload starting:", {
         fileName: file.name,
-        fileSize: file.size,
+        originalSize: file.size,
         fileType: file.type,
         userId
       });
 
-      // Generate unique filename
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${userId}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+      // Compress image before upload (max 1920px width, 85% quality)
+      const compressedBlob = await compressImage(file, 1920, 0.85);
+      
+      console.log("Image compressed:", {
+        originalSize: file.size,
+        compressedSize: compressedBlob.size,
+        reduction: `${Math.round((1 - compressedBlob.size / file.size) * 100)}%`
+      });
+
+      // Generate unique filename - always use .jpg after compression
+      const fileName = `${userId}/${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
 
       console.log("Generated path:", fileName);
 
-      // Upload to Supabase Storage
+      // Upload compressed blob to Supabase Storage
       const { data, error } = await supabase.storage
         .from("catches")
-        .upload(fileName, file, {
+        .upload(fileName, compressedBlob, {
+          contentType: "image/jpeg",
           cacheControl: "3600",
           upsert: false,
         });
