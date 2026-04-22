@@ -17,8 +17,9 @@ self.addEventListener("install", (event) => {
       console.log("[SW] Caching static assets");
       return cache.addAll(STATIC_CACHE);
     }).then(() => {
-      // Skip waiting to activate immediately
-      return self.skipWaiting();
+      // Skip waiting to activate immediately when explicitly told to
+      // (via postMessage from client)
+      console.log("[SW] Installation complete, waiting for activation signal");
     })
   );
 });
@@ -39,6 +40,7 @@ self.addEventListener("activate", (event) => {
       );
     }).then(() => {
       // Take control of all clients immediately
+      console.log("[SW] Taking control of all clients");
       return self.clients.claim();
     })
   );
