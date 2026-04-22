@@ -1,4 +1,4 @@
- 
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 export type Json =
   | string
   | number
@@ -392,6 +392,89 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      trophies: {
+        Row: {
+          created_at: string | null
+          fish_species: string
+          id: string
+          length_cm: number
+          period_end_date: string
+          period_type: string
+          position: number
+          user_id: string
+          weight_kg: number
+        }
+        Insert: {
+          created_at?: string | null
+          fish_species: string
+          id?: string
+          length_cm: number
+          period_end_date: string
+          period_type: string
+          position?: number
+          user_id: string
+          weight_kg: number
+        }
+        Update: {
+          created_at?: string | null
+          fish_species?: string
+          id?: string
+          length_cm?: number
+          period_end_date?: string
+          period_type?: string
+          position?: number
+          user_id?: string
+          weight_kg?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trophies_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trophy_notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_read: boolean
+          trophy_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean
+          trophy_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean
+          trophy_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trophy_notifications_trophy_id_fkey"
+            columns: ["trophy_id"]
+            isOneToOne: false
+            referencedRelation: "trophies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trophy_notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
