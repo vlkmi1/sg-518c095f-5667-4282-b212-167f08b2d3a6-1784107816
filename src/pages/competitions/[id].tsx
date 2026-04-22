@@ -351,7 +351,13 @@ export default function CompetitionDetailPage() {
     if (!competition) return;
 
     const joinCode = competition.join_code || competition.invite_code;
-    const shareUrl = `${window.location.origin}/competitions/${competition.id}`;
+    
+    // Use production domain or current origin
+    const baseUrl = process.env.NODE_ENV === "production" 
+      ? window.location.origin 
+      : (process.env.NEXT_PUBLIC_SITE_URL || window.location.origin);
+    
+    const shareUrl = `${baseUrl}/competitions/${competition.id}`;
 
     if (navigator.share) {
       try {
@@ -376,7 +382,12 @@ export default function CompetitionDetailPage() {
   async function handleShareSpectatorLink() {
     if (!competition) return;
 
-    const spectatorUrl = `${window.location.origin}/competitions/watch/${competition.id}`;
+    // Use production domain or current origin
+    const baseUrl = process.env.NODE_ENV === "production" 
+      ? window.location.origin 
+      : (process.env.NEXT_PUBLIC_SITE_URL || window.location.origin);
+    
+    const spectatorUrl = `${baseUrl}/competitions/watch/${competition.id}`;
 
     if (navigator.share) {
       try {
