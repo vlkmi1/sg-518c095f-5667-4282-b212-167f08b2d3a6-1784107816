@@ -161,8 +161,8 @@ export const storageService = {
         userId
       });
 
-      // Compress image before upload (max 1000px width, 85% quality)
-      const compressedBlob = await compressImage(file, 1000, 0.85);
+      // Compress image before upload (max 800px width, 75% quality for smaller files)
+      const compressedBlob = await compressImage(file, 800, 0.75);
       
       console.log("Image compressed:", {
         originalSize: file.size,
