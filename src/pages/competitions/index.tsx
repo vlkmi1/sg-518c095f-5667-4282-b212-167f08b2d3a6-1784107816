@@ -25,12 +25,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Trophy, Plus, Users, Calendar, Loader2 } from "lucide-react";
 import { format, isSameDay } from "date-fns";
 import { cs } from "date-fns/locale";
-import { createClient } from "@supabase/supabase-js";
-
-const supabaseClient = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
-);
 
 export default function CompetitionsPage() {
   const router = useRouter();
@@ -72,8 +66,6 @@ export default function CompetitionsPage() {
         return;
       }
 
-      console.log("Competitions loaded:", data);
-
       // Load participant counts and winners for each competition
       const competitionsWithCounts = await Promise.all(
         (data || []).map(async (comp: any) => {
@@ -109,7 +101,6 @@ export default function CompetitionsPage() {
         })
       );
 
-      console.log("Competitions with participant counts:", competitionsWithCounts);
       setCompetitions(competitionsWithCounts);
     } catch (error) {
       console.error("Error loading competitions:", error);
@@ -199,10 +190,8 @@ export default function CompetitionsPage() {
     const end = new Date(endDate);
     
     if (isSameDay(start, end)) {
-      // Same day format: "Neděle 19.4. - 13:00-20:00"
       return `${format(start, "EEEE d.M.", { locale: cs })} - ${format(start, "HH:mm")}-${format(end, "HH:mm")}`;
     } else {
-      // Different days format: "19. Apr 13:00 - 20. Apr 20:00"
       return `${format(start, "d. MMM HH:mm", { locale: cs })} - ${format(end, "d. MMM yyyy HH:mm", { locale: cs })}`;
     }
   }
@@ -217,7 +206,6 @@ export default function CompetitionsPage() {
       return `${score} bodů`;
     }
     
-    // Measurement-based
     if (comp.measurement_type === "length") {
       return `${score} cm`;
     } else if (comp.measurement_type === "weight") {
@@ -225,7 +213,6 @@ export default function CompetitionsPage() {
     } else if (comp.measurement_type === "count") {
       return `${score} ks`;
     } else {
-      // combined
       return `${score} bodů`;
     }
   }
@@ -254,7 +241,7 @@ export default function CompetitionsPage() {
           {/* Header Section */}
           <Card>
             <CardHeader>
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
                 <div>
                   <CardTitle className="font-serif text-2xl mb-2 flex items-center gap-2">
                     <Trophy className="h-6 w-6 text-primary" />
@@ -264,10 +251,10 @@ export default function CompetitionsPage() {
                     Vytvářejte vlastní závody nebo se připojte k závodům ostatních rybářů
                   </p>
                 </div>
-                <div className="flex gap-2 flex-wrap justify-end">
+                <div className="flex gap-2 flex-wrap w-full sm:w-auto">
                   <Dialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
                     <DialogTrigger asChild>
-                      <Button variant="outline" className="gap-2">
+                      <Button variant="outline" className="gap-2 flex-1 sm:flex-none">
                         <Users className="h-4 w-4" />
                         Přidat se k závodu
                       </Button>
@@ -308,7 +295,7 @@ export default function CompetitionsPage() {
                       </div>
                     </DialogContent>
                   </Dialog>
-                  <Button onClick={() => router.push("/competitions/create")} className="gap-2">
+                  <Button onClick={() => router.push("/competitions/create")} className="gap-2 flex-1 sm:flex-none">
                     <Plus className="h-4 w-4" />
                     Přidat závod
                   </Button>
