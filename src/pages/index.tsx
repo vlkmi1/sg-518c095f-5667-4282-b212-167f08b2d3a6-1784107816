@@ -1,5 +1,6 @@
 import { CatchGallery } from "@/components/gallery/CatchGallery";
 import { HallOfFame } from "@/components/gallery/HallOfFame";
+import { HowItWorks } from "@/components/HowItWorks";
 import { ContactForm } from "@/components/ContactForm";
 
 export default function Home() {
@@ -37,8 +38,15 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Contact Section */}
+      {/* How It Works Section */}
       <section className="py-12">
+        <div className="container mx-auto px-4">
+          <HowItWorks />
+        </div>
+      </section>
+
+      {/* Contact Section */}
+      <section className="py-12 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="max-w-2xl mx-auto">
             <h2 className="font-serif text-4xl font-bold text-center mb-8">
