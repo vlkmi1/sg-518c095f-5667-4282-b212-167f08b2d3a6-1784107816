@@ -139,31 +139,36 @@ export function CompetitionCountdown({
               {/* 1st Place - Gold */}
               {topThree[0] && (
                 <div className="bg-yellow-500/20 border-2 border-yellow-500/40 rounded-lg p-4">
-                  <div className="text-center mb-3">
-                    <div className="text-4xl mb-2">🥇</div>
-                    <p className="text-xs text-yellow-700 font-medium uppercase tracking-wide mb-2">
+                  <div className="flex flex-col items-center gap-3 text-center">
+                    {/* Medal */}
+                    <div className="text-4xl">🥇</div>
+                    
+                    {/* Label */}
+                    <p className="text-xs text-yellow-700 font-medium uppercase tracking-wide">
                       Vítěz závodu
                     </p>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-12 w-12 ring-2 ring-yellow-500">
-                        <AvatarImage src={topThree[0].avatar_url || undefined} />
-                        <AvatarFallback className="bg-yellow-500/20 text-yellow-700">
-                          <Trophy className="h-6 w-6" />
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-bold text-lg">{topThree[0].nickname}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {topThree[0].catchCount} {topThree[0].catchCount === 1 ? "úlovek" : topThree[0].catchCount < 5 ? "úlovky" : "úlovků"}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
+                    
+                    {/* Avatar */}
+                    <Avatar className="h-16 w-16 ring-2 ring-yellow-500">
+                      <AvatarImage src={topThree[0].avatar_url || undefined} />
+                      <AvatarFallback className="bg-yellow-500/20 text-yellow-700">
+                        <Trophy className="h-8 w-8" />
+                      </AvatarFallback>
+                    </Avatar>
+                    
+                    {/* Score */}
+                    <div className="text-center">
                       <p className="text-3xl font-bold text-yellow-700">{topThree[0].score}</p>
                       <p className="text-xs text-muted-foreground">
                         {scoringType === "points" ? "bodů" : "skóre"}
+                      </p>
+                    </div>
+                    
+                    {/* Name and catches */}
+                    <div className="text-center">
+                      <p className="font-bold text-lg break-words max-w-full">{topThree[0].nickname}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {topThree[0].catchCount} {topThree[0].catchCount === 1 ? "úlovek" : topThree[0].catchCount < 5 ? "úlovky" : "úlovků"}
                       </p>
                     </div>
                   </div>
@@ -173,26 +178,31 @@ export function CompetitionCountdown({
               {/* 2nd Place - Silver */}
               {topThree[1] && (
                 <div className="bg-gray-400/20 border-2 border-gray-400/40 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="text-3xl flex-shrink-0">🥈</div>
-                      <Avatar className="h-10 w-10 ring-2 ring-gray-400">
-                        <AvatarImage src={topThree[1].avatar_url || undefined} />
-                        <AvatarFallback className="bg-gray-400/20 text-gray-700">
-                          <User className="h-5 w-5" />
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-bold text-base">{topThree[1].nickname}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {topThree[1].catchCount} {topThree[1].catchCount === 1 ? "úlovek" : topThree[1].catchCount < 5 ? "úlovky" : "úlovků"}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
+                  <div className="flex flex-col items-center gap-3 text-center">
+                    {/* Medal */}
+                    <div className="text-3xl">🥈</div>
+                    
+                    {/* Avatar */}
+                    <Avatar className="h-14 w-14 ring-2 ring-gray-400">
+                      <AvatarImage src={topThree[1].avatar_url || undefined} />
+                      <AvatarFallback className="bg-gray-400/20 text-gray-700">
+                        <User className="h-7 w-7" />
+                      </AvatarFallback>
+                    </Avatar>
+                    
+                    {/* Score */}
+                    <div className="text-center">
                       <p className="text-2xl font-bold text-gray-700">{topThree[1].score}</p>
                       <p className="text-xs text-muted-foreground">
                         {scoringType === "points" ? "bodů" : "skóre"}
+                      </p>
+                    </div>
+                    
+                    {/* Name and catches */}
+                    <div className="text-center">
+                      <p className="font-bold text-base break-words max-w-full">{topThree[1].nickname}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {topThree[1].catchCount} {topThree[1].catchCount === 1 ? "úlovek" : topThree[1].catchCount < 5 ? "úlovky" : "úlovků"}
                       </p>
                     </div>
                   </div>
@@ -202,26 +212,31 @@ export function CompetitionCountdown({
               {/* 3rd Place - Bronze */}
               {topThree[2] && (
                 <div className="bg-amber-700/20 border-2 border-amber-700/40 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="text-3xl flex-shrink-0">🥉</div>
-                      <Avatar className="h-10 w-10 ring-2 ring-amber-700">
-                        <AvatarImage src={topThree[2].avatar_url || undefined} />
-                        <AvatarFallback className="bg-amber-700/20 text-amber-700">
-                          <User className="h-5 w-5" />
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-bold text-base">{topThree[2].nickname}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {topThree[2].catchCount} {topThree[2].catchCount === 1 ? "úlovek" : topThree[2].catchCount < 5 ? "úlovky" : "úlovků"}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
+                  <div className="flex flex-col items-center gap-3 text-center">
+                    {/* Medal */}
+                    <div className="text-3xl">🥉</div>
+                    
+                    {/* Avatar */}
+                    <Avatar className="h-14 w-14 ring-2 ring-amber-700">
+                      <AvatarImage src={topThree[2].avatar_url || undefined} />
+                      <AvatarFallback className="bg-amber-700/20 text-amber-700">
+                        <User className="h-7 w-7" />
+                      </AvatarFallback>
+                    </Avatar>
+                    
+                    {/* Score */}
+                    <div className="text-center">
                       <p className="text-2xl font-bold text-amber-700">{topThree[2].score}</p>
                       <p className="text-xs text-muted-foreground">
                         {scoringType === "points" ? "bodů" : "skóre"}
+                      </p>
+                    </div>
+                    
+                    {/* Name and catches */}
+                    <div className="text-center">
+                      <p className="font-bold text-base break-words max-w-full">{topThree[2].nickname}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {topThree[2].catchCount} {topThree[2].catchCount === 1 ? "úlovek" : topThree[2].catchCount < 5 ? "úlovky" : "úlovků"}
                       </p>
                     </div>
                   </div>
