@@ -20,6 +20,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { authService } from "@/services/authService";
 import { adminService } from "@/services/adminService";
+import { competitionService } from "@/services/competitionService";
 import { useToast } from "@/hooks/use-toast";
 import { Shield, Users, Fish, Ban, CheckCircle, Eye, EyeOff, Trash2, User, Edit, Trophy, Loader2 } from "lucide-react";
 import { format } from "date-fns";
@@ -60,6 +61,7 @@ export default function AdminPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [users, setUsers] = useState<any[]>([]);
   const [catches, setCatches] = useState<any[]>([]);
+  const [competitions, setCompetitions] = useState<any[]>([]);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [userDetailOpen, setUserDetailOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
@@ -116,6 +118,11 @@ export default function AdminPage() {
       console.log("📊 [Admin] Catches loaded:", catchesData.length);
       console.log("📊 [Admin] First catch sample:", catchesData[0]);
       setCatches(catchesData);
+
+      // Get all competitions
+      const { data: competitionsData } = await competitionService.getCompetitions();
+      console.log("📊 [Admin] Competitions loaded:", competitionsData?.length || 0);
+      setCompetitions(competitionsData || []);
 
     } catch (error) {
       console.error("❌ [Admin] Load data error:", error);
@@ -220,6 +227,32 @@ export default function AdminPage() {
       });
     } finally {
       setIsDeleting(false);
+    }
+  }
+
+  async function handleDeleteCompetition(competitionId: string) {
+    setProcessingId(competitionId);
+    try {
+      const { error } = await competitionService.deleteCompetition(competitionId);
+      
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "🗑️ Závod odstraněn",
+        description: "Závod byl trvale smazán",
+      });
+
+      await loadData();
+    } catch (error: any) {
+      toast({
+        title: "Chyba",
+        description: error.message || "Nepodařilo se odstranit závod",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessingId(null);
     }
   }
 
@@ -505,7 +538,7 @@ export default function AdminPage() {
               </p>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div className="text-center p-4 bg-background rounded-lg">
                   <p className="text-3xl font-bold text-primary">{users.length}</p>
                   <p className="text-sm text-muted-foreground">Uživatelů</p>
@@ -514,13 +547,17 @@ export default function AdminPage() {
                   <p className="text-3xl font-bold text-primary">{catches.length}</p>
                   <p className="text-sm text-muted-foreground">Úlovků</p>
                 </div>
+                <div className="text-center p-4 bg-background rounded-lg">
+                  <p className="text-3xl font-bold text-primary">{competitions.length}</p>
+                  <p className="text-sm text-muted-foreground">Závodů</p>
+                </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Tabs */}
           <Tabs defaultValue="users" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="users" className="gap-2">
                 <Users className="h-4 w-4" />
                 Uživatelé ({users.length})
@@ -528,6 +565,10 @@ export default function AdminPage() {
               <TabsTrigger value="catches" className="gap-2">
                 <Fish className="h-4 w-4" />
                 Úlovky ({catches.length})
+              </TabsTrigger>
+              <TabsTrigger value="competitions" className="gap-2">
+                <Trophy className="h-4 w-4" />
+                Závody ({competitions.length})
               </TabsTrigger>
             </TabsList>
 
@@ -703,6 +744,91 @@ export default function AdminPage() {
                   </Card>
                 ))}
               </div>
+            </TabsContent>
+
+            {/* Competitions Tab */}
+            <TabsContent value="competitions" className="space-y-4">
+              <Card>
+                <CardContent className="p-0">
+                  <div className="divide-y">
+                    {competitions.map((competition) => {
+                      const now = new Date();
+                      const startDate = new Date(competition.start_date);
+                      const endDate = new Date(competition.end_date);
+                      const isUpcoming = startDate > now;
+                      const isActive = startDate <= now && endDate >= now;
+                      const isFinished = endDate < now;
+
+                      return (
+                        <div
+                          key={competition.id}
+                          className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors"
+                        >
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Trophy className="h-5 w-5 text-primary" />
+                              <h3 className="font-serif text-lg font-semibold">{competition.name}</h3>
+                              {isUpcoming && (
+                                <Badge variant="secondary">Připravuje se</Badge>
+                              )}
+                              {isActive && (
+                                <Badge className="bg-green-500">Aktivní</Badge>
+                              )}
+                              {isFinished && (
+                                <Badge variant="outline">Ukončen</Badge>
+                              )}
+                              {!competition.is_public && (
+                                <Badge variant="outline">Soukromý</Badge>
+                              )}
+                            </div>
+                            {competition.description && (
+                              <p className="text-sm text-muted-foreground mb-2">{competition.description}</p>
+                            )}
+                            <div className="flex gap-4 text-sm text-muted-foreground">
+                              <p suppressHydrationWarning>
+                                📅 {format(startDate, "d. MMM yyyy HH:mm", { locale: cs })} - {format(endDate, "d. MMM yyyy HH:mm", { locale: cs })}
+                              </p>
+                              <p>🔑 {competition.join_code}</p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  disabled={processingId === competition.id}
+                                  className="gap-2"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                  <span className="hidden sm:inline">Odstranit</span>
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Opravdu chcete smazat tento závod?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Tato akce je nevratná. Závod a všechny související údaje (účastníci, úlovky v závodu) budou trvale odstraněny.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Zrušit</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDeleteCompetition(competition.id)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Smazat
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </main>
