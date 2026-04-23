@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
-import { Fish, Users, Trophy, Upload, Share2, Eye, EyeOff, Target, Scale, Award, User } from "lucide-react";
+import { Fish, Users, Trophy, Upload, Share2, Eye, EyeOff, Target, Scale, Award, User, Smartphone } from "lucide-react";
 
 export function HowItWorks() {
   return (
@@ -547,6 +547,148 @@ export function HowItWorks() {
                       <strong>Buďte konzistentní:</strong> Týdenní trofeje jsou nejdostupnější - chyťte si jednu každý týden!
                     </li>
                   </ul>
+                </div>
+              </CardContent>
+            </Card>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* Instalace aplikace */}
+        <AccordionItem value="installation">
+          <AccordionTrigger className="text-lg font-semibold">
+            <div className="flex items-center gap-2">
+              <Smartphone className="h-5 w-5 text-primary" />
+              Jak nainstalovat aplikaci Ukaž Rybu do mobilu?
+            </div>
+          </AccordionTrigger>
+          <AccordionContent>
+            <Card className="border-0 shadow-none">
+              <CardContent className="space-y-6 pt-6">
+                {/* Úvod */}
+                <div className="p-4 bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg border border-primary/20">
+                  <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
+                    <Smartphone className="h-5 w-5 text-primary" />
+                    Proč si nainstalovat aplikaci?
+                  </h3>
+                  <ul className="space-y-2 text-sm text-muted-foreground">
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary">✓</span>
+                      <span><strong>Rychlejší přístup</strong> - ikona přímo na domovské obrazovce</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary">✓</span>
+                      <span><strong>Nativní vzhled</strong> - aplikace běží na celou obrazovku bez prohlížeče</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary">✓</span>
+                      <span><strong>Offline režim</strong> - základní funkce fungují i bez internetu</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary">✓</span>
+                      <span><strong>Push notifikace</strong> - upozornění na nové trofeje a závody</span>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Android instalace */}
+                <div>
+                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-sm">1</span>
+                    Instalace na Android (Chrome)
+                  </h3>
+                  <div className="space-y-3">
+                    <ol className="list-decimal list-inside space-y-3 text-muted-foreground ml-4">
+                      <li>
+                        <strong>Otevřete web ukažrybu.cz</strong> v prohlížeči Google Chrome
+                      </li>
+                      <li>
+                        <strong>Klikněte na tři tečky</strong> (menu) v pravém horním rohu
+                      </li>
+                      <li>
+                        <strong>Vyberte "Přidat na plochu"</strong> nebo "Nainstalovat aplikaci"
+                      </li>
+                      <li>
+                        <strong>Potvrďte instalaci</strong> v dialogovém okně
+                      </li>
+                      <li>
+                        <strong>Ikona aplikace</strong> se objeví na domovské obrazovce
+                      </li>
+                    </ol>
+                    <div className="p-3 bg-accent/10 rounded-lg border border-accent/20 mt-3">
+                      <p className="text-sm text-muted-foreground">
+                        💡 <strong>Tip:</strong> Po instalaci můžete aplikaci spustit přímo z domovské obrazovky, stejně jako běžné aplikace z Google Play.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* iOS instalace */}
+                <div>
+                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-sm">2</span>
+                    Instalace na iPhone/iPad (Safari)
+                  </h3>
+                  <div className="space-y-3">
+                    <ol className="list-decimal list-inside space-y-3 text-muted-foreground ml-4">
+                      <li>
+                        <strong>Otevřete web ukažrybu.cz</strong> v prohlížeči Safari
+                      </li>
+                      <li>
+                        <strong>Klikněte na ikonu "Sdílet"</strong> (čtverec se šipkou nahoru) dole uprostřed obrazovky
+                      </li>
+                      <li>
+                        <strong>Posuňte se dolů</strong> a vyberte <strong>"Přidat na plochu"</strong>
+                      </li>
+                      <li>
+                        <strong>Upravte název</strong> (pokud chcete) a klikněte na <strong>"Přidat"</strong>
+                      </li>
+                      <li>
+                        <strong>Ikona aplikace</strong> se objeví na domovské obrazovce
+                      </li>
+                    </ol>
+                    <div className="p-3 bg-accent/10 rounded-lg border border-accent/20 mt-3">
+                      <p className="text-sm text-muted-foreground">
+                        💡 <strong>Tip:</strong> Aplikace na iOS musí být nainstalována přes Safari. V jiných prohlížečích (Chrome, Firefox) tato možnost není dostupná.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tlačítko Instalovat v aplikaci */}
+                <div>
+                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-sm">3</span>
+                    Ještě jednodušší způsob
+                  </h3>
+                  <div className="p-4 bg-gradient-to-br from-primary/5 to-accent/5 border border-primary/20 rounded-lg">
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Na webu ukažrybu.cz najdete v horní liště tlačítko <strong>"Instalovat"</strong> 📲, které vás provede instalací automaticky.
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      ℹ️ Tlačítko se zobrazí pouze v podporovaných prohlížečích (Chrome na Android, Safari na iOS).
+                    </p>
+                  </div>
+                </div>
+
+                {/* Odinstalace */}
+                <div>
+                  <h3 className="font-semibold text-lg mb-3">Jak aplikaci odinstalovat?</h3>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {/* Android */}
+                    <div className="p-4 border rounded-lg bg-card">
+                      <h4 className="font-semibold mb-2">Android</h4>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Podržte ikonu aplikace na domovské obrazovce a vyberte <strong>"Odinstalovat"</strong> nebo ji přetáhněte do koše.
+                      </p>
+                    </div>
+                    {/* iOS */}
+                    <div className="p-4 border rounded-lg bg-card">
+                      <h4 className="font-semibold mb-2">iPhone/iPad</h4>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Podržte ikonu aplikace, vyberte <strong>"Odstranit aplikaci"</strong> a potvrďte.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
