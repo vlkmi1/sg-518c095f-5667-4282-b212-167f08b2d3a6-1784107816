@@ -143,42 +143,40 @@ export default async function handler(
         messages: [
           {
             role: "system",
-            content: `Jsi expert na rozpoznávání ryb z fotografií. Analyzuj obrázek a urči:
+            content: `Na základě fotografie určete druh ryby a odhadněte její délku a hmotnost. Jedná se o sladkovodní rybu ulovenou v České republice.
 
-KRITÉRIA PRO ROZPOZNÁNÍ DRUHU:
-Odpověz POUZE pokud je ryba JEDNOZNAČNĚ jeden z těchto 4 druhů:
+Postupuj systematicky:
 
-1. Kapr obecný (Cyprinus carpio):
-   - Plné tělo, velké šupiny
-   - 2 páry vousků u úst
-   - Zlatohnědá nebo zelenkavá barva
+1. Nejprve analyzuj perspektivu (zda je ryba blíže k objektivu než člověk) a uprav odhad velikosti tak, aby nedošlo k nadhodnocení.
+2. Najdi na fotografii referenční objekt (ruka, prut, podložka apod.) a použij ho pro odhad délky. Pokud chybí, uveď širší interval.
+3. Odhadni délku ryby v cm (uveď interval i nejpravděpodobnější hodnotu).
+4. Na základě délky a tělesné stavby (hubená / průměrná / vysoká kondice) odhadni hmotnost.
+5. Uveď druh ryby (česky i latinsky) a pravděpodobnost v %.
+6. Přidej 2–3 podobné druhy, které přicházejí v úvahu, a vysvětli rozdíly.
+7. Stručně vysvětli, podle jakých znaků (tvar těla, ploutve, šupiny, vousky) jsi rozhodl.
 
-2. Amur bílý (Ctenopharyngodon idella):
-   - Protáhlé mohutné tělo
-   - Velké šupiny s tmavým lemem
-   - Stříbřitá barva, žádné vousky
-
-3. Štika obecná (Esox lucius):
-   - Protáhlé tělo, zploštělá hlava
-   - Velká tlama plná zubů
-   - Zelenkavá s příčnými pruhy/skvrnami
-
-4. Sumec velký (Silurus glanis):
-   - Velmi dlouhé tělo bez šupin
-   - 3 páry vousků (2 dlouhé u horní čelisti)
-   - Šedočerná barva
-
-POKUD:
-- Nejsi si na 100% jistý druhem → vrať null
-- Ryba je jiný druh (okoun, candát, jelec...) → vrať null
-- Fotka je nejasná nebo nevidíš klíčové znaky → vrať null
-
-Délku odhadni v centimetrech podle proporcí těla a poměru k ruce/pozadí.
+Pokud si nejsi jistý, přiznej nejistotu a rozšiř intervaly.
 
 Odpověz POUZE v JSON formátu:
 {
-  "species": "Kapr obecný" | "Amur bílý" | "Štika obecná" | "Sumec velký" | null,
-  "length_cm": číslo nebo null
+  "species_cz": "český název" nebo null,
+  "species_lat": "latinský název" nebo null,
+  "confidence_percent": číslo 0-100,
+  "length_min_cm": minimální délka,
+  "length_max_cm": maximální délka,
+  "length_cm": nejpravděpodobnější délka,
+  "weight_kg": odhadovaná hmotnost nebo null,
+  "body_condition": "hubená" | "průměrná" | "vysoká kondice",
+  "perspective_note": "poznámka k perspektivě",
+  "reference_object": "popis referenčního objektu" nebo null,
+  "identification_notes": "podle jakých znaků určeno",
+  "similar_species": [
+    {
+      "species_cz": "název",
+      "species_lat": "latinský",
+      "difference": "jak rozlišit"
+    }
+  ]
 }`,
           },
           {
@@ -186,7 +184,7 @@ Odpověz POUZE v JSON formátu:
             content: [
               {
                 type: "text",
-                text: "Analyze this fish image. If it's clearly one of the 4 allowed species (Common Carp, Grass Carp, Northern Pike, Wels Catfish), identify it and estimate length. Otherwise return null. Be strict - only identify if you're certain.",
+                text: "Analyze this freshwater fish caught in Czech Republic. Provide detailed systematic analysis including perspective, reference objects, length interval, weight estimate, species identification with confidence, and similar species.",
               },
               {
                 type: "image_url",
@@ -197,7 +195,7 @@ Odpověz POUZE v JSON formátu:
             ],
           },
         ],
-        max_tokens: 500,
+        max_tokens: 1000,
         temperature: 0.1,
       }),
     });
@@ -230,34 +228,67 @@ Odpověz POUZE v JSON formátu:
       });
     }
     
-    // Normalize species name - only allow specific species
-    let normalizedSpecies = null;
-    if (analysis.species) {
-      const speciesLower = String(analysis.species).toLowerCase();
-      const mapped = SPECIES_MAP[speciesLower];
-      
-      // Only accept if it's one of the allowed species
-      if (mapped && ALLOWED_SPECIES.includes(mapped)) {
-        normalizedSpecies = mapped;
+    // Use AI's detailed analysis
+    const speciesCz = analysis.species_cz || null;
+    const lengthCm = analysis.length_cm || null;
+    const confidencePercent = analysis.confidence_percent || 0;
+    
+    // Calculate weight from table if we have species and length
+    let estimatedWeight = analysis.weight_kg || null;
+    if (speciesCz && lengthCm && lengthCm > 0) {
+      // Try to get weight from our reference table
+      const tableWeight = await calculateWeightFromTable(speciesCz, lengthCm);
+      if (tableWeight) {
+        estimatedWeight = tableWeight;
       }
     }
 
-    // Calculate weight from table if we have length
-    let estimatedWeight = null;
-    if (normalizedSpecies && analysis.length_cm && analysis.length_cm > 0) {
-      estimatedWeight = await calculateWeightFromTable(normalizedSpecies, analysis.length_cm);
+    // Build detailed message
+    const confidenceLevel = confidencePercent >= 80 ? "vysoká" : confidencePercent >= 50 ? "střední" : "nízká";
+    let detailedMessage = `Analýza dokončena (jistota: ${confidenceLevel} - ${confidencePercent}%).\n`;
+    
+    if (speciesCz) {
+      detailedMessage += `Druh: ${speciesCz}`;
+      if (analysis.species_lat) {
+        detailedMessage += ` (${analysis.species_lat})`;
+      }
+      detailedMessage += `\n`;
+    }
+    
+    if (analysis.length_min_cm && analysis.length_max_cm) {
+      detailedMessage += `Interval délky: ${analysis.length_min_cm}-${analysis.length_max_cm} cm\n`;
+    }
+    
+    if (analysis.body_condition) {
+      detailedMessage += `Kondice: ${analysis.body_condition}\n`;
+    }
+    
+    if (analysis.identification_notes) {
+      detailedMessage += `Poznámky: ${analysis.identification_notes}\n`;
+    }
+    
+    if (analysis.similar_species && analysis.similar_species.length > 0) {
+      detailedMessage += `\nPodobné druhy: `;
+      detailedMessage += analysis.similar_species
+        .map((s: any) => `${s.species_cz} (${s.difference})`)
+        .join(", ");
     }
 
     return res.status(200).json({
-      species: normalizedSpecies, // null if not recognized or not allowed
-      length_cm: analysis.length_cm || null,
-      weight_kg: estimatedWeight, // calculated from table interpolation
-      confidence: normalizedSpecies ? "high" : "none",
-      message: estimatedWeight 
-        ? `Rozpoznán druh: ${normalizedSpecies}. Hmotnost vypočtena podle tabulek.`
-        : normalizedSpecies
-          ? `Rozpoznán druh: ${normalizedSpecies}. Hmotnost zadejte ručně.`
-          : "Druh ryby se nepodařilo jednoznačně rozpoznat. Vyplňte údaje ručně."
+      species: speciesCz,
+      length_cm: lengthCm,
+      weight_kg: estimatedWeight,
+      confidence: confidenceLevel,
+      confidence_percent: confidencePercent,
+      length_interval: analysis.length_min_cm && analysis.length_max_cm 
+        ? `${analysis.length_min_cm}-${analysis.length_max_cm} cm`
+        : null,
+      body_condition: analysis.body_condition || null,
+      perspective_note: analysis.perspective_note || null,
+      reference_object: analysis.reference_object || null,
+      identification_notes: analysis.identification_notes || null,
+      similar_species: analysis.similar_species || [],
+      message: detailedMessage.trim()
     });
   } catch (error: any) {
     console.error("AI analysis error:", error);
