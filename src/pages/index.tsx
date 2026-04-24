@@ -1,33 +1,48 @@
+import { useState, useEffect } from "react";
 import { CatchGallery } from "@/components/gallery/CatchGallery";
 import { HallOfFame } from "@/components/gallery/HallOfFame";
 import { HowItWorks } from "@/components/HowItWorks";
 import { ContactForm } from "@/components/ContactForm";
 
 export default function Home() {
+  const [isPWA, setIsPWA] = useState(false);
+
+  useEffect(() => {
+    const checkPWA = () => {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+      const isIOSStandalone = (window.navigator as any).standalone === true;
+      setIsPWA(isStandalone || isIOSStandalone);
+    };
+
+    checkPWA();
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero Section */}
-      <section className="relative h-[45vh] md:h-[60vh] flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/20 to-background z-10" />
-        <div className="absolute inset-0">
-          <img
-            src="/hero-fishing.jpg"
-            alt="Rybářství"
-            className="w-full h-full object-cover"
-          />
-        </div>
-        <div className="relative z-20 text-center px-4 max-w-4xl mx-auto">
-          <h1 className="font-serif text-5xl md:text-7xl font-bold text-white mb-6 drop-shadow-lg">
-            Ukaž Rybu
-          </h1>
-          <p className="text-xl md:text-2xl text-white/90 mb-8 drop-shadow">
-            Sdílej své úlovky s komunitou rybářů
-          </p>
-        </div>
-      </section>
+      {/* Hero Section - skrytá v PWA režimu */}
+      {!isPWA && (
+        <section className="relative h-[45vh] md:h-[60vh] flex items-center justify-center overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-primary/20 to-background z-10" />
+          <div className="absolute inset-0">
+            <img
+              src="/hero-fishing.jpg"
+              alt="Rybářství"
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <div className="relative z-20 text-center px-4 max-w-4xl mx-auto">
+            <h1 className="font-serif text-5xl md:text-7xl font-bold text-white mb-6 drop-shadow-lg">
+              Ukaž Rybu
+            </h1>
+            <p className="text-xl md:text-2xl text-white/90 mb-8 drop-shadow">
+              Sdílej své úlovky s komunitou rybářů
+            </p>
+          </div>
+        </section>
+      )}
 
       {/* Gallery Section */}
-      <section className="py-12">
+      <section className={isPWA ? "py-6" : "py-12"}>
         <CatchGallery />
       </section>
 
