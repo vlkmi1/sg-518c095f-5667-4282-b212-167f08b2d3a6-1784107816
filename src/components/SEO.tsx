@@ -9,8 +9,8 @@ interface SEOProps {
 
 // SEO elements that can be used in _document.tsx (returns JSX without Head wrapper)
 export function SEOElements({
-  title = "Ukaž Rybu - aplikace pro každého rybáře",
-  description = "Sdílej své úlovky s komunitou rybářů. Založte si kamarádský závod a předveďte se v závodech. Najdi inspiraci. A ano je to ZDARMA.",
+  title = "Ukaž Rybu - Galerie rybářských úlovků",
+  description = "Sdílej své úlovky s komunitou rybářů. AI rozpoznání druhu ryby, automatické měření a síň slávy nejlepších úlovků.",
   image = "/og-image.png",
   url,
 }: SEOProps) {
@@ -18,12 +18,12 @@ export function SEOElements({
     <>
       <title>{title}</title>
       <meta name="description" content={description} />
-      <link rel="icon" href="/favicon.ico" />
+      <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
 
       {/* Open Graph */}
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
-      {image && <meta property="og:image" content={image} />}
+      <meta property="og:image" content={image} />
       {url && <meta property="og:url" content={url} />}
       <meta property="og:type" content="website" />
 
@@ -31,7 +31,7 @@ export function SEOElements({
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
-      {image && <meta name="twitter:image" content={image} />}
+      <meta name="twitter:image" content={image} />
     </>
   );
 }
