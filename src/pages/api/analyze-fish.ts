@@ -213,18 +213,35 @@ Odpověz POUZE v JSON formátu:
       throw new Error("No response from OpenAI");
     }
 
-    // Parse AI response
+    console.log("Raw AI response:", content);
+
+    // Parse AI response - strip markdown code blocks if present
     let analysis;
     try {
-      analysis = JSON.parse(content.trim());
+      // Remove markdown code blocks if present (```json ... ``` or ``` ... ```)
+      let cleanContent = content.trim();
+      
+      // Check for markdown code blocks
+      if (cleanContent.startsWith("```")) {
+        // Remove opening ```json or ```
+        cleanContent = cleanContent.replace(/^```(?:json)?\s*\n?/, "");
+        // Remove closing ```
+        cleanContent = cleanContent.replace(/\n?```\s*$/, "");
+      }
+      
+      // Try to parse cleaned content
+      analysis = JSON.parse(cleanContent.trim());
+      console.log("Parsed AI analysis:", analysis);
     } catch (err) {
-      console.error("Failed to parse AI response JSON", err);
+      console.error("Failed to parse AI response JSON:", err);
+      console.error("Content that failed to parse:", content);
       return res.status(200).json({
         species: null,
         length_cm: null,
         weight_kg: null,
         confidence: "none",
-        message: "AI analýza vrátila neplatný formát. Vyplňte údaje ručně."
+        message: "AI analýza vrátila neplatný formát. Vyplňte údaje ručně.",
+        debug_content: content.substring(0, 200) // First 200 chars for debugging
       });
     }
     
