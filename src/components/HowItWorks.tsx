@@ -697,7 +697,7 @@ export function HowItWorks() {
 
         {/* Pricing Section */}
         <AccordionItem value="pricing">
-          <AccordionTrigger className="hover:no-underline px-6 py-4">
+          <AccordionTrigger className="hover:no-underline py-4">
             <div className="flex items-center gap-3">
               
               <span className="text-lg font-semibold text-left">
