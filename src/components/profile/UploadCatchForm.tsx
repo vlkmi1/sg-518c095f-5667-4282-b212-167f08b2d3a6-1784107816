@@ -49,6 +49,69 @@ async function reverseGeocode(latitude: number, longitude: number) {
   }
 }
 
+// Species name mapping for AI results - handles variations like "kapr obecný" -> "Kapr"
+const SPECIES_NAME_MAPPING: Record<string, string> = {
+  "kapr obecný": "Kapr",
+  "kapr": "Kapr",
+  "štika obecná": "Štika",
+  "štika": "Štika",
+  "sumec velký": "Sumec",
+  "sumec": "Sumec",
+  "candát obecný": "Candát",
+  "candát": "Candát",
+  "okoun říční": "Okoun",
+  "okoun": "Okoun",
+  "amur bílý": "Amur",
+  "amur": "Amur",
+  "lín obecný": "Lín",
+  "lín": "Lín",
+  "cejn velký": "Cejn",
+  "cejn": "Cejn",
+  "plotice obecná": "Plotice",
+  "plotice": "Plotice",
+  "jelec tloušť": "Jelec",
+  "jelec": "Jelec",
+  "pstruh obecný": "Pstruh",
+  "pstruh": "Pstruh",
+  "mník jednovousý": "Mník",
+  "mník": "Mník",
+  "úhoř říční": "Úhoř",
+  "úhoř": "Úhoř",
+  "jeseter": "Jeseter",
+  "bolen dravý": "Bolen",
+  "bolen": "Bolen",
+  "parma obecná": "Parma",
+  "parma": "Parma",
+  "síh": "Síh",
+  "siven americký": "Siven",
+  "siven": "Siven",
+};
+
+// Normalize species name from AI
+function normalizeSpeciesName(aiSpecies: string | null): string | null {
+  if (!aiSpecies) return null;
+  
+  const normalized = aiSpecies.toLowerCase().trim();
+  
+  // Try exact match first
+  if (SPECIES_NAME_MAPPING[normalized]) {
+    return SPECIES_NAME_MAPPING[normalized];
+  }
+  
+  // Try to find if the AI species starts with any known species
+  for (const [key, value] of Object.entries(SPECIES_NAME_MAPPING)) {
+    if (normalized.startsWith(key) || key.startsWith(normalized)) {
+      return value;
+    }
+  }
+  
+  // If no mapping found, capitalize first letter of each word
+  return aiSpecies
+    .split(" ")
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+}
+
 const FISH_SPECIES = [
   { value: "Kapr", label: "Kapr", image: "/Kapr.webp" },
   { value: "Amur", label: "Amur", image: "/amur.webp" },
@@ -287,15 +350,19 @@ export function UploadCatchForm() {
       const result = await response.json();
       console.log("AI analysis result:", result);
 
+      // Normalize species name to match our database values
+      const normalizedSpecies = normalizeSpeciesName(result.species);
+      console.log("Normalized species:", normalizedSpecies, "from:", result.species);
+
       setAiAnalysis({
-        species: result.species || null,
+        species: normalizedSpecies,
         length: result.length_cm || null,
         weight: result.weight_kg || null,
       });
 
       // Pre-fill form with AI results
-      if (result.species) {
-        setSpecies(result.species);
+      if (normalizedSpecies) {
+        setSpecies(normalizedSpecies);
       }
       if (result.length_cm) {
         setLengthCm(result.length_cm.toString());
@@ -309,7 +376,7 @@ export function UploadCatchForm() {
       
       // Add extra details if available
       const details = [];
-      if (result.species) details.push(`Druh: ${result.species}`);
+      if (normalizedSpecies) details.push(`Druh: ${normalizedSpecies}`);
       if (result.length_cm) details.push(`Délka: ${result.length_cm} cm`);
       if (result.weight_kg) details.push(`Váha: ${result.weight_kg} kg`);
       if (result.length_interval) details.push(`Interval: ${result.length_interval}`);
