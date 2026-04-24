@@ -222,6 +222,11 @@ export function UploadCatchForm() {
         pick: ["DateTimeOriginal", "latitude", "longitude"],
       });
       
+      console.log("EXIF data found:", exifData);
+      
+      let exifFoundCount = 0;
+      const exifMessages = [];
+      
       // Extract date/time
       if (exifData?.DateTimeOriginal) {
         const photoDate = new Date(exifData.DateTimeOriginal);
@@ -229,10 +234,8 @@ export function UploadCatchForm() {
         setCaughtDate(format(photoDate, "yyyy-MM-dd"));
         setCaughtTime(format(photoDate, "HH:mm"));
         
-        toast({
-          title: "📅 Datum a čas načteny z fotky",
-          description: `${format(photoDate, "d.M.yyyy HH:mm")}`,
-        });
+        exifMessages.push(`📅 ${format(photoDate, "d.M.yyyy HH:mm")}`);
+        exifFoundCount++;
       }
 
       // Extract GPS and reverse geocode
@@ -289,15 +292,37 @@ export function UploadCatchForm() {
             setDistrict(location.district);
           }
 
-          toast({
-            title: "📍 Poloha načtena z fotky",
-            description: `${location.district || location.region || location.country}`,
-          });
+          exifMessages.push(`📍 ${location.district || location.region || location.country}`);
+          exifFoundCount++;
+        } else {
+          exifMessages.push(`📍 GPS: ${exifData.latitude.toFixed(4)}, ${exifData.longitude.toFixed(4)}`);
+          exifFoundCount++;
         }
+      }
+
+      // Show what was found
+      if (exifFoundCount > 0) {
+        toast({
+          title: `✅ Načteno z fotky (${exifFoundCount})`,
+          description: exifMessages.join(" • "),
+          duration: 5000,
+        });
+      } else {
+        console.log("No EXIF data found in image");
+        toast({
+          title: "ℹ️ Žádná metadata v fotce",
+          description: "Fotka neobsahuje datum/čas ani GPS polohu. Vyplňte ručně.",
+          variant: "default",
+        });
       }
     } catch (error) {
       console.log("EXIF data not found or error reading:", error);
-      // Keep defaults if EXIF reading fails
+      // Don't show error toast - just log and continue
+      toast({
+        title: "ℹ️ Žádná metadata",
+        description: "Fotka neobsahuje EXIF data (běžné u screenshotů a editovaných fotek)",
+        variant: "default",
+      });
     }
 
     // Create preview
