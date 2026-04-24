@@ -305,7 +305,7 @@ export function UploadCatchForm() {
       }
 
       // Build detailed toast message
-      let toastMessage = result.message || "Formulář byl předvyplněn odhadovanými údaji";
+      const toastMessage = result.message || "Formulář byl předvyplněn odhadovanými údaji";
       
       // Add extra details if available
       const details = [];
