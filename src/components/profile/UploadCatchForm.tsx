@@ -289,24 +289,38 @@ export function UploadCatchForm() {
 
       setAiAnalysis({
         species: result.species || null,
-        length: result.length || null,
-        weight: result.weight || null,
+        length: result.length_cm || null,
+        weight: result.weight_kg || null,
       });
 
       // Pre-fill form with AI results
       if (result.species) {
         setSpecies(result.species);
       }
-      if (result.length) {
-        setLengthCm(result.length.toString());
+      if (result.length_cm) {
+        setLengthCm(result.length_cm.toString());
       }
-      if (result.weight) {
-        setWeightKg(result.weight.toString());
+      if (result.weight_kg) {
+        setWeightKg(result.weight_kg.toString());
       }
+
+      // Build detailed toast message
+      let toastMessage = result.message || "Formulář byl předvyplněn odhadovanými údaji";
+      
+      // Add extra details if available
+      const details = [];
+      if (result.species) details.push(`Druh: ${result.species}`);
+      if (result.length_cm) details.push(`Délka: ${result.length_cm} cm`);
+      if (result.weight_kg) details.push(`Váha: ${result.weight_kg} kg`);
+      if (result.length_interval) details.push(`Interval: ${result.length_interval}`);
+      if (result.body_condition) details.push(`Kondice: ${result.body_condition}`);
+      
+      const detailsText = details.length > 0 ? details.join(" • ") : "";
 
       toast({
         title: "✅ AI analýza dokončena",
-        description: "Formulář byl předvyplněn odhadovanými údaji",
+        description: detailsText || toastMessage,
+        duration: 8000,
       });
     } catch (error: any) {
       console.error("AI analysis error:", error);
