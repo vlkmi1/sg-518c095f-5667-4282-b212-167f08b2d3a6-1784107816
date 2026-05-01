@@ -48,6 +48,7 @@ interface AddCompetitionCatchProps {
   scoringType: "points" | "measurements";
   measurementType?: "weight" | "length" | "both";
   fishPoints?: Record<string, number>;
+  minWeightKg?: number | null;
   onSuccess?: () => void;
 }
 
@@ -56,6 +57,7 @@ export function AddCompetitionCatch({
   scoringType,
   measurementType,
   fishPoints,
+  minWeightKg,
   onSuccess,
 }: AddCompetitionCatchProps) {
   const { toast } = useToast();
@@ -234,10 +236,22 @@ export function AddCompetitionCatch({
 
       console.log("Competition catch created successfully:", data);
 
-      toast({
-        title: "✅ Úlovek přidán!",
-        description: "Váš úlovek byl úspěšně přidán do závodu",
-      });
+      // Check if catch meets minimum weight requirement
+      const catchWeight = weightKg ? parseFloat(weightKg) : 0;
+      const meetsMinWeight = !minWeightKg || catchWeight >= minWeightKg;
+
+      if (!meetsMinWeight && minWeightKg) {
+        toast({
+          title: "⚠️ Úlovek přidán, ale nezapočítán",
+          description: `Váha úlovku (${catchWeight} kg) je pod limitem ${minWeightKg} kg. Úlovek byl zaznamenán, ale nezapočítá se do hodnocení závodu.`,
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "✅ Úlovek přidán!",
+          description: "Váš úlovek byl úspěšně přidán do závodu",
+        });
+      }
 
       // Reset form
       setPhotoFile(null);
@@ -435,13 +449,21 @@ export function AddCompetitionCatch({
             </p>
           )}
           {scoringType === "measurements" && (
-            <p className="text-sm text-muted-foreground bg-primary/5 p-3 rounded-lg">
-              ℹ️ Tento závod hodnotí podle {
-                measurementType === "weight" ? "váhy" :
-                measurementType === "length" ? "délky" :
-                "délky a váhy"
-              }. Zadejte přesné rozměry úlovku.
-            </p>
+            <>
+              <p className="text-sm text-muted-foreground bg-primary/5 p-3 rounded-lg">
+                ℹ️ Tento závod hodnotí podle {
+                  measurementType === "weight" ? "váhy" :
+                  measurementType === "length" ? "délky" :
+                  "délky a váhy"
+                }. Zadejte přesné rozměry úlovku.
+              </p>
+              {minWeightKg && (
+                <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 p-3 rounded-lg">
+                  ⚠️ <strong>Minimální váha:</strong> Do hodnocení se započítávají pouze úlovky s váhou ≥ {minWeightKg} kg. 
+                  Úlovky pod tímto limitem budou zaznamenány, ale nezapočítány.
+                </p>
+              )}
+            </>
           )}
 
           {/* Submit */}
