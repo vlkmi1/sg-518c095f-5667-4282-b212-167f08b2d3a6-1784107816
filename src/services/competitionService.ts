@@ -36,6 +36,7 @@ export const competitionService = {
     measurement_type?: string | null;
     fish_points?: Record<string, number> | null;
     top_catches_count?: number | null;
+    min_weight_kg?: number | null;
     creator_id: string;
     is_public?: boolean;
   }): Promise<{ data: any; error: any }> {
@@ -408,6 +409,11 @@ export const competitionService = {
     catches.forEach((c: any) => {
       const catchData = c.catches;
       if (!catchData) return;
+      
+      // Skip if catch doesn't meet minimum weight requirement
+      if (competition.min_weight_kg && catchData.weight_kg < competition.min_weight_kg) {
+        return; // Don't count this catch
+      }
       
       const userId = catchData.user_id;
       const nickname = catchData.profiles?.nickname || "Anonym";

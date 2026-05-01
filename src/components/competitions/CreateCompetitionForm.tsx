@@ -87,6 +87,7 @@ export function CreateCompetitionForm() {
   // Measurements scoring configuration
   const [measurementType, setMeasurementType] = useState<"weight" | "length" | "both">("both");
   const [topCatchesCount, setTopCatchesCount] = useState<number | null>(null);
+  const [minWeightKg, setMinWeightKg] = useState<number | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -147,6 +148,7 @@ export function CreateCompetitionForm() {
         measurement_type: scoringType === "measurements" ? measurementType : null,
         fish_points: fishPointsJson,
         top_catches_count: scoringType === "measurements" ? (topCatchesCount || null) : null,
+        min_weight_kg: scoringType === "measurements" ? (minWeightKg || null) : null,
         creator_id: user.id, // Use creator_id not created_by
         is_public: isPublic,
       });
@@ -423,6 +425,25 @@ export function CreateCompetitionForm() {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="min_weight">
+                  Minimální váha pro započítání (kg)
+                </Label>
+                <Input
+                  id="min_weight"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  value={minWeightKg || ""}
+                  onChange={(e) => setMinWeightKg(e.target.value ? Number(e.target.value) : null)}
+                  placeholder="Např. 2.5"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Pokud nevyplníte, započítávají se všechny úlovky. Pokud zadáte minimální váhu (např. 2.5 kg), 
+                  do hodnocení se započítají pouze úlovky, které mají váhu <strong>vyšší nebo rovnou</strong> této hodnotě.
+                </p>
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="top_catches">
                   Počet nejlepších úlovků (volitelné)
                 </Label>
@@ -451,6 +472,11 @@ export function CreateCompetitionForm() {
                   )}
                   {measurementType === "both" && (
                     <li>Skóre = délka (cm) + váha (kg) × 10 (např. 75 cm + 8.5 kg × 10 = 160 bodů)</li>
+                  )}
+                  {minWeightKg && (
+                    <li className="text-amber-700">
+                      ⚠️ Započítávají se pouze úlovky s váhou ≥ {minWeightKg} kg
+                    </li>
                   )}
                 </ul>
               </div>
