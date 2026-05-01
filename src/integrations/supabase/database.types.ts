@@ -1,4 +1,4 @@
- 
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 export type Json =
   | string
   | number
@@ -229,6 +229,7 @@ export type Database = {
           is_public: boolean | null
           join_code: string | null
           measurement_type: string | null
+          min_weight_kg: number | null
           name: string
           organizer_id: string | null
           prize_type: string | null
@@ -252,6 +253,7 @@ export type Database = {
           is_public?: boolean | null
           join_code?: string | null
           measurement_type?: string | null
+          min_weight_kg?: number | null
           name: string
           organizer_id?: string | null
           prize_type?: string | null
@@ -275,6 +277,7 @@ export type Database = {
           is_public?: boolean | null
           join_code?: string | null
           measurement_type?: string | null
+          min_weight_kg?: number | null
           name?: string
           organizer_id?: string | null
           prize_type?: string | null
