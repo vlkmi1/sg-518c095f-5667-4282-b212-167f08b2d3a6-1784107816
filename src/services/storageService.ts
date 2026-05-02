@@ -214,8 +214,8 @@ export const storageService = {
       const compressedFile = await compressImage(file, 400, 0.8);
       
       const fileExt = file.name.split(".").pop();
-      const fileName = `${userId}_${Date.now()}.${fileExt}`;
-      const filePath = `avatars/${fileName}`;
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `${userId}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from("avatars")
