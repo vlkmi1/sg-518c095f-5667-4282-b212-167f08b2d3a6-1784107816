@@ -27,9 +27,13 @@ export default function Document() {
             __html: `
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', () => {
-                  navigator.serviceWorker.register('/sw.js').then(
+                  navigator.serviceWorker.register('/sw.js', { 
+                    updateViaCache: 'none' 
+                  }).then(
                     (registration) => {
                       console.log('SW registered: ', registration);
+                      // Check for updates immediately after registration
+                      registration.update();
                     },
                     (err) => {
                       console.log('SW registration failed: ', err);
