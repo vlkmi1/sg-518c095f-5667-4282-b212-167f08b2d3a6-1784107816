@@ -71,7 +71,7 @@ export function EditProfileForm({ profile, onSave, onCancel }: EditProfileFormPr
         throw new Error("Uživatel není přihlášen");
       }
 
-      let updateData: {
+      const updateData: {
         full_name: string | null;
         location: string | null;
         avatar_url?: string;
