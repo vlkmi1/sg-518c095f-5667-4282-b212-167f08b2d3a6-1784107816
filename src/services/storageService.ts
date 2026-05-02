@@ -211,26 +211,22 @@ export const storageService = {
   // Upload avatar/profile picture
   async uploadAvatar(file: File, userId: string): Promise<{ url: string; path: string }> {
     try {
-      // Compress and resize image
       const compressedFile = await compressImage(file, 400, 0.8);
       
-      // Generate unique filename
       const fileExt = file.name.split(".").pop();
       const fileName = `${userId}_${Date.now()}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
 
-      // Upload to Supabase Storage
       const { error: uploadError } = await supabase.storage
-        .from("catches")
+        .from("avatars")
         .upload(filePath, compressedFile);
 
       if (uploadError) {
         throw uploadError;
       }
 
-      // Get public URL
       const { data } = supabase.storage
-        .from("catches")
+        .from("avatars")
         .getPublicUrl(filePath);
 
       console.log("uploadAvatar success:", { url: data.publicUrl, path: filePath });
@@ -245,7 +241,7 @@ export const storageService = {
   async deleteAvatar(filePath: string): Promise<void> {
     try {
       const { error } = await supabase.storage
-        .from("catches")
+        .from("avatars")
         .remove([filePath]);
 
       if (error) {
