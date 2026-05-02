@@ -12,6 +12,7 @@ import { Trophy, Users, Calendar, Fish, User, Eye, ChevronDown, ChevronUp } from
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
 import { CompetitionCountdown } from "@/components/competitions/CompetitionCountdown";
+import { CompetitionTimeline } from "@/components/competitions/CompetitionTimeline";
 
 export default function CompetitionWatchPage() {
   const router = useRouter();
@@ -479,6 +480,16 @@ export default function CompetitionWatchPage() {
               </CardContent>
             </Card>
           )}
+
+          {/* Timeline */}
+          <CompetitionTimeline
+            catches={catches}
+            participants={participants}
+            scoringType={competition.scoring_type}
+            measurementType={competition.measurement_type}
+            fishPoints={competition.fish_points}
+            minWeightKg={competition.min_weight_kg}
+          />
 
           {/* Leaderboard */}
           <Card>

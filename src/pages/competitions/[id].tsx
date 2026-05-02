@@ -28,6 +28,7 @@ import { format, isBefore, startOfDay } from "date-fns";
 import { cs } from "date-fns/locale";
 import { AddCompetitionCatch } from "@/components/competitions/AddCompetitionCatch";
 import { CompetitionCountdown } from "@/components/competitions/CompetitionCountdown";
+import { CompetitionTimeline } from "@/components/competitions/CompetitionTimeline";
 
 export default function CompetitionDetailPage() {
   const router = useRouter();
@@ -905,6 +906,16 @@ export default function CompetitionDetailPage() {
               </CardContent>
             </Card>
           )}
+
+          {/* Timeline */}
+          <CompetitionTimeline
+            catches={catches}
+            participants={participants}
+            scoringType={competition.scoring_type}
+            measurementType={competition.measurement_type}
+            fishPoints={competition.fish_points}
+            minWeightKg={competition.min_weight_kg}
+          />
 
           {/* Pending Join Requests - only visible to creator */}
           {isCreator && pendingRequests.length > 0 && (
