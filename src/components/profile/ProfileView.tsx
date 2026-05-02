@@ -244,7 +244,7 @@ export function ProfileView() {
                     <span className="hidden sm:inline">Upravit profil</span>
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-md">
+                <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle className="font-serif">Upravit profil</DialogTitle>
                     <DialogDescription>
