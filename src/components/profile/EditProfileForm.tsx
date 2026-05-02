@@ -71,7 +71,15 @@ export function EditProfileForm({ profile, onSave, onCancel }: EditProfileFormPr
         throw new Error("Uživatel není přihlášen");
       }
 
-      let avatarUrl = profile?.avatar_url;
+      let updateData: {
+        full_name: string | null;
+        location: string | null;
+        avatar_url?: string;
+        avatar_path?: string;
+      } = {
+        full_name: fullName.trim() || null,
+        location: location.trim() || null,
+      };
 
       // Upload new avatar if selected
       if (avatarFile) {
@@ -86,26 +94,14 @@ export function EditProfileForm({ profile, onSave, onCancel }: EditProfileFormPr
 
         // Upload new avatar
         const { url, path } = await storageService.uploadAvatar(avatarFile, user.id);
-        avatarUrl = url;
-
-        // Update avatar in profile
-        await profileService.updateAvatar(user.id, url);
         
-        // Update avatar_path separately
-        const { error: pathError } = await profileService.updateProfile(user.id, {
-          avatar_path: path,
-        });
-        
-        if (pathError) {
-          console.error("Error updating avatar_path:", pathError);
-        }
+        // Add avatar to update data
+        updateData.avatar_url = url;
+        updateData.avatar_path = path;
       }
 
-      // Update other profile fields
-      const { error } = await profileService.updateProfile(user.id, {
-        full_name: fullName.trim() || null,
-        location: location.trim() || null,
-      });
+      // Update all profile fields in one operation
+      const { error } = await profileService.updateProfile(user.id, updateData);
 
       if (error) {
         throw new Error(error.message);

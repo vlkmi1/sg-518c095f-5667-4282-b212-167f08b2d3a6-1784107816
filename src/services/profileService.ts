@@ -73,7 +73,12 @@ export const profileService = {
   },
 
   // Update profile
-  async updateProfile(userId: string, updates: { full_name?: string | null; location?: string | null; avatar_path?: string | null }): Promise<{ error: any }> {
+  async updateProfile(userId: string, updates: { 
+    full_name?: string | null; 
+    location?: string | null; 
+    avatar_path?: string | null;
+    avatar_url?: string | null;
+  }): Promise<{ error: any }> {
     const { error } = await supabase
       .from("profiles")
       .update(updates)
@@ -84,16 +89,14 @@ export const profileService = {
   },
 
   // Update profile avatar
-  async updateAvatar(userId: string, avatarUrl: string): Promise<{ data: any; error: any }> {
-    const { data, error } = await supabase
+  async updateAvatar(userId: string, avatarUrl: string): Promise<{ error: any }> {
+    const { error } = await supabase
       .from("profiles")
       .update({ avatar_url: avatarUrl })
-      .eq("id", userId)
-      .select()
-      .single();
+      .eq("id", userId);
 
-    console.log("updateAvatar:", { data, error });
-    return { data, error };
+    console.log("updateAvatar:", { avatarUrl, error });
+    return { error };
   },
 
   // Check if nickname is available
