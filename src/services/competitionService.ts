@@ -488,6 +488,37 @@ export const competitionService = {
     }
   },
 
+  // Update competition
+  async updateCompetition(competitionId: string, updates: {
+    name?: string;
+    description?: string;
+    start_date?: string;
+    end_date?: string;
+    scoring_type?: string;
+    measurement_type?: string | null;
+    fish_points?: Record<string, number> | null;
+    top_catches_count?: number | null;
+    min_weight_kg?: number | null;
+    is_public?: boolean;
+  }): Promise<{ success: boolean; error: any }> {
+    try {
+      const { error } = await supabase
+        .from("competitions")
+        .update(updates)
+        .eq("id", competitionId);
+
+      if (error) {
+        console.error("Update competition error:", error);
+        return { success: false, error };
+      }
+
+      return { success: true, error: null };
+    } catch (error: any) {
+      console.error("Update competition error:", error);
+      return { success: false, error };
+    }
+  },
+
   // Terminate competition early (during competition, deletes all catches)
   async terminateCompetition(competitionId: string): Promise<{ success: boolean; error: any }> {
     try {

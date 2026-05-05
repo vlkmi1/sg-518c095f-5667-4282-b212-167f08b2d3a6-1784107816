@@ -44,6 +44,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { catchService } from "@/services/catchService";
+import { Switch } from "@/components/ui/switch";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -71,6 +72,9 @@ export default function AdminPage() {
   const [newPassword, setNewPassword] = useState("");
   const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
+  const [editCompetitionOpen, setEditCompetitionOpen] = useState(false);
+  const [competitionToEdit, setCompetitionToEdit] = useState<any>(null);
+  const [competitionFormData, setCompetitionFormData] = useState<any>({});
 
   useEffect(() => {
     checkAdminAccess();
@@ -108,18 +112,15 @@ export default function AdminPage() {
     try {
       setIsLoading(true);
 
-      // Get all users
       const usersData = await adminService.getAllUsers();
       console.log("📊 [Admin] Users loaded:", usersData.length);
       setUsers(usersData);
 
-      // Get all catches
       const catchesData = await adminService.getAllCatches();
       console.log("📊 [Admin] Catches loaded:", catchesData.length);
       console.log("📊 [Admin] First catch sample:", catchesData[0]);
       setCatches(catchesData);
 
-      // Get all competitions
       const { data: competitionsData } = await competitionService.getCompetitions();
       console.log("📊 [Admin] Competitions loaded:", competitionsData?.length || 0);
       setCompetitions(competitionsData || []);
@@ -292,17 +293,14 @@ export default function AdminPage() {
         description: "Email uživatele byl úspěšně ověřen a účet aktivován",
       });
       
-      // Reload user detail to show updated status
       const detail = await adminService.getUserDetail(selectedUser.id);
       setUserDetail(detail);
       
-      // Update selected user data
       setSelectedUser((prev: any) => ({
         ...prev,
         email_confirmed_at: new Date().toISOString()
       }));
 
-      // Reload all users to update the main list
       await loadData();
     } catch (error: any) {
       toast({
@@ -358,15 +356,124 @@ export default function AdminPage() {
     }
   }
 
+  function handleOpenEditCompetition(competition: any) {
+    setCompetitionToEdit(competition);
+    
+    // Format dates to datetime-local format
+    const startDate = new Date(competition.start_date);
+    const endDate = new Date(competition.end_date);
+    
+    const startDateStr = startDate.toISOString().slice(0, 16);
+    const endDateStr = endDate.toISOString().slice(0, 16);
+    
+    setCompetitionFormData({
+      name: competition.name || "",
+      description: competition.description || "",
+      start_date: startDateStr,
+      end_date: endDateStr,
+      scoring_type: competition.scoring_type || "measurement",
+      measurement_type: competition.measurement_type || "length",
+      top_catches_count: competition.top_catches_count?.toString() || "",
+      min_weight_kg: competition.min_weight_kg?.toString() || "",
+      is_public: competition.is_public || false,
+    });
+    setEditCompetitionOpen(true);
+  }
+
+  async function handleUpdateCompetition() {
+    if (!competitionToEdit) return;
+
+    setIsSubmitting(true);
+
+    try {
+      const updates: any = {};
+      const now = new Date();
+      const competitionStarted = new Date(competitionToEdit.start_date) <= now;
+      
+      if (competitionFormData.name !== competitionToEdit.name) {
+        updates.name = competitionFormData.name;
+      }
+      if (competitionFormData.description !== competitionToEdit.description) {
+        updates.description = competitionFormData.description || null;
+      }
+      
+      // Only allow editing start_date if competition hasn't started
+      if (!competitionStarted) {
+        const newStartDate = new Date(competitionFormData.start_date).toISOString();
+        if (newStartDate !== competitionToEdit.start_date) {
+          updates.start_date = newStartDate;
+        }
+      }
+      
+      // Always allow editing end_date
+      const newEndDate = new Date(competitionFormData.end_date).toISOString();
+      if (newEndDate !== competitionToEdit.end_date) {
+        updates.end_date = newEndDate;
+      }
+      
+      if (competitionFormData.scoring_type !== competitionToEdit.scoring_type) {
+        updates.scoring_type = competitionFormData.scoring_type;
+      }
+      if (competitionFormData.measurement_type !== competitionToEdit.measurement_type) {
+        updates.measurement_type = competitionFormData.measurement_type || null;
+      }
+      if (competitionFormData.top_catches_count && 
+          competitionFormData.top_catches_count !== competitionToEdit.top_catches_count?.toString()) {
+        updates.top_catches_count = parseInt(competitionFormData.top_catches_count);
+      }
+      if (competitionFormData.min_weight_kg && 
+          competitionFormData.min_weight_kg !== competitionToEdit.min_weight_kg?.toString()) {
+        updates.min_weight_kg = parseFloat(competitionFormData.min_weight_kg);
+      }
+      if (competitionFormData.is_public !== competitionToEdit.is_public) {
+        updates.is_public = competitionFormData.is_public;
+      }
+
+      if (Object.keys(updates).length === 0) {
+        toast({
+          title: "Žádné změny",
+          description: "Nebyly provedeny žádné změny",
+        });
+        setEditCompetitionOpen(false);
+        setIsSubmitting(false);
+        return;
+      }
+
+      const { success, error } = await competitionService.updateCompetition(
+        competitionToEdit.id,
+        updates
+      );
+
+      if (!success || error) {
+        throw error || new Error("Nepodařilo se aktualizovat závod");
+      }
+
+      toast({
+        title: "✅ Závod aktualizován",
+        description: "Závod byl úspěšně upraven",
+      });
+
+      setEditCompetitionOpen(false);
+      await loadData();
+    } catch (error: any) {
+      console.error("Update competition error:", error);
+      toast({
+        title: "Chyba",
+        description: error.message || "Nepodařilo se upravit závod",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   function handleOpenEditDialog(catchData: any) {
     setCatchToEdit(catchData);
     
-    // Format caught_at to date and time strings
     const caughtDate = catchData.caught_at ? new Date(catchData.caught_at) : new Date();
     const dateStr = caughtDate.toISOString().split('T')[0];
     const timeStr = caughtDate.toTimeString().slice(0, 5);
     
-    // Pre-fill form with current data
     setEditFormData({
       species: catchData.species || "",
       length_cm: catchData.length_cm?.toString() || "",
@@ -436,7 +543,6 @@ export default function AdminPage() {
         updates.notes = editFormData.notes || null;
       }
 
-      // Handle date/time update
       if (checkDateTimeChange()) {
         const caughtAt = new Date(`${editFormData.caught_date}T${editFormData.caught_time}`);
         updates.caught_at = caughtAt.toISOString();
@@ -494,13 +600,11 @@ export default function AdminPage() {
   async function handleUpdateCatch() {
     if (!catchToEdit) return;
 
-    // Check if date/time changed
     if (checkDateTimeChange()) {
       setConfirmDateChangeOpen(true);
       return;
     }
 
-    // No date/time change, proceed directly
     proceedWithUpdate();
   }
 
@@ -526,7 +630,6 @@ export default function AdminPage() {
       <SEO title="Admin Panel" />
       <div className="min-h-screen bg-background">
         <main className="container py-8 space-y-6">
-          {/* Admin Header */}
           <Card className="border-primary/20 bg-primary/5">
             <CardHeader>
               <CardTitle className="font-serif text-2xl flex items-center gap-2">
@@ -555,7 +658,6 @@ export default function AdminPage() {
             </CardContent>
           </Card>
 
-          {/* Tabs */}
           <Tabs defaultValue="users" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="users" className="gap-2">
@@ -572,7 +674,6 @@ export default function AdminPage() {
               </TabsTrigger>
             </TabsList>
 
-            {/* Users Tab */}
             <TabsContent value="users" className="space-y-4">
               <Card>
                 <CardContent className="p-0">
@@ -653,13 +754,11 @@ export default function AdminPage() {
               </Card>
             </TabsContent>
 
-            {/* Catches Tab */}
             <TabsContent value="catches" className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {catches.map((catchItem) => (
                   <Card key={catchItem.id} className={catchItem.is_hidden ? "opacity-60" : ""}>
                     <CardContent className="p-4 space-y-3">
-                      {/* Image */}
                       {catchItem.photo_url && (
                         <div className="relative rounded-lg overflow-hidden aspect-video">
                           <img
@@ -678,7 +777,6 @@ export default function AdminPage() {
                         </div>
                       )}
 
-                      {/* Info */}
                       <div>
                         <div className="flex items-center gap-2">
                           <Fish className="h-5 w-5 text-primary" />
@@ -746,7 +844,6 @@ export default function AdminPage() {
               </div>
             </TabsContent>
 
-            {/* Competitions Tab */}
             <TabsContent value="competitions" className="space-y-4">
               <Card>
                 <CardContent className="p-0">
@@ -792,6 +889,16 @@ export default function AdminPage() {
                             </div>
                           </div>
                           <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleOpenEditCompetition(competition)}
+                              disabled={processingId === competition.id}
+                              className="gap-2"
+                            >
+                              <Edit className="h-4 w-4" />
+                              <span className="hidden sm:inline">Upravit</span>
+                            </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button
@@ -834,7 +941,6 @@ export default function AdminPage() {
         </main>
       </div>
 
-      {/* Confirm Date/Time Change Dialog */}
       <AlertDialog open={confirmDateChangeOpen} onOpenChange={setConfirmDateChangeOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -855,7 +961,6 @@ export default function AdminPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Edit Catch Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -866,7 +971,6 @@ export default function AdminPage() {
           </DialogHeader>
 
           <div className="space-y-4 pt-4">
-            {/* All fields - admin can edit everything */}
             <div className="space-y-2">
               <Label htmlFor="edit-species">Druh ryby *</Label>
               <Select
@@ -1011,7 +1115,6 @@ export default function AdminPage() {
               />
             </div>
 
-            {/* Date and Time */}
             <div className="space-y-4 pt-2 border-t">
               <Label className="text-base font-semibold">Datum a čas ulovení</Label>
               <div className="grid grid-cols-2 gap-4">
@@ -1071,7 +1174,178 @@ export default function AdminPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete User Dialog */}
+      <Dialog open={editCompetitionOpen} onOpenChange={setEditCompetitionOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-serif">Upravit závod (Admin)</DialogTitle>
+            <DialogDescription>
+              Upravte informace o závodu. Pokud již začal, nelze změnit datum začátku.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="comp-name">Název závodu *</Label>
+              <Input
+                id="comp-name"
+                value={competitionFormData.name}
+                onChange={(e) =>
+                  setCompetitionFormData((prev: any) => ({ ...prev, name: e.target.value }))
+                }
+                placeholder="např. Letní Kapřík 2026"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="comp-description">Popis (volitelné)</Label>
+              <Textarea
+                id="comp-description"
+                value={competitionFormData.description}
+                onChange={(e) =>
+                  setCompetitionFormData((prev: any) => ({ ...prev, description: e.target.value }))
+                }
+                placeholder="Krátký popis závodu..."
+                rows={3}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="comp-start">
+                  Začátek {competitionToEdit && new Date(competitionToEdit.start_date) <= new Date() && "(nelze změnit)"}
+                </Label>
+                <Input
+                  id="comp-start"
+                  type="datetime-local"
+                  value={competitionFormData.start_date}
+                  onChange={(e) =>
+                    setCompetitionFormData((prev: any) => ({ ...prev, start_date: e.target.value }))
+                  }
+                  disabled={competitionToEdit && new Date(competitionToEdit.start_date) <= new Date()}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="comp-end">Konec</Label>
+                <Input
+                  id="comp-end"
+                  type="datetime-local"
+                  value={competitionFormData.end_date}
+                  onChange={(e) =>
+                    setCompetitionFormData((prev: any) => ({ ...prev, end_date: e.target.value }))
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="comp-scoring">Typ bodování</Label>
+              <Select
+                value={competitionFormData.scoring_type}
+                onValueChange={(value) =>
+                  setCompetitionFormData((prev: any) => ({ ...prev, scoring_type: value }))
+                }
+              >
+                <SelectTrigger id="comp-scoring">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="measurement">Měření (délka/hmotnost)</SelectItem>
+                  <SelectItem value="points">Body za druhy</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {competitionFormData.scoring_type === "measurement" && (
+              <div className="space-y-2">
+                <Label htmlFor="comp-measurement">Co se měří?</Label>
+                <Select
+                  value={competitionFormData.measurement_type}
+                  onValueChange={(value) =>
+                    setCompetitionFormData((prev: any) => ({ ...prev, measurement_type: value }))
+                  }
+                >
+                  <SelectTrigger id="comp-measurement">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="length">Délka (cm)</SelectItem>
+                    <SelectItem value="weight">Hmotnost (kg)</SelectItem>
+                    <SelectItem value="both">Délka + Hmotnost</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="comp-top-catches">Počítají se jen X největších úlovků (volitelné)</Label>
+              <Input
+                id="comp-top-catches"
+                type="number"
+                min="1"
+                value={competitionFormData.top_catches_count}
+                onChange={(e) =>
+                  setCompetitionFormData((prev: any) => ({ ...prev, top_catches_count: e.target.value }))
+                }
+                placeholder="např. 3 (prázdné = všechny)"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="comp-min-weight">Minimální hmotnost úlovku (kg, volitelné)</Label>
+              <Input
+                id="comp-min-weight"
+                type="number"
+                step="0.1"
+                min="0"
+                value={competitionFormData.min_weight_kg}
+                onChange={(e) =>
+                  setCompetitionFormData((prev: any) => ({ ...prev, min_weight_kg: e.target.value }))
+                }
+                placeholder="např. 2.0"
+              />
+            </div>
+
+            <div className="flex items-center justify-between space-x-2 pt-2">
+              <Label htmlFor="comp-public" className="cursor-pointer">
+                Veřejný závod (kdokoliv se může přidat)
+              </Label>
+              <Switch
+                id="comp-public"
+                checked={competitionFormData.is_public}
+                onCheckedChange={(checked) =>
+                  setCompetitionFormData((prev: any) => ({ ...prev, is_public: checked }))
+                }
+              />
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button
+                onClick={handleUpdateCompetition}
+                disabled={isSubmitting}
+                className="flex-1"
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Ukládám...
+                  </span>
+                ) : (
+                  "Uložit změny"
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setEditCompetitionOpen(false)}
+                disabled={isSubmitting}
+              >
+                Zrušit
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -1093,7 +1367,6 @@ export default function AdminPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* User Detail Dialog */}
       <Dialog open={userDetailOpen} onOpenChange={setUserDetailOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
@@ -1110,7 +1383,6 @@ export default function AdminPage() {
             </div>
           ) : userDetail && selectedUser ? (
             <div className="space-y-6">
-              {/* User Info */}
               <div className="flex items-center gap-4">
                 <Avatar className="h-20 w-20">
                   <AvatarImage src={selectedUser.avatar_url || undefined} />
@@ -1141,7 +1413,6 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* Statistics */}
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">Statistiky</CardTitle>
@@ -1167,7 +1438,6 @@ export default function AdminPage() {
                 </CardContent>
               </Card>
 
-              {/* Account Details */}
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">Detaily účtu</CardTitle>
@@ -1211,7 +1481,6 @@ export default function AdminPage() {
                 </CardContent>
               </Card>
 
-              {/* Actions */}
               <div className="flex gap-3 pt-4">
                 <Button
                   onClick={handleOpenPasswordDialog}
@@ -1234,7 +1503,6 @@ export default function AdminPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Change Password Dialog */}
       <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
         <DialogContent>
           <DialogHeader>
