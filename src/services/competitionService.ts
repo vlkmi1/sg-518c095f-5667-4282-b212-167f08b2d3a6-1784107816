@@ -19,6 +19,17 @@ export const competitionService = {
         return { data: null, error };
       }
 
+      console.log("📊 [CompetitionService] getCompetitions returned:", data?.length || 0, "competitions");
+      if (data && data.length > 0) {
+        console.log("📊 [CompetitionService] First competition sample:", {
+          id: data[0].id,
+          name: data[0].name,
+          start_date: data[0].start_date,
+          end_date: data[0].end_date,
+          updated_at: data[0].updated_at
+        });
+      }
+
       return { data, error: null };
     } catch (error: any) {
       console.error("Get competitions error:", error);

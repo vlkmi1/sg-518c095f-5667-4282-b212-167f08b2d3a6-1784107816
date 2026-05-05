@@ -123,7 +123,9 @@ export default function AdminPage() {
 
       const { data: competitionsData } = await competitionService.getCompetitions();
       console.log("📊 [Admin] Competitions loaded:", competitionsData?.length || 0);
+      console.log("📊 [Admin] Setting competitions state with data:", competitionsData);
       setCompetitions(competitionsData || []);
+      console.log("✅ [Admin] Competitions state updated");
 
     } catch (error) {
       console.error("❌ [Admin] Load data error:", error);
