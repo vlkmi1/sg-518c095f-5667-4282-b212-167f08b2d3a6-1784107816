@@ -454,7 +454,9 @@ export default function AdminPage() {
       });
 
       setEditCompetitionOpen(false);
+      console.log("🔄 [Admin] Reloading data after competition update...");
       await loadData();
+      console.log("✅ [Admin] Data reload completed");
     } catch (error: any) {
       console.error("Update competition error:", error);
       toast({
