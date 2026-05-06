@@ -12,10 +12,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { Logo } from "@/components/layout/Logo";
+import { InstallButton } from "@/components/layout/InstallButton";
 import { authService } from "@/services/authService";
 import { adminService } from "@/services/adminService";
 import { profileService } from "@/services/profileService";
-import { Fish, Trophy, User, LogOut, Shield, Download } from "lucide-react";
+import { Fish, Trophy, User, LogOut, Shield } from "lucide-react";
 
 export function Header() {
   const router = useRouter();
@@ -23,32 +24,12 @@ export function Header() {
   const [profile, setProfile] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [canInstall, setCanInstall] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [mounted, setMounted] = useState(false);
   const [shouldShowMobileNav, setShouldShowMobileNav] = useState(true);
 
   useEffect(() => {
     setMounted(true);
     checkAuth();
-    
-    // PWA Install prompt
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      setCanInstall(true);
-    };
-
-    window.addEventListener("beforeinstallprompt", handler);
-
-    // Check if already installed
-    if (window.matchMedia("(display-mode: standalone)").matches) {
-      setCanInstall(false);
-    }
-
-    return () => {
-      window.removeEventListener("beforeinstallprompt", handler);
-    };
   }, []);
 
   async function checkAuth() {
@@ -79,18 +60,6 @@ export function Header() {
     router.push("/");
   }
 
-  async function handleInstall() {
-    if (!deferredPrompt) return;
-
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-
-    if (outcome === "accepted") {
-      setDeferredPrompt(null);
-      setCanInstall(false);
-    }
-  }
-
   const isActive = (path: string) => {
     return router.pathname === path || router.pathname.startsWith(path + "/");
   };
@@ -102,6 +71,7 @@ export function Header() {
           {/* Logo + Install Button */}
           <div className="flex items-center gap-3">
             <Logo />
+            <InstallButton />
           </div>
 
           {/* Desktop Navigation */}
