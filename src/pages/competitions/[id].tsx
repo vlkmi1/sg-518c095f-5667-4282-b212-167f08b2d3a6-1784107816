@@ -17,6 +17,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { authService } from "@/services/authService";
 import { adminService } from "@/services/adminService";
 import { competitionService } from "@/services/competitionService";
@@ -46,6 +47,7 @@ export default function CompetitionDetailPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isTerminating, setIsTerminating] = useState(false);
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const isCreator = currentUserId && competition?.creator_id === currentUserId;
   
@@ -549,6 +551,17 @@ export default function CompetitionDetailPage() {
         title={competition.name}
         description={`Kód závodu je: ${competition.join_code || competition.invite_code} | ${competition.description || "Rybářský závod na Ukaž Rybu"}`}
       />
+      <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
+        <DialogContent className="max-w-4xl p-0">
+          {selectedImage && (
+            <img
+              src={selectedImage}
+              alt="Zvětšený úlovek"
+              className="w-full h-auto max-h-[90vh] object-contain"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
       <div className="min-h-screen bg-background">
         <main className="container py-8 space-y-6">
           {/* Competition Header */}
@@ -860,7 +873,10 @@ export default function CompetitionDetailPage() {
                         className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
                       >
                         {/* Photo */}
-                        <div className="relative w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0">
+                        <div 
+                          className="relative w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => setSelectedImage(catchData.photo_url)}
+                        >
                           <img
                             src={catchData.photo_url}
                             alt={catchData.species}
