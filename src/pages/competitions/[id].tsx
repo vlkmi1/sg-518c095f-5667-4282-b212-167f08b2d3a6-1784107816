@@ -843,13 +843,13 @@ export default function CompetitionDetailPage() {
           {/* Recent Catches */}
           {recentCatches.length > 0 && (
             <Card>
-              <CardHeader>
-                <CardTitle className="font-serif text-xl">
+              <CardHeader className="pb-3 sm:pb-6">
+                <CardTitle className="font-serif text-lg sm:text-xl">
                   Nedávné úlovky
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   {recentCatches.map((catchData) => {
                     const participant = participants.find((p) => p.user_id === catchData.user_id);
                     const score = calculateCatchScore(catchData);
@@ -857,10 +857,10 @@ export default function CompetitionDetailPage() {
                     return (
                       <div
                         key={catchData.id}
-                        className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
+                        className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
                       >
                         {/* Photo */}
-                        <div className="relative w-20 h-20 flex-shrink-0">
+                        <div className="relative w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0">
                           <img
                             src={catchData.photo_url}
                             alt={catchData.species}
@@ -870,35 +870,35 @@ export default function CompetitionDetailPage() {
 
                         {/* Info */}
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium truncate">
+                          <div className="flex items-center gap-1 sm:gap-2 mb-0.5 sm:mb-1">
+                            <span className="font-medium text-sm sm:text-base truncate">
                               {participant?.profiles?.nickname || catchData.profiles?.nickname || "Neznámý"}
                             </span>
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className="text-[10px] sm:text-xs px-1 py-0 sm:px-2 sm:py-0.5">
                               {catchData.species}
                             </Badge>
                           </div>
                           
-                          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground">
                             {catchData.length_cm && (
-                              <span>📏 {catchData.length_cm} cm</span>
+                              <span className="text-[11px] sm:text-sm">📏 {catchData.length_cm} cm</span>
                             )}
                             {catchData.weight_kg && (
-                              <span>⚖️ {catchData.weight_kg} kg</span>
+                              <span className="text-[11px] sm:text-sm">⚖️ {catchData.weight_kg} kg</span>
                             )}
                           </div>
                           
-                          <div className="text-xs text-muted-foreground mt-1" suppressHydrationWarning>
+                          <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1" suppressHydrationWarning>
                             {format(new Date(catchData.caught_at || catchData.created_at), "d. M. yyyy HH:mm", { locale: cs })}
                           </div>
                         </div>
 
                         {/* Score */}
                         <div className="text-right flex-shrink-0">
-                          <div className="text-2xl font-bold text-primary">
+                          <div className="text-lg sm:text-2xl font-bold text-primary">
                             {score.toFixed(competition.scoring_type === "measurements" ? 1 : 0)}
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-[9px] sm:text-xs text-muted-foreground">
                             {competition.scoring_type === "points" ? "bodů" : "bodů"}
                           </div>
                         </div>

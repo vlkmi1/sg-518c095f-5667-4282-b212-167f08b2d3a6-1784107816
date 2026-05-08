@@ -98,29 +98,29 @@ export function CompetitionTimeline({
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="font-serif text-xl flex items-center gap-2">
-          <Clock className="h-5 w-5 text-primary" />
+      <CardHeader className="pb-3 sm:pb-6">
+        <CardTitle className="font-serif text-lg sm:text-xl flex items-center gap-2">
+          <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
           Časová osa úlovků
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {sortedDates.map((date) => (
-            <div key={date} className="space-y-3">
+            <div key={date} className="space-y-2 sm:space-y-3">
               {/* Date Header */}
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <div className="h-px flex-1 bg-border" />
-                <Badge variant="outline" className="font-medium">
+                <Badge variant="outline" className="font-medium text-xs">
                   {date}
                 </Badge>
                 <div className="h-px flex-1 bg-border" />
               </div>
 
               {/* Catches for this date */}
-              <div className="space-y-3 relative pl-6">
+              <div className="space-y-2 sm:space-y-3 relative pl-4 sm:pl-6">
                 {/* Vertical line */}
-                <div className="absolute left-2 top-0 bottom-0 w-0.5 bg-primary/20" />
+                <div className="absolute left-1.5 sm:left-2 top-0 bottom-0 w-0.5 bg-primary/20" />
 
                 {catchesByDate[date]
                   .sort((a, b) => {
@@ -136,67 +136,67 @@ export function CompetitionTimeline({
                     return (
                       <div key={catchData.id} className="relative">
                         {/* Timeline dot */}
-                        <div className={`absolute -left-[1.1rem] top-6 w-3 h-3 rounded-full border-2 ${
+                        <div className={`absolute -left-[0.85rem] sm:-left-[1.1rem] top-4 sm:top-6 w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full border-2 ${
                           isValid ? "bg-primary border-primary" : "bg-muted border-muted-foreground/30"
                         }`} />
 
                         {/* Catch card */}
-                        <div className={`ml-2 p-3 rounded-lg border transition-all ${
+                        <div className={`ml-1 sm:ml-2 p-2 sm:p-3 rounded-lg border transition-all ${
                           isValid 
                             ? "bg-card hover:bg-accent/5 border-border" 
                             : "bg-muted/30 border-muted-foreground/20"
                         }`}>
-                          <div className="flex items-start gap-3">
+                          <div className="flex items-start gap-2 sm:gap-3">
                             {/* Time */}
-                            <div className="text-xs text-muted-foreground whitespace-nowrap pt-1" suppressHydrationWarning>
+                            <div className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap pt-0.5 sm:pt-1" suppressHydrationWarning>
                               {format(new Date(catchData.caught_at || catchData.created_at), "HH:mm")}
                             </div>
 
                             {/* Avatar */}
-                            <Avatar className="h-10 w-10 flex-shrink-0">
+                            <Avatar className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0">
                               <AvatarImage src={participant?.profiles?.avatar_url || catchData.profiles?.avatar_url || undefined} />
                               <AvatarFallback className="bg-primary/10 text-primary">
-                                <User className="h-5 w-5" />
+                                <User className="h-4 w-4 sm:h-5 sm:w-5" />
                               </AvatarFallback>
                             </Avatar>
 
                             {/* Info */}
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-start justify-between gap-2 mb-1">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="font-medium">
+                              <div className="flex items-start justify-between gap-1 sm:gap-2 mb-0.5 sm:mb-1">
+                                <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+                                  <span className="font-medium text-sm sm:text-base truncate">
                                     {participant?.profiles?.nickname || catchData.profiles?.nickname || "Neznámý"}
                                   </span>
-                                  <Badge variant="outline" className="text-xs">
+                                  <Badge variant="outline" className="text-[10px] sm:text-xs px-1 py-0 sm:px-2 sm:py-0.5">
                                     {catchData.species}
                                   </Badge>
                                   {!isValid && (
-                                    <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+                                    <Badge variant="outline" className="text-[10px] sm:text-xs px-1 py-0 sm:px-2 bg-amber-50 text-amber-700 border-amber-200">
                                       Nezapočítán
                                     </Badge>
                                   )}
                                 </div>
                                 {isValid && (
                                   <div className="text-right flex-shrink-0">
-                                    <div className="text-lg font-bold text-primary">
+                                    <div className="text-base sm:text-lg font-bold text-primary">
                                       {score.toFixed(scoringType === "measurements" ? 1 : 0)}
                                     </div>
-                                    <div className="text-xs text-muted-foreground">
+                                    <div className="text-[9px] sm:text-xs text-muted-foreground">
                                       {scoringType === "points" ? "bodů" : "skóre"}
                                     </div>
                                   </div>
                                 )}
                               </div>
 
-                              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                              <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground">
                                 {catchData.length_cm && (
-                                  <span>📏 {catchData.length_cm} cm</span>
+                                  <span className="text-[11px] sm:text-sm">📏 {catchData.length_cm} cm</span>
                                 )}
                                 {catchData.weight_kg && (
-                                  <span className={!isValid && minWeightKg ? "text-amber-700 font-medium" : ""}>
+                                  <span className={`text-[11px] sm:text-sm ${!isValid && minWeightKg ? "text-amber-700 font-medium" : ""}`}>
                                     ⚖️ {catchData.weight_kg} kg
                                     {!isValid && minWeightKg && (
-                                      <span className="ml-1 text-xs">(&lt; {minWeightKg} kg)</span>
+                                      <span className="ml-1 text-[9px] sm:text-xs">(&lt; {minWeightKg} kg)</span>
                                     )}
                                   </span>
                                 )}
@@ -204,7 +204,7 @@ export function CompetitionTimeline({
                             </div>
 
                             {/* Photo */}
-                            <div className="relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden">
+                            <div className="relative w-12 h-12 sm:w-16 sm:h-16 flex-shrink-0 rounded-lg overflow-hidden">
                               <img
                                 src={catchData.photo_url}
                                 alt={catchData.species}
