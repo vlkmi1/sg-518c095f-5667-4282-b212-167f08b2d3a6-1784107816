@@ -135,9 +135,12 @@ export default function CompetitionWatchPage() {
   function getLeaderboard() {
     if (!participants.length) return [];
 
+    const minWeight = competition.min_weight_kg || 0;
+
     const participantsWithScores = participants.map((participant) => {
       const participantCatches = catches.filter(
-        (c) => c.user_id === participant.user_id
+        (c) => c.user_id === participant.user_id &&
+               (minWeight === 0 || (c.weight_kg || 0) >= minWeight)
       );
 
       let score = 0;
