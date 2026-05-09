@@ -544,7 +544,9 @@ export default function CompetitionWatchPage() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-2xl font-bold text-primary">{participant.score}</p>
+                        <p className="text-2xl font-bold text-primary">
+                          {participant.score.toFixed(competition.scoring_type === "measurements" ? 1 : 0)}
+                        </p>
                         <p className="text-xs text-muted-foreground">
                           {competition.scoring_type === "points" ? "bodů" : "skóre"}
                         </p>
