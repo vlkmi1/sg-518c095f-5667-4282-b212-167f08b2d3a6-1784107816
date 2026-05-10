@@ -158,7 +158,9 @@ export function CompetitionCountdown({
                     
                     {/* Score */}
                     <div className="text-center">
-                      <p className="text-3xl font-bold text-yellow-700">{topThree[0].score}</p>
+                      <p className="text-3xl font-bold text-yellow-700">
+                        {topThree[0].score.toFixed(scoringType === "measurements" ? 1 : 0)}
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         {scoringType === "points" ? "bodů" : "skóre"}
                       </p>
@@ -192,7 +194,9 @@ export function CompetitionCountdown({
                     
                     {/* Score */}
                     <div className="text-center">
-                      <p className="text-2xl font-bold text-gray-700">{topThree[1].score}</p>
+                      <p className="text-2xl font-bold text-gray-700">
+                        {topThree[1].score.toFixed(scoringType === "measurements" ? 1 : 0)}
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         {scoringType === "points" ? "bodů" : "skóre"}
                       </p>
@@ -226,7 +230,9 @@ export function CompetitionCountdown({
                     
                     {/* Score */}
                     <div className="text-center">
-                      <p className="text-2xl font-bold text-amber-700">{topThree[2].score}</p>
+                      <p className="text-2xl font-bold text-amber-700">
+                        {topThree[2].score.toFixed(scoringType === "measurements" ? 1 : 0)}
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         {scoringType === "points" ? "bodů" : "skóre"}
                       </p>
