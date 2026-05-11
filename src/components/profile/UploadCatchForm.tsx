@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { authService } from "@/services/authService";
 import { catchService } from "@/services/catchService";
 import { storageService } from "@/services/storageService";
-import { Loader2, MapPin, Fish, Sparkles, Upload, X, Zap, FileText } from "lucide-react";
+import { Loader2, MapPin, Fish, Sparkles, Upload, X, Zap, FileText, Mail } from "lucide-react";
 import { format } from "date-fns";
 
 // Reverse geocoding using OpenStreetMap Nominatim API
@@ -160,6 +160,42 @@ const CZECH_REGIONS = [
 export function UploadCatchForm() {
   const router = useRouter();
   const { toast } = useToast();
+
+  // Email verification check
+  const [isEmailVerified, setIsEmailVerified] = useState<boolean | null>(null);
+  const [userEmail, setUserEmail] = useState("");
+
+  useEffect(() => {
+    const checkEmailVerification = async () => {
+      const user = await authService.getCurrentUser();
+      if (user) {
+        setUserEmail(user.email);
+        const verified = await authService.isEmailVerified();
+        setIsEmailVerified(verified);
+      }
+    };
+    checkEmailVerification();
+  }, []);
+
+  async function handleResendVerification() {
+    if (!userEmail) return;
+    
+    const { error } = await authService.resendVerificationEmail(userEmail);
+    
+    if (error) {
+      toast({
+        title: "Chyba",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "✅ Email odeslán",
+        description: "Zkontrolujte svou emailovou schránku a klikněte na ověřovací odkaz.",
+        duration: 6000,
+      });
+    }
+  }
 
   // Step 1: Photo upload
   const [step, setStep] = useState<"upload" | "mode" | "form">("upload");
@@ -541,6 +577,16 @@ export function UploadCatchForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
+    // Check email verification before allowing submission
+    if (isEmailVerified === false) {
+      toast({
+        title: "❌ Email není ověřen",
+        description: "Pro přidání úlovku musíte nejprve ověřit svůj email.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!photoFile || !species) {
       toast({
         title: "Chybějící údaje",
@@ -656,6 +702,46 @@ export function UploadCatchForm() {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {/* Email Verification Warning */}
+        {isEmailVerified === false && (
+          <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-950/20 border-2 border-amber-500 rounded-lg space-y-3">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-10 h-10 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center">
+                <Mail className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div className="flex-1 space-y-2">
+                <h3 className="font-semibold text-amber-900 dark:text-amber-100">
+                  ⚠️ Email není ověřen
+                </h3>
+                <p className="text-sm text-amber-800 dark:text-amber-200">
+                  Pro přidávání úlovků musíte nejprve ověřit svůj email. 
+                  Zkontrolujte schránku <strong>{userEmail}</strong> a klikněte na ověřovací odkaz.
+                </p>
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleResendVerification}
+                    className="border-amber-500 text-amber-700 hover:bg-amber-100"
+                  >
+                    📧 Odeslat email znovu
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => router.reload()}
+                    className="border-amber-500 text-amber-700 hover:bg-amber-100"
+                  >
+                    🔄 Ověřil jsem email
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Step 1: Upload Photo */}
         {step === "upload" && (
           <div className="space-y-4">

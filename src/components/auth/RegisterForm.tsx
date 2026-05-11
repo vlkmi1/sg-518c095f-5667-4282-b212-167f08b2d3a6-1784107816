@@ -95,8 +95,32 @@ export function RegisterForm() {
         return;
       }
 
-      // Show success state
-      setRegistrationSuccess(true);
+      // Automatically sign in the user
+      const { error: signInError } = await authService.signIn(email, password);
+      
+      if (signInError) {
+        // If sign in fails, show success message but ask to login manually
+        setRegistrationSuccess(true);
+        setLoading(false);
+        return;
+      }
+
+      // Success - user is now signed in
+      toast({
+        title: "✅ Registrace úspěšná!",
+        description: `Vítejte, ${nickname}! Zkontrolujte prosím email a ověřte svůj účet.`,
+        duration: 6000,
+      });
+
+      // Show email verification reminder
+      toast({
+        title: "📧 Ověřte svůj email",
+        description: "Pro přidávání úlovků a vytváření závodů musíte nejprve ověřit email kliknutím na odkaz ve zprávě.",
+        duration: 8000,
+      });
+
+      // Redirect to profile
+      router.push("/profile");
     } catch (err) {
       toast({
         title: "Chyba",

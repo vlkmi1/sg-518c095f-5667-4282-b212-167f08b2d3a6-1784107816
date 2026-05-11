@@ -11,13 +11,49 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { authService } from "@/services/authService";
 import { competitionService } from "@/services/competitionService";
-import { Loader2, Trophy, Plus, Minus, Trash2 } from "lucide-react";
+import { Loader2, Trophy, Plus, Minus, Trash2, Mail } from "lucide-react";
 import { format } from "date-fns";
 import { FISH_SPECIES } from "@/lib/constants";
 
 export function CreateCompetitionForm() {
   const router = useRouter();
   const { toast } = useToast();
+
+  // Email verification check
+  const [isEmailVerified, setIsEmailVerified] = useState<boolean | null>(null);
+  const [userEmail, setUserEmail] = useState("");
+
+  useEffect(() => {
+    const checkEmailVerification = async () => {
+      const user = await authService.getCurrentUser();
+      if (user) {
+        setUserEmail(user.email);
+        const verified = await authService.isEmailVerified();
+        setIsEmailVerified(verified);
+      }
+    };
+    checkEmailVerification();
+  }, []);
+
+  async function handleResendVerification() {
+    if (!userEmail) return;
+    
+    const { error } = await authService.resendVerificationEmail(userEmail);
+    
+    if (error) {
+      toast({
+        title: "Chyba",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "✅ Email odeslán",
+        description: "Zkontrolujte svou emailovou schránku a klikněte na ověřovací odkaz.",
+        duration: 6000,
+      });
+    }
+  }
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -91,6 +127,16 @@ export function CreateCompetitionForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    // Check email verification before allowing submission
+    if (isEmailVerified === false) {
+      toast({
+        title: "❌ Email není ověřen",
+        description: "Pro vytvoření závodu musíte nejprve ověřit svůj email.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     if (!name.trim()) {
       toast({
@@ -203,6 +249,46 @@ export function CreateCompetitionForm() {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {/* Email Verification Warning */}
+        {isEmailVerified === false && (
+          <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-950/20 border-2 border-amber-500 rounded-lg space-y-3">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-10 h-10 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center">
+                <Trophy className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div className="flex-1 space-y-2">
+                <h3 className="font-semibold text-amber-900 dark:text-amber-100">
+                  ⚠️ Email není ověřen
+                </h3>
+                <p className="text-sm text-amber-800 dark:text-amber-200">
+                  Pro vytváření závodů musíte nejprve ověřit svůj email. 
+                  Zkontrolujte schránku <strong>{userEmail}</strong> a klikněte na ověřovací odkaz.
+                </p>
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleResendVerification}
+                    className="border-amber-500 text-amber-700 hover:bg-amber-100"
+                  >
+                    📧 Odeslat email znovu
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => router.reload()}
+                    className="border-amber-500 text-amber-700 hover:bg-amber-100"
+                  >
+                    🔄 Ověřil jsem email
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Competition Name */}
           <div className="space-y-2">

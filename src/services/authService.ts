@@ -51,6 +51,35 @@ export const authService = {
     return session;
   },
 
+  // Check if current user's email is verified
+  async isEmailVerified(): Promise<boolean> {
+    const { data: { user } } = await supabase.auth.getUser();
+    return user?.email_confirmed_at ? true : false;
+  },
+
+  // Resend verification email
+  async resendVerificationEmail(email: string): Promise<{ error: AuthError | null }> {
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+        options: {
+          emailRedirectTo: `${getURL()}auth/confirm-email`
+        }
+      });
+
+      if (error) {
+        return { error: { message: error.message } };
+      }
+
+      return { error: null };
+    } catch (error) {
+      return { 
+        error: { message: "Nepodařilo se znovu odeslat ověřovací email" } 
+      };
+    }
+  },
+
   // Sign up with email and password
   async signUp(email: string, password: string): Promise<{ user: AuthUser | null; error: AuthError | null }> {
     try {
@@ -92,20 +121,6 @@ export const authService = {
 
       if (error) {
         return { user: null, error: { message: error.message, code: error.status?.toString() } };
-      }
-
-      // Check if email is confirmed
-      if (data.user && !data.user.email_confirmed_at) {
-        // Sign out the user immediately
-        await supabase.auth.signOut();
-        
-        return { 
-          user: null, 
-          error: { 
-            message: "Email není ověřen. Zkontrolujte prosím svou emailovou schránku a ověřte svůj email před přihlášením.", 
-            code: "email_not_confirmed" 
-          } 
-        };
       }
 
       const authUser = data.user ? {
