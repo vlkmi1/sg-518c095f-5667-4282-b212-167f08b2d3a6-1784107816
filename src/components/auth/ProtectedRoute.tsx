@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { authService } from "@/services/authService";
+import Head from "next/head";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -43,15 +44,27 @@ export function ProtectedRoute({ children, redirectTo = "/auth/login" }: Protect
   // Show nothing while checking auth
   if (isAuthenticated === null) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-muted-foreground">Načítám...</p>
+      <>
+        <Head>
+          <meta name="robots" content="noindex, nofollow" />
+        </Head>
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+            <p className="text-muted-foreground">Načítám...</p>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
-  // Show children only if authenticated
-  return isAuthenticated ? <>{children}</> : null;
+  // Show children only if authenticated (with noindex for search engines)
+  return isAuthenticated ? (
+    <>
+      <Head>
+        <meta name="robots" content="noindex, nofollow" />
+      </Head>
+      {children}
+    </>
+  ) : null;
 }

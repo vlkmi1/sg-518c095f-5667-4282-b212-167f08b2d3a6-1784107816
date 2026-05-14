@@ -1,0 +1,22 @@
+# robots.txt for Ukaž Rybu
+User-agent: *
+
+# Allow public pages
+Allow: /
+Allow: /auth/login
+Allow: /auth/register
+Allow: /catch/*
+
+# Disallow protected pages (these redirect to login)
+Disallow: /competitions
+Disallow: /profile
+Disallow: /my-catches
+Disallow: /admin
+Disallow: /api/
+
+# Disallow auth callback pages
+Disallow: /auth/confirm-email
+Disallow: /auth/reset-password
+
+# Sitemap
+Sitemap: https://ukaz-rybu.vercel.app/sitemap.xml
