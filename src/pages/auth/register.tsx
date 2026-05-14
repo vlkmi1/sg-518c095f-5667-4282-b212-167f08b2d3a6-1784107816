@@ -9,7 +9,7 @@ export default function RegisterPage() {
       <SEO
         title="Registrace - Ukaž Rybu"
         description="Zaregistruj se zdarma a sdílej své úlovky s komunitou rybářů"
-        url="https://ukaz-rybu.vercel.app/auth/register"
+        url="https://ukazrybu.cz/auth/register"
         noindex={false}
       />
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">

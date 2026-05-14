@@ -32,7 +32,7 @@ export default function Home() {
       <SEO 
         title="Ukaž Rybu - Sdílej své úlovky s komunitou rybářů"
         description="Sdílej své úlovky s komunitou rybářů. Soutěž v závodech. Najdi inspiraci. A ano, je to ZDARMA!"
-        url="https://ukaz-rybu.vercel.app"
+        url="https://ukazrybu.cz"
         noindex={false}
       />
     </>

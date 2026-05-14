@@ -9,7 +9,7 @@ export default function LoginPage() {
       <SEO
         title="Přihlášení - Ukaž Rybu"
         description="Přihlaš se a sdílej své úlovky s komunitou rybářů"
-        url="https://ukaz-rybu.vercel.app/auth/login"
+        url="https://ukazrybu.cz/auth/login"
         noindex={false}
       />
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">

@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <!-- Homepage - hlavní stránka -->
   <url>
-    <loc>https://ukaz-rybu.vercel.app/</loc>
+    <loc>https://ukazrybu.cz/</loc>
     <lastmod>2026-05-14</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
@@ -10,14 +10,14 @@
   
   <!-- Public auth pages -->
   <url>
-    <loc>https://ukaz-rybu.vercel.app/auth/login</loc>
+    <loc>https://ukazrybu.cz/auth/login</loc>
     <lastmod>2026-05-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   
   <url>
-    <loc>https://ukaz-rybu.vercel.app/auth/register</loc>
+    <loc>https://ukazrybu.cz/auth/register</loc>
     <lastmod>2026-05-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>

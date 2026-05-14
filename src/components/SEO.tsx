@@ -14,7 +14,7 @@ export function SEOElements({
   title = "Ukaž Rybu - Sdílej své úlovky s komunitou rybářů",
   description = "Sdílej své úlovky s komunitou rybářů. Soutěž v závodech. Najdi inspiraci. A ano, je to ZDARMA!",
   image = "/og-image.png",
-  url = "https://ukaz-rybu.vercel.app",
+  url = "https://ukazrybu.cz",
   noindex = false,
 }: SEOProps) {
   return (
@@ -47,7 +47,7 @@ export function SEO({
   title = "Ukaž Rybu - Sdílej své úlovky s komunitou rybářů",
   description = "Sdílej své úlovky s komunitou rybářů. Soutěž v závodech. Najdi inspiraci. A ano, je to ZDARMA!",
   image = "/og-image.png",
-  url = "https://ukaz-rybu.vercel.app",
+  url = "https://ukazrybu.cz",
   noindex = false,
 }: SEOProps) {
   return (

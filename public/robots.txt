@@ -19,4 +19,4 @@ Disallow: /auth/confirm-email
 Disallow: /auth/reset-password
 
 # Sitemap
-Sitemap: https://ukaz-rybu.vercel.app/sitemap.xml
+Sitemap: https://ukazrybu.cz/sitemap.xml
