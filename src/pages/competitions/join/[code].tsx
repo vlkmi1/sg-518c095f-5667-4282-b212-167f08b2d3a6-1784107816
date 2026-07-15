@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { competitionService } from "@/services/competitionService";
 import { authService } from "@/services/authService";
-import { Trophy, Calendar, Users, CheckCircle, Loader2 } from "lucide-react";
+import { Trophy, Calendar, Users, CheckCircle, Loader2, XCircle } from "lucide-react";
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
 
@@ -113,14 +113,16 @@ export default function JoinCompetitionPage() {
 
   if (isLoading) {
     return (
-      <ProtectedRoute>
-        <div className="min-h-screen bg-background">
-          <Header />
-          <div className="container py-16 flex items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        </div>
-      </ProtectedRoute>
+      <div className="min-h-screen flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+              <p className="text-muted-foreground">Načítání závodu...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 

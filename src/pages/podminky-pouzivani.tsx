@@ -1,20 +1,17 @@
 import { SEO } from "@/components/SEO";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { FileText, CheckCircle, XCircle, AlertCircle, Scale, UserX, RefreshCw } from "lucide-react";
 import Link from "next/link";
 
-export default function TermsPage() {
+export default function TermsOfServicePage() {
   return (
     <>
-      <SEO 
+      <SEO
         title="Podmínky použití - Ukaž Rybu"
-        description="Podmínky použití platformy Ukaž Rybu pro sdílení rybářských úlovků"
+        description="Všeobecné obchodní podmínky a pravidla používání aplikace Ukaž Rybu"
       />
       <div className="min-h-screen bg-gradient-to-b from-background via-accent/5 to-background">
-        <Header />
-        <main className="container max-w-4xl mx-auto px-4 py-12">
+        <main className="container max-w-4xl mx-auto px-4 py-16">
           <div className="mb-8 text-center">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent/10 mb-4">
               <FileText className="h-8 w-8 text-accent" />
@@ -316,7 +313,6 @@ export default function TermsPage() {
             </CardContent>
           </Card>
         </main>
-        <Footer />
       </div>
     </>
   );

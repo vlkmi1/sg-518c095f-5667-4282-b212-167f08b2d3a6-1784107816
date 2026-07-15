@@ -1,20 +1,17 @@
 import { SEO } from "@/components/SEO";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { Shield, Lock, Eye, Trash2, Mail, Cookie } from "lucide-react";
 import Link from "next/link";
 
-export default function PrivacyPage() {
+export default function PrivacyPolicyPage() {
   return (
     <>
-      <SEO 
+      <SEO
         title="Ochrana soukromí - Ukaž Rybu"
-        description="Zásady ochrany osobních údajů a soukromí uživatelů platformy Ukaž Rybu"
+        description="Zásady ochrany osobních údajů a GDPR pro aplikaci Ukaž Rybu"
       />
       <div className="min-h-screen bg-gradient-to-b from-background via-primary/5 to-background">
-        <Header />
-        <main className="container max-w-4xl mx-auto px-4 py-12">
+        <main className="container max-w-4xl mx-auto px-4 py-16">
           <div className="mb-8 text-center">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
               <Shield className="h-8 w-8 text-primary" />
@@ -227,7 +224,6 @@ export default function PrivacyPage() {
             </CardContent>
           </Card>
         </main>
-        <Footer />
       </div>
     </>
   );

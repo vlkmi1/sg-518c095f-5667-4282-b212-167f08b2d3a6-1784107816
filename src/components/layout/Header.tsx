@@ -70,7 +70,17 @@ export function Header() {
         <div className="container flex h-16 items-center justify-between">
           {/* Logo + Install Button */}
           <div className="flex items-center gap-3">
-            <Logo />
+            <Link href="/" className="flex items-center gap-3 group">
+              <Logo />
+              <div className="hidden sm:block">
+                <h1 className="font-serif text-xl md:text-2xl font-bold text-primary group-hover:text-primary/80 transition-colors">
+                  Ukaž Rybu
+                </h1>
+                <p className="text-xs text-muted-foreground -mt-1">
+                  A soupeř v závodu s kamarády
+                </p>
+              </div>
+            </Link>
             <InstallButton />
           </div>
 
