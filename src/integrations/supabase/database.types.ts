@@ -1,4 +1,4 @@
- 
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 export type Json =
   | string
   | number
@@ -481,7 +481,42 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      trophy_cron_jobs: {
+        Row: {
+          active: boolean | null
+          command: string | null
+          database: string | null
+          jobid: number | null
+          jobname: string | null
+          nodename: string | null
+          nodeport: number | null
+          schedule: string | null
+          username: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          command?: string | null
+          database?: string | null
+          jobid?: number | null
+          jobname?: string | null
+          nodename?: string | null
+          nodeport?: number | null
+          schedule?: string | null
+          username?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          command?: string | null
+          database?: string | null
+          jobid?: number | null
+          jobname?: string | null
+          nodename?: string | null
+          nodeport?: number | null
+          schedule?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       admin_update_user_password: {
@@ -492,6 +527,8 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: undefined
       }
+      award_monthly_if_last_day: { Args: never; Returns: undefined }
+      invoke_award_trophies: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

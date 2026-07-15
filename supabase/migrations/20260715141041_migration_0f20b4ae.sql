@@ -1,3 +1,6 @@
+-- Run the migration to set up trophy cron system
+-- This will enable pg_cron, pg_net and create the scheduled jobs
+
 -- Enable pg_cron extension
 CREATE EXTENSION IF NOT EXISTS pg_cron;
 
@@ -18,7 +21,6 @@ BEGIN
   project_url := 'https://ugbfeqfnzegnevxcxxuq.supabase.co';
   
   -- Make HTTP request to Edge Function using pg_net
-  -- Note: Service role key should be set in Supabase dashboard under Project Settings > API
   SELECT net.http_post(
     url := project_url || '/functions/v1/award-trophies',
     headers := jsonb_build_object(
@@ -45,14 +47,12 @@ SELECT cron.schedule(
   $$SELECT invoke_award_trophies();$$
 );
 
--- Schedule monthly trophies (run on 28th, 29th, 30th, 31st and check if it's last day)
--- We'll create a wrapper function that checks if it's the last day of the month
+-- Schedule monthly trophies - wrapper function
 CREATE OR REPLACE FUNCTION award_monthly_if_last_day()
 RETURNS void
 LANGUAGE plpgsql
 AS $$
 BEGIN
-  -- Check if today is the last day of the month
   IF EXTRACT(DAY FROM CURRENT_DATE) = EXTRACT(DAY FROM (DATE_TRUNC('MONTH', CURRENT_DATE) + INTERVAL '1 MONTH - 1 DAY')) THEN
     PERFORM invoke_award_trophies();
     RAISE NOTICE 'Monthly trophies awarded on last day of month';
@@ -89,18 +89,5 @@ SELECT
 FROM cron.job
 WHERE jobname LIKE 'award-%trophies';
 
-COMMENT ON VIEW trophy_cron_jobs IS 'View to monitor trophy award cron jobs';
-
--- Log successful setup
-DO $$
-BEGIN
-  RAISE NOTICE '=== Trophy Cron System Setup Complete ===';
-  RAISE NOTICE 'Weekly trophies: Every Sunday at 23:55 UTC';
-  RAISE NOTICE 'Monthly trophies: Last day of month at 23:55 UTC (checks days 28-31)';
-  RAISE NOTICE 'Yearly trophies: December 31st at 23:55 UTC';
-  RAISE NOTICE 'View jobs with: SELECT * FROM trophy_cron_jobs;';
-  RAISE NOTICE '';
-  RAISE NOTICE 'IMPORTANT: Set service_role_key in Supabase dashboard:';
-  RAISE NOTICE 'Project Settings > Database > Custom postgres config';
-  RAISE NOTICE 'Add: app.settings.service_role_key = your_service_role_key';
-END $$;
+-- Verify the jobs were created
+SELECT * FROM trophy_cron_jobs;
