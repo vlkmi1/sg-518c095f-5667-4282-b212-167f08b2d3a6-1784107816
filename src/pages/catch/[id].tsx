@@ -15,6 +15,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { createClient } from "@supabase/supabase-js";
 
 interface CatchDetailPageProps {
   catchData: Tables<"catches"> | null;
@@ -34,7 +35,12 @@ export const getServerSideProps: GetServerSideProps<CatchDetailPageProps> = asyn
   }
 
   try {
-    const { data, error } = await supabase
+    // Create server-side Supabase client with anon key
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+    const serverSupabase = createClient(supabaseUrl, supabaseAnonKey);
+
+    const { data, error } = await serverSupabase
       .from("catches")
       .select("*, profiles(nickname, avatar_url)")
       .eq("id", id)
@@ -51,8 +57,8 @@ export const getServerSideProps: GetServerSideProps<CatchDetailPageProps> = asyn
 
     return {
       props: {
-        catchData: data,
-        profile: { nick: data.profiles?.nickname || "Anonym" },
+        catchData: data as any,
+        profile: { nick: (data as any).profiles?.nickname || "Anonym" },
       },
     };
   } catch (error) {

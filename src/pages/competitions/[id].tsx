@@ -31,6 +31,7 @@ import { AddCompetitionCatch } from "@/components/competitions/AddCompetitionCat
 import { CompetitionCountdown } from "@/components/competitions/CompetitionCountdown";
 import { CompetitionTimeline } from "@/components/competitions/CompetitionTimeline";
 import type { GetServerSideProps } from "next";
+import { createClient } from "@supabase/supabase-js";
 
 interface CompetitionDetailPageProps {
   competition: any;
@@ -48,7 +49,12 @@ export const getServerSideProps: GetServerSideProps<CompetitionDetailPageProps> 
   }
 
   try {
-    const { data, error } = await supabase
+    // Create server-side Supabase client with anon key
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+    const serverSupabase = createClient(supabaseUrl, supabaseAnonKey);
+
+    const { data, error } = await serverSupabase
       .from("competitions")
       .select("*")
       .eq("id", id)
