@@ -38,7 +38,7 @@ export default function AuthCallback() {
       setUserEmail(user.email || null);
 
       // Check if profile exists
-      const { data: existingProfile } = await profileService.getProfile(user.id);
+      const { data: existingProfile } = await profileService.getProfileById(user.id);
 
       if (existingProfile && existingProfile.nickname) {
         // Profile exists with nickname - redirect to profile
