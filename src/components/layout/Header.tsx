@@ -16,7 +16,7 @@ import { InstallButton } from "@/components/layout/InstallButton";
 import { authService } from "@/services/authService";
 import { adminService } from "@/services/adminService";
 import { profileService } from "@/services/profileService";
-import { Fish, Trophy, User, LogOut, Shield } from "lucide-react";
+import { Fish, Trophy, User, LogOut, Shield, Plus, BarChart3, UserPlus } from "lucide-react";
 
 export function Header() {
   const router = useRouter();
@@ -129,6 +129,37 @@ export function Header() {
                   <Link href="/profile" className="flex items-center gap-2 cursor-pointer">
                     <User className="h-4 w-4" />
                     Profil
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/profile/add-catch" className="flex items-center gap-2 cursor-pointer">
+                    <Plus className="h-4 w-4" />
+                    Přidat úlovek
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/my-catches" className="flex items-center gap-2 cursor-pointer">
+                    <Fish className="h-4 w-4" />
+                    Moje úlovky
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/competitions" className="flex items-center gap-2 cursor-pointer">
+                    <UserPlus className="h-4 w-4" />
+                    Přidat se k závodu
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/competitions/create" className="flex items-center gap-2 cursor-pointer">
+                    <Trophy className="h-4 w-4" />
+                    Vytvořit závod
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/profile#statistics" className="flex items-center gap-2 cursor-pointer">
+                    <BarChart3 className="h-4 w-4" />
+                    Statistiky
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
