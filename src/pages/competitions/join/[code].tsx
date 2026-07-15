@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import { Header } from "@/components/layout/Header";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -135,22 +134,8 @@ export default function JoinCompetitionPage() {
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-background">
-        <Header />
         <main className="container py-8 sm:py-12">
           <Card className="max-w-2xl mx-auto border-primary/20 shadow-md">
-            <CardHeader className="text-center pb-2">
-              <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                <Trophy className="w-8 h-8 text-primary" />
-              </div>
-              <CardTitle className="font-serif text-3xl text-primary">
-                {hasJoined ? "Jste v závodě!" : "Pozvánka do závodu"}
-              </CardTitle>
-              <CardDescription className="text-base">
-                {hasJoined 
-                  ? "Vaše úlovky se nyní budou počítat do výsledků."
-                  : "Přidejte se k přátelům na výpravě"}
-              </CardDescription>
-            </CardHeader>
             <CardContent className="space-y-6 pt-4">
               {/* Competition details */}
               <div className="space-y-4">
