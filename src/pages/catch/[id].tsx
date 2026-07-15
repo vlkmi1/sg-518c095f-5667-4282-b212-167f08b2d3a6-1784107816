@@ -180,6 +180,7 @@ export default function CatchDetailPage({ catchData: initialCatchData, profile: 
         title={`${catchData.species} - ${profile?.nick || "Úlovek"}`}
         description={`${catchData.species}${catchData.length_cm ? ` (${catchData.length_cm} cm)` : ""}${catchData.weight_kg ? ` (${catchData.weight_kg.toFixed(2)} kg)` : ""} - ${catchData.fishing_area || catchData.district || "Ukaž Rybu"}`}
         image={catchData.photo_url}
+        url={`${process.env.NEXT_PUBLIC_SITE_URL || "https://ukažrybu.cz"}/catch/${catchData.id}`}
       />
       
       <main className="container mx-auto px-4 py-8 max-w-4xl">

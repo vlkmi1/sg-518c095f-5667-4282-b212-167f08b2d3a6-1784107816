@@ -603,7 +603,8 @@ export default function CompetitionDetailPage({ competition: initialCompetition 
     <>
       <SEO
         title={competition?.name || "Závod"}
-        description={competition ? `Kód závodu je: ${competition.join_code || competition.invite_code} | ${competition.description || "Rybářský závod na Ukaž Rybu"}` : "Rybářský závod na Ukaž Rybu"}
+        description={competition ? `${competition.name} - Rybářský závod. Kód: ${competition.join_code || competition.invite_code}. ${competition.description || ""}` : "Rybářský závod na Ukaž Rybu"}
+        url={`${process.env.NEXT_PUBLIC_SITE_URL || "https://ukažrybu.cz"}/competitions/${competition?.id}`}
       />
       <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
         <DialogContent className="max-w-4xl p-0">
