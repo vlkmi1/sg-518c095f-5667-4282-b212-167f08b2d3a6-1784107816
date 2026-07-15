@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Shield, Lock, Eye, Trash2, Mail, Cookie } from "lucide-react";
+import Link from "next/link";
 
 export default function PrivacyPage() {
   return (
@@ -210,7 +211,7 @@ export default function PrivacyPage() {
               </p>
               <div className="bg-primary/5 p-4 rounded-lg mt-4">
                 <p><strong className="text-foreground">Email:</strong> info@ukažrybu.cz</p>
-                <p><strong className="text-foreground">Kontaktní formulář:</strong> <a href="/#contact" className="text-primary hover:underline">ukažrybu.cz/#contact</a></p>
+                <p><strong className="text-foreground">Kontaktní formulář:</strong> <Link href="/#contact" className="text-primary hover:underline">ukažrybu.cz/#contact</Link></p>
               </div>
             </CardContent>
           </Card>

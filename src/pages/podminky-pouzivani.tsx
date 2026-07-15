@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { FileText, CheckCircle, XCircle, AlertCircle, Scale, UserX, RefreshCw } from "lucide-react";
+import Link from "next/link";
 
 export default function TermsPage() {
   return (
@@ -307,7 +308,7 @@ export default function TermsPage() {
               </p>
               <div className="bg-accent/5 p-4 rounded-lg mt-4">
                 <p><strong className="text-foreground">Email:</strong> info@ukažrybu.cz</p>
-                <p><strong className="text-foreground">Kontaktní formulář:</strong> <a href="/#contact" className="text-accent hover:underline">ukažrybu.cz/#contact</a></p>
+                <p><strong className="text-foreground">Kontaktní formulář:</strong> <Link href="/#contact" className="text-accent hover:underline">ukažrybu.cz/#contact</Link></p>
               </div>
               <p className="mt-4">
                 Tyto Podmínky se řídí právním řádem České republiky. Případné spory budou řešeny u místně a věcně příslušných soudů ČR.
