@@ -81,7 +81,7 @@ export function Header() {
                 </p>
               </div>
             </Link>
-            <InstallButton />
+            {mounted && <InstallButton />}
           </div>
 
           {/* Desktop Navigation */}
