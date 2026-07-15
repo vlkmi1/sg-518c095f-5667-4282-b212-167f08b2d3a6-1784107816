@@ -10,24 +10,77 @@ import { Fish, MapPin, Calendar, Share2, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 import { cs } from "date-fns/locale";
 import type { Tables } from "@/integrations/supabase/types";
+import type { GetServerSideProps } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
-export default function CatchDetailPage() {
+interface CatchDetailPageProps {
+  catchData: Tables<"catches"> | null;
+  profile: { nick: string } | null;
+}
+
+export const getServerSideProps: GetServerSideProps<CatchDetailPageProps> = async (context) => {
+  const { id } = context.params || {};
+
+  if (!id || typeof id !== "string") {
+    return {
+      props: {
+        catchData: null,
+        profile: null,
+      },
+    };
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("catches")
+      .select("*, profiles(nickname, avatar_url)")
+      .eq("id", id)
+      .single();
+
+    if (error || !data) {
+      return {
+        props: {
+          catchData: null,
+          profile: null,
+        },
+      };
+    }
+
+    return {
+      props: {
+        catchData: data,
+        profile: { nick: data.profiles?.nickname || "Anonym" },
+      },
+    };
+  } catch (error) {
+    console.error("SSR error loading catch:", error);
+    return {
+      props: {
+        catchData: null,
+        profile: null,
+      },
+    };
+  }
+};
+
+export default function CatchDetailPage({ catchData: initialCatchData, profile: initialProfile }: CatchDetailPageProps) {
   const router = useRouter();
   const { id } = router.query;
   const { toast } = useToast();
 
-  const [catchData, setCatchData] = useState<Tables<"catches"> | null>(null);
-  const [profile, setProfile] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [catchData, setCatchData] = useState<Tables<"catches"> | null>(initialCatchData);
+  const [profile, setProfile] = useState<any>(initialProfile);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (id && typeof id === "string") {
-      loadCatchDetail(id);
+    if (initialCatchData) {
+      setCatchData(initialCatchData);
+      setProfile(initialProfile);
     }
-  }, [id]);
+  }, [initialCatchData, initialProfile]);
 
   async function loadCatchDetail(catchId: string) {
     setIsLoading(true);
@@ -94,22 +147,6 @@ export default function CatchDetailPage() {
         });
       }
     }
-  }
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <SEO 
-          title="Načítání úlovku..."
-          description="Detail úlovku se načítá"
-        />
-        <main className="container mx-auto px-4 py-8 max-w-4xl">
-          <Skeleton className="h-96 w-full rounded-lg mb-4" />
-          <Skeleton className="h-8 w-3/4 mb-2" />
-          <Skeleton className="h-6 w-1/2" />
-        </main>
-      </div>
-    );
   }
 
   if (!catchData) {

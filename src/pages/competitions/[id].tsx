@@ -30,20 +30,66 @@ import { cs } from "date-fns/locale";
 import { AddCompetitionCatch } from "@/components/competitions/AddCompetitionCatch";
 import { CompetitionCountdown } from "@/components/competitions/CompetitionCountdown";
 import { CompetitionTimeline } from "@/components/competitions/CompetitionTimeline";
+import type { GetServerSideProps } from "next";
 
-export default function CompetitionDetailPage() {
+interface CompetitionDetailPageProps {
+  competition: any;
+}
+
+export const getServerSideProps: GetServerSideProps<CompetitionDetailPageProps> = async (context) => {
+  const { id } = context.params || {};
+
+  if (!id || typeof id !== "string") {
+    return {
+      props: {
+        competition: null,
+      },
+    };
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("competitions")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error || !data) {
+      return {
+        props: {
+          competition: null,
+        },
+      };
+    }
+
+    return {
+      props: {
+        competition: data,
+      },
+    };
+  } catch (error) {
+    console.error("SSR error loading competition:", error);
+    return {
+      props: {
+        competition: null,
+      },
+    };
+  }
+};
+
+export default function CompetitionDetailPage({ competition: initialCompetition }: CompetitionDetailPageProps) {
   const router = useRouter();
   const { id } = router.query;
   const { toast } = useToast();
 
-  const [competition, setCompetition] = useState<any>(null);
+  const [competition, setCompetition] = useState<any>(initialCompetition);
   const [participants, setParticipants] = useState<any[]>([]);
   const [catches, setCatches] = useState<any[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isUserParticipant, setIsUserParticipant] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isTerminating, setIsTerminating] = useState(false);
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
@@ -59,6 +105,12 @@ export default function CompetitionDetailPage() {
   const canDelete = isCreator && competition && new Date(competition.start_date) > new Date();
   const canTerminate = isCreator && competition && isCompetitionOngoing;
   const canDeleteTerminated = isCreator && competition?.terminated_early === true;
+
+  useEffect(() => {
+    if (initialCompetition) {
+      setCompetition(initialCompetition);
+    }
+  }, [initialCompetition]);
 
   useEffect(() => {
     if (id) {
@@ -146,7 +198,9 @@ export default function CompetitionDetailPage() {
   }
 
   async function loadCompetitionData() {
-    setIsLoading(true);
+    if (!initialCompetition) {
+      setIsLoading(true);
+    }
     try {
       const { data: comp, error: compError } = await competitionService.getCompetition(id as string);
 
@@ -548,8 +602,8 @@ export default function CompetitionDetailPage() {
   return (
     <>
       <SEO
-        title={competition.name}
-        description={`Kód závodu je: ${competition.join_code || competition.invite_code} | ${competition.description || "Rybářský závod na Ukaž Rybu"}`}
+        title={competition?.name || "Závod"}
+        description={competition ? `Kód závodu je: ${competition.join_code || competition.invite_code} | ${competition.description || "Rybářský závod na Ukaž Rybu"}` : "Rybářský závod na Ukaž Rybu"}
       />
       <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
         <DialogContent className="max-w-4xl p-0">
