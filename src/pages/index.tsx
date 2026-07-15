@@ -1,5 +1,6 @@
 import { SEO } from "@/components/SEO";
 import { HallOfFame } from "@/components/gallery/HallOfFame";
+import { CatchGallery } from "@/components/gallery/CatchGallery";
 import { HowItWorks } from "@/components/HowItWorks";
 import { ContactForm } from "@/components/ContactForm";
 
@@ -12,6 +13,21 @@ export default function HomePage() {
           {/* Síň slávy jako první sekce */}
           <section className="py-16">
             <HallOfFame />
+          </section>
+
+          {/* Galerie úlovků */}
+          <section className="py-16 bg-background">
+            <div className="container mx-auto px-4">
+              <div className="text-center mb-12">
+                <h2 className="font-serif text-4xl md:text-5xl mb-4">
+                  Nejnovější úlovky
+                </h2>
+                <p className="text-muted-foreground text-lg">
+                  Prohlédněte si úlovky rybářů z celé České republiky
+                </p>
+              </div>
+              <CatchGallery />
+            </div>
           </section>
 
           {/* Jak to funguje */}
