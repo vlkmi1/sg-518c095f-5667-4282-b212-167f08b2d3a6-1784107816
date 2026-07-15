@@ -7,6 +7,20 @@ export default function Document() {
       <Head>
         <SEOElements />
         
+        {/* Theme initialization BEFORE hydration to prevent flash */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                const theme = localStorage.getItem('theme') || 'light';
+                if (theme === 'dark') {
+                  document.documentElement.classList.add('dark');
+                }
+              } catch (e) {}
+            `,
+          }}
+        />
+        
         {/* Viewport - CRITICAL for mobile */}
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover" />
         
