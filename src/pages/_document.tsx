@@ -45,7 +45,7 @@ export default function Document() {
           }}
         />
       </Head>
-      <body>
+      <body className="antialiased">
         <Main />
         <NextScript />
       </body>

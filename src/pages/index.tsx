@@ -1,6 +1,4 @@
 import { SEO } from "@/components/SEO";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { HallOfFame } from "@/components/gallery/HallOfFame";
 import { HowItWorks } from "@/components/HowItWorks";
 import { ContactForm } from "@/components/ContactForm";
@@ -10,7 +8,6 @@ export default function HomePage() {
     <>
       <SEO />
       <div className="min-h-screen bg-gradient-to-b from-background via-primary/5 to-background">
-        <Header />
         <main>
           {/* Síň slávy jako první sekce */}
           <section className="py-16">
@@ -37,7 +34,6 @@ export default function HomePage() {
             </div>
           </section>
         </main>
-        <Footer />
       </div>
     </>
   );
