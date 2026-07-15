@@ -206,7 +206,7 @@ export const authService = {
   // Listen to auth state changes
   onAuthStateChange(callback: (event: string, session: Session | null) => void) {
     return supabase.auth.onAuthStateChange(callback);
-  }
+  },
 
   async signInWithGoogle() {
     const { data, error } = await supabase.auth.signInWithOAuth({
