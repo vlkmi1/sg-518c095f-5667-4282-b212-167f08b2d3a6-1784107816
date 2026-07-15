@@ -10,8 +10,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setMounted(true);
+    // Load theme from localStorage only after mount
     const savedTheme = localStorage.getItem("theme") || "light";
     setTheme(savedTheme);
+    document.documentElement.classList.toggle("dark", savedTheme === "dark");
   }, []);
 
   useEffect(() => {
@@ -21,6 +23,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   }, [theme, mounted]);
 
+  // Always render children to prevent hydration mismatch
   return (
     <ThemeContext.Provider value={{ theme, setTheme }}>
       {children}
