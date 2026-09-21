@@ -191,7 +191,7 @@ export function UploadCatchForm() {
     } else {
       toast({
         title: "✅ Email odeslán",
-        description: "Zkontrolujte svou emailovou schránku a klikněte na ověřovací odkaz.",
+        description: "Zkontrolujte svou emailovou schránku a zadejte 4místný ověřovací kód z emailu.",
         duration: 6000,
       });
     }
@@ -715,7 +715,7 @@ export function UploadCatchForm() {
                 </h3>
                 <p className="text-sm text-amber-800 dark:text-amber-200">
                   Pro přidávání úlovků musíte nejprve ověřit svůj email. 
-                  Zkontrolujte schránku <strong>{userEmail}</strong> a klikněte na ověřovací odkaz.
+                  Zkontrolujte schránku <strong>{userEmail}</strong> a zadejte 4místný ověřovací kód z emailu.
                 </p>
                 <div className="flex gap-2 pt-2">
                   <Button
