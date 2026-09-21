@@ -15,6 +15,9 @@ export interface UpdateProfileData {
   nickname?: string;
   full_name?: string;
   avatar_url?: string;
+  location?: string;
+  bio?: string;
+  first_login_completed?: boolean;
 }
 
 export const profileService = {
@@ -73,12 +76,7 @@ export const profileService = {
   },
 
   // Update profile
-  async updateProfile(userId: string, updates: { 
-    full_name?: string | null; 
-    location?: string | null; 
-    avatar_path?: string | null;
-    avatar_url?: string | null;
-  }): Promise<{ error: any }> {
+  async updateProfile(userId: string, updates: UpdateProfileData): Promise<{ error: any }> {
     const { error } = await supabase
       .from("profiles")
       .update(updates)

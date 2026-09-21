@@ -78,9 +78,9 @@ export function EditProfileForm({ profile, onSave, onCancel }: EditProfileFormPr
 
       // Upload new avatar if selected
       if (avatarFile) {
-        const uploadedUrl = await storageService.uploadAvatar(profile.id, avatarFile);
-        if (uploadedUrl) {
-          avatarUrl = uploadedUrl;
+        const result = await storageService.uploadAvatar(avatarFile, profile.id);
+        if (result.url) {
+          avatarUrl = result.url;
         }
       }
 

@@ -208,7 +208,7 @@ export function ProfileView() {
     router.push("/");
   }
 
-  function handleProfileUpdated() {
+  async function handleProfileUpdated() {
     setEditDialogOpen(false);
     
     // Mark first login as completed
