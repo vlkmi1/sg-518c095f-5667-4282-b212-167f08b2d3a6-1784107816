@@ -208,48 +208,94 @@ export const storageService = {
     }
   },
 
-  // Upload avatar/profile picture
+  // Upload avatar/profile picture with size validation and proper path tracking
   async uploadAvatar(file: File, userId: string): Promise<{ url: string; path: string }> {
     try {
-      const compressedFile = await compressImage(file, 400, 0.8);
-      
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `${userId}/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(filePath, compressedFile);
-
-      if (uploadError) {
-        throw uploadError;
+      // Validate file type
+      if (!file.type.startsWith("image/")) {
+        throw new Error("Soubor musí být obrázek (PNG, JPG, WebP)");
       }
 
-      const { data } = supabase.storage
+      // Validate file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+      if (file.size > maxSize) {
+        throw new Error("Soubor je příliš velký. Maximální velikost je 5MB.");
+      }
+
+      console.log("Avatar upload starting:", {
+        fileName: file.name,
+        originalSize: file.size,
+        fileType: file.type,
+        userId
+      });
+
+      // Compress image to 200x200px for avatars (smaller = faster load)
+      const compressedBlob = await compressImage(file, 200, 0.85);
+      
+      console.log("Avatar compressed:", {
+        originalSize: file.size,
+        compressedSize: compressedBlob.size,
+        reduction: `${Math.round((1 - compressedBlob.size / file.size) * 100)}%`
+      });
+
+      // Generate unique filename - always .jpg after compression
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
+      const filePath = `${userId}/${fileName}`;
+
+      console.log("Generated avatar path:", filePath);
+
+      // Upload compressed blob to Supabase Storage
+      const { data, error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, compressedBlob, {
+          contentType: "image/jpeg",
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      if (uploadError) {
+        console.error("Avatar upload error:", uploadError);
+        throw new Error(`Chyba při nahrávání: ${uploadError.message}`);
+      }
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
         .from("avatars")
         .getPublicUrl(filePath);
 
-      console.log("uploadAvatar success:", { url: data.publicUrl, path: filePath });
-      return { url: data.publicUrl, path: filePath };
-    } catch (error) {
+      console.log("Avatar upload success:", { 
+        url: urlData.publicUrl, 
+        path: filePath 
+      });
+
+      return { url: urlData.publicUrl, path: filePath };
+    } catch (error: any) {
       console.error("uploadAvatar error:", error);
       throw error;
     }
   },
 
-  // Delete avatar
+  // Delete avatar from storage
   async deleteAvatar(filePath: string): Promise<void> {
     try {
+      if (!filePath) {
+        console.log("No avatar path provided, skipping delete");
+        return;
+      }
+
+      console.log("Deleting avatar:", filePath);
+
       const { error } = await supabase.storage
         .from("avatars")
         .remove([filePath]);
 
       if (error) {
-        throw error;
+        console.error("Avatar delete error:", error);
+        throw new Error(`Chyba při mazání: ${error.message}`);
       }
 
-      console.log("deleteAvatar success:", filePath);
-    } catch (error) {
+      console.log("Avatar deleted successfully:", filePath);
+    } catch (error: any) {
       console.error("deleteAvatar error:", error);
       throw error;
     }

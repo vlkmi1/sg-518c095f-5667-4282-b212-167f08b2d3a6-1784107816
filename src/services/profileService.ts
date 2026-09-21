@@ -15,6 +15,7 @@ export interface UpdateProfileData {
   nickname?: string;
   full_name?: string;
   avatar_url?: string;
+  avatar_path?: string;
   location?: string;
   bio?: string;
   first_login_completed?: boolean;
@@ -83,6 +84,20 @@ export const profileService = {
       .eq("id", userId);
 
     console.log("updateProfile:", { userId, updates, error });
+    return { error };
+  },
+
+  // Remove avatar (set to null)
+  async removeAvatar(userId: string): Promise<{ error: any }> {
+    const { error } = await supabase
+      .from("profiles")
+      .update({ 
+        avatar_url: null,
+        avatar_path: null 
+      })
+      .eq("id", userId);
+
+    console.log("removeAvatar:", { userId, error });
     return { error };
   },
 

@@ -1,6 +1,4 @@
--- Ensure avatar_path column exists in profiles table
--- This column stores the Storage path for avatar deletion
-
+-- Apply the migration to ensure avatar_path column exists
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -15,3 +13,10 @@ BEGIN
     RAISE NOTICE 'avatar_path column already exists';
   END IF;
 END $$;
+
+-- Verify the column exists
+SELECT column_name, data_type, is_nullable
+FROM information_schema.columns 
+WHERE table_name = 'profiles' 
+AND column_name IN ('avatar_url', 'avatar_path')
+ORDER BY column_name;
