@@ -16,6 +16,7 @@ import { InstallButton } from "@/components/layout/InstallButton";
 import { authService } from "@/services/authService";
 import { adminService } from "@/services/adminService";
 import { profileService } from "@/services/profileService";
+import { useToast } from "@/hooks/use-toast";
 import { Fish, Trophy, User, LogOut, Shield, Plus, BarChart3, UserPlus } from "lucide-react";
 
 export function Header() {
@@ -26,6 +27,7 @@ export function Header() {
   const [isLoading, setIsLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
   const [shouldShowMobileNav, setShouldShowMobileNav] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     setMounted(true);
@@ -53,11 +55,35 @@ export function Header() {
   }
 
   async function handleLogout() {
-    await authService.signOut();
-    setUser(null);
-    setIsAdmin(false);
-    setShouldShowMobileNav(false);
-    router.push("/");
+    try {
+      const { error } = await authService.signOut();
+      
+      if (error) {
+        console.error("Logout error:", error);
+        toast({
+          title: "Chyba při odhlášení",
+          description: error.message || "Nepodařilo se odhlásit. Zkuste to znovu.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Success - clear local state
+      setUser(null);
+      setProfile(null);
+      setIsAdmin(false);
+      setShouldShowMobileNav(false);
+
+      // Hard reload to clear all state and redirect to home
+      window.location.href = "/";
+    } catch (err) {
+      console.error("Unexpected logout error:", err);
+      toast({
+        title: "Chyba",
+        description: "Něco se pokazilo. Zkuste to prosím znovu.",
+        variant: "destructive",
+      });
+    }
   }
 
   const isActive = (path: string) => {
