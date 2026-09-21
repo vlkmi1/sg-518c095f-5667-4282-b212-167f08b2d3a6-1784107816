@@ -391,6 +391,7 @@ export type Database = {
         Row: {
           avatar_path: string | null
           avatar_url: string | null
+          bio: string | null
           created_at: string | null
           email: string | null
           first_login_completed: boolean | null
@@ -405,6 +406,7 @@ export type Database = {
         Insert: {
           avatar_path?: string | null
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string | null
           email?: string | null
           first_login_completed?: boolean | null
@@ -419,6 +421,7 @@ export type Database = {
         Update: {
           avatar_path?: string | null
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string | null
           email?: string | null
           first_login_completed?: boolean | null
