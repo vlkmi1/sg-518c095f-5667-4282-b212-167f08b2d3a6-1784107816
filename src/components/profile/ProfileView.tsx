@@ -204,8 +204,29 @@ export function ProfileView() {
   }
 
   async function handleLogout() {
-    await authService.signOut();
-    router.push("/");
+    try {
+      const { error } = await authService.signOut();
+      
+      if (error) {
+        console.error("Logout error:", error);
+        toast({
+          title: "Chyba při odhlášení",
+          description: error.message || "Nepodařilo se odhlásit. Zkuste to znovu.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Success - hard reload to clear all state and redirect to home
+      window.location.href = "/";
+    } catch (err) {
+      console.error("Unexpected logout error:", err);
+      toast({
+        title: "Chyba",
+        description: "Něco se pokazilo. Zkuste to prosím znovu.",
+        variant: "destructive",
+      });
+    }
   }
 
   async function handleProfileUpdated() {
