@@ -58,9 +58,13 @@
   body {
     @apply bg-background text-foreground;
     font-family: 'Work Sans', system-ui, sans-serif;
+    /* Ensure fonts render with fallback immediately */
+    font-display: swap;
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Crimson Pro', Georgia, serif;
+    /* Ensure fonts render with fallback immediately */
+    font-display: swap;
   }
 }
 

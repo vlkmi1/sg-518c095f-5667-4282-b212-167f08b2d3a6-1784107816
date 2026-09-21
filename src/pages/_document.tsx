@@ -7,6 +7,10 @@ export default function Document() {
       <Head>
         <SEOElements />
         
+        {/* Preconnect to Google Fonts - CRITICAL for performance */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        
         {/* Theme initialization BEFORE hydration to prevent flash */}
         <script
           dangerouslySetInnerHTML={{
