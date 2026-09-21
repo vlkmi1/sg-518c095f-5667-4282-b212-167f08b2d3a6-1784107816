@@ -166,13 +166,6 @@ export function LoginForm() {
       <CardContent>
         {!showResetPassword ? (
           <>
-            <Alert className="mb-4 bg-primary/5 border-primary/20">
-              <AlertCircle className="h-4 w-4 text-primary" />
-              <AlertDescription className="text-sm">
-                Po registraci obdržíte <strong>4místný ověřovací kód</strong> na email. Zadejte ho pro aktivaci účtu. Teprve poté se můžete přihlásit.
-              </AlertDescription>
-            </Alert>
-
             {/* OAuth Buttons */}
             <div className="space-y-3 mb-6">
               <Button
