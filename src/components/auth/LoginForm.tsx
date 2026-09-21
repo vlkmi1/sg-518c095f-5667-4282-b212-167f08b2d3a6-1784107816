@@ -56,10 +56,10 @@ export function LoginForm() {
           errorMessage = "Nesprávný email/nick nebo heslo. Zkontrolujte prosím své přihlašovací údaje.";
         } else if (error.message.includes("Email not confirmed")) {
           errorTitle = "Email není ověřený";
-          errorMessage = "Váš účet ještě nebyl aktivován. Zkontrolujte svou emailovou schránku a klikněte na ověřovací odkaz.";
+          errorMessage = "Váš účet ještě nebyl aktivován. Zkontrolujte svou emailovou schránku a zadejte 4místný ověřovací kód z emailu.";
         } else if (error.message.includes("email") && error.message.toLowerCase().includes("confirm")) {
           errorTitle = "Email není ověřený";
-          errorMessage = "Před přihlášením musíte ověřit svůj email. Zkontrolujte svou emailovou schránku a klikněte na ověřovací odkaz.";
+          errorMessage = "Před přihlášením musíte ověřit svůj email. Zkontrolujte svou emailovou schránku a zadejte 4místný ověřovací kód z emailu.";
         }
         
         toast({
