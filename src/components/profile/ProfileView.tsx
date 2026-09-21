@@ -54,6 +54,23 @@ export function ProfileView() {
     loadProfile();
   }, []);
 
+  // Detect first-time login and auto-open profile edit
+  useEffect(() => {
+    if (profile && !profile.first_login_completed && !editDialogOpen) {
+      // First-time user - show welcome message and open edit dialog
+      toast({
+        title: "🎉 Vítejte v Ukaž Rybu!",
+        description: "Zkontrolujte a upravte svůj profil, především uživatelské jméno (nick).",
+        duration: 8000,
+      });
+      
+      // Auto-open edit dialog after a short delay
+      setTimeout(() => {
+        setEditDialogOpen(true);
+      }, 1000);
+    }
+  }, [profile, editDialogOpen, toast]);
+
   // Show install guide toast if app is not installed
   useEffect(() => {
     // Check if app is already installed (standalone mode)
@@ -193,6 +210,14 @@ export function ProfileView() {
 
   function handleProfileUpdated() {
     setEditDialogOpen(false);
+    
+    // Mark first login as completed
+    if (user && profile && !profile.first_login_completed) {
+      await profileService.updateProfile(user.id, {
+        first_login_completed: true,
+      });
+    }
+    
     loadProfile();
   }
 

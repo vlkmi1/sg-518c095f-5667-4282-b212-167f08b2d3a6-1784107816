@@ -1,13 +1,14 @@
-import { useState, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useToast } from "@/hooks/use-toast";
+import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { profileService } from "@/services/profileService";
 import { storageService } from "@/services/storageService";
-import { authService } from "@/services/authService";
-import { Loader2, Upload, User } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2, Upload, AlertCircle, UserCheck } from "lucide-react";
+import Image from "next/image";
 
 interface EditProfileFormProps {
   profile: any;
@@ -17,94 +18,84 @@ interface EditProfileFormProps {
 
 export function EditProfileForm({ profile, onSave, onCancel }: EditProfileFormProps) {
   const { toast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
+  const [nickname, setNickname] = useState(profile?.nickname || "");
   const [fullName, setFullName] = useState(profile?.full_name || "");
   const [location, setLocation] = useState(profile?.location || "");
+  const [bio, setBio] = useState(profile?.bio || "");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(
-    profile?.avatar_url || null
-  );
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(profile?.avatar_url || null);
+  const [loading, setLoading] = useState(false);
+  const [isFirstTime, setIsFirstTime] = useState(false);
 
-  function handleAvatarSelect(e: React.ChangeEvent<HTMLInputElement>) {
+  useEffect(() => {
+    // Detect if this is first-time profile edit
+    setIsFirstTime(!profile?.first_login_completed);
+  }, [profile]);
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Check file type
-    if (!file.type.startsWith("image/")) {
-      toast({
-        title: "Neplatný soubor",
-        description: "Vyberte obrázek (JPG, PNG, WebP)",
-        variant: "destructive",
-      });
-      return;
+    if (file) {
+      setAvatarFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
+  };
 
-    // Check file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: "Soubor je příliš velký",
-        description: "Maximální velikost je 5 MB",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setAvatarFile(file);
-
-    // Create preview
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setAvatarPreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
+    setLoading(true);
 
     try {
-      const user = await authService.getCurrentUser();
-      if (!user) {
-        throw new Error("Uživatel není přihlášen");
+      // Validate nickname
+      if (!nickname.trim()) {
+        toast({
+          title: "Chyba",
+          description: "Nick je povinný",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
       }
 
-      const updateData: {
-        full_name: string | null;
-        location: string | null;
-        avatar_url?: string;
-        avatar_path?: string;
-      } = {
-        full_name: fullName.trim() || null,
-        location: location.trim() || null,
-      };
+      // Check nickname availability if changed
+      if (nickname !== profile.nickname) {
+        const isAvailable = await profileService.isNicknameAvailable(nickname);
+        if (!isAvailable) {
+          toast({
+            title: "Nick obsazený",
+            description: "Tento nick již používá jiný uživatel",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
+      }
+
+      let avatarUrl = profile.avatar_url;
 
       // Upload new avatar if selected
       if (avatarFile) {
-        // Delete old avatar if exists
-        if (profile?.avatar_url && profile?.avatar_path) {
-          try {
-            await storageService.deleteAvatar(profile.avatar_path);
-          } catch (error) {
-            console.error("Error deleting old avatar:", error);
-          }
+        const uploadedUrl = await storageService.uploadAvatar(profile.id, avatarFile);
+        if (uploadedUrl) {
+          avatarUrl = uploadedUrl;
         }
-
-        // Upload new avatar
-        const { url, path } = await storageService.uploadAvatar(avatarFile, user.id);
-        
-        // Add avatar to update data
-        updateData.avatar_url = url;
-        updateData.avatar_path = path;
       }
 
-      // Update all profile fields in one operation
-      const { error } = await profileService.updateProfile(user.id, updateData);
+      // Update profile
+      const { error } = await profileService.updateProfile(profile.id, {
+        nickname,
+        full_name: fullName || null,
+        location: location || null,
+        bio: bio || null,
+        avatar_url: avatarUrl,
+        first_login_completed: true,
+      });
 
       if (error) {
-        throw new Error(error.message);
+        throw new Error(error);
       }
 
       toast({
@@ -114,125 +105,140 @@ export function EditProfileForm({ profile, onSave, onCancel }: EditProfileFormPr
 
       onSave();
     } catch (error: any) {
-      console.error("Update profile error:", error);
       toast({
         title: "Chyba",
         description: error.message || "Nepodařilo se aktualizovat profil",
         variant: "destructive",
       });
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* First-time user alert */}
+      {isFirstTime && (
+        <Alert className="bg-primary/5 border-primary/20">
+          <UserCheck className="h-5 w-5 text-primary" />
+          <AlertDescription className="ml-2">
+            <p className="font-semibold mb-1">👋 Vítejte! Dokončete svůj profil</p>
+            <p className="text-sm text-muted-foreground">
+              <strong className="text-foreground">Zkontrolujte hlavně nick</strong> - ten se bude zobrazovat u vašich úlovků a v závodech.
+              Změnit ho můžete kdykoliv později.
+            </p>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Avatar Upload */}
-      <div className="flex flex-col items-center gap-4">
-        <Avatar className="h-24 w-24">
-          <AvatarImage src={avatarPreview || undefined} />
-          <AvatarFallback className="bg-primary/10 text-primary text-2xl">
-            <User className="h-12 w-12" />
-          </AvatarFallback>
-        </Avatar>
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => fileInputRef.current?.click()}
-            className="gap-2"
-          >
-            <Upload className="h-4 w-4" />
-            {avatarPreview ? "Změnit fotku" : "Nahrát fotku"}
-          </Button>
+      <div className="space-y-3">
+        <Label>Profilová fotka</Label>
+        <div className="flex items-center gap-4">
           {avatarPreview && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setAvatarFile(null);
-                setAvatarPreview(null);
-                if (fileInputRef.current) {
-                  fileInputRef.current.value = "";
-                }
-              }}
-            >
-              Odstranit
-            </Button>
+            <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-primary/20">
+              <Image
+                src={avatarPreview}
+                alt="Avatar preview"
+                fill
+                className="object-cover"
+              />
+            </div>
           )}
+          <div className="flex-1">
+            <Input
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarChange}
+              disabled={loading}
+              className="cursor-pointer"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              PNG, JPG nebo WebP, max 5MB
+            </p>
+          </div>
         </div>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleAvatarSelect}
-          className="hidden"
-        />
-        <p className="text-xs text-muted-foreground text-center">
-          JPG, PNG nebo WebP. Max 5 MB.
-        </p>
       </div>
 
-      {/* Nickname (Read-only) */}
+      {/* Nickname */}
       <div className="space-y-2">
-        <Label htmlFor="nickname">Přezdívka (nick)</Label>
+        <Label htmlFor="nickname" className="flex items-center gap-2">
+          Nick <span className="text-destructive">*</span>
+          {isFirstTime && <AlertCircle className="h-4 w-4 text-primary" />}
+        </Label>
         <Input
           id="nickname"
-          value={profile?.nickname || ""}
-          disabled
-          className="bg-muted"
+          value={nickname}
+          onChange={(e) => setNickname(e.target.value)}
+          placeholder="jan123"
+          required
+          disabled={loading}
+          pattern="[a-zA-Z0-9_-]+"
+          title="Pouze písmena, čísla, podtržítka a pomlčky"
+          className={isFirstTime ? "border-primary/50 focus:border-primary" : ""}
         />
-      </div>
-
-      {/* Email (Read-only) */}
-      <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          value={profile?.email || ""}
-          disabled
-          className="bg-muted"
-        />
+        <p className="text-xs text-muted-foreground">
+          Zobrazuje se u vašich úlovků a v závodech
+        </p>
       </div>
 
       {/* Full Name */}
       <div className="space-y-2">
-        <Label htmlFor="full_name">Celé jméno (volitelné)</Label>
+        <Label htmlFor="fullName">Celé jméno (volitelné)</Label>
         <Input
-          id="full_name"
+          id="fullName"
           value={fullName}
           onChange={(e) => setFullName(e.target.value)}
-          placeholder="např. Jan Novák"
+          placeholder="Jan Novák"
+          disabled={loading}
         />
       </div>
 
       {/* Location */}
       <div className="space-y-2">
-        <Label htmlFor="location">Bydliště (volitelné)</Label>
+        <Label htmlFor="location">Lokace (volitelné)</Label>
         <Input
           id="location"
           value={location}
           onChange={(e) => setLocation(e.target.value)}
-          placeholder="např. Praha"
+          placeholder="Praha, Česká republika"
+          disabled={loading}
+        />
+      </div>
+
+      {/* Bio */}
+      <div className="space-y-2">
+        <Label htmlFor="bio">O mně (volitelné)</Label>
+        <Textarea
+          id="bio"
+          value={bio}
+          onChange={(e) => setBio(e.target.value)}
+          placeholder="Napište něco o sobě..."
+          disabled={loading}
+          rows={3}
         />
       </div>
 
       {/* Action Buttons */}
-      <div className="flex gap-2 pt-4">
-        <Button type="submit" disabled={isSubmitting} className="flex-1">
-          {isSubmitting ? (
+      <div className="flex gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+          disabled={loading}
+          className="flex-1"
+        >
+          Zrušit
+        </Button>
+        <Button type="submit" disabled={loading} className="flex-1">
+          {loading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Ukládám...
             </>
           ) : (
-            "Uložit"
+            "Uložit změny"
           )}
-        </Button>
-        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
-          Zrušit
         </Button>
       </div>
     </form>
