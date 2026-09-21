@@ -32,7 +32,39 @@ export function Header() {
   useEffect(() => {
     setMounted(true);
     checkAuth();
-  }, []);
+
+    // Listen to auth state changes (login/logout)
+    const { data: authListener } = authService.onAuthStateChange((event, session) => {
+      console.log("Auth state changed:", event, session?.user?.email);
+      
+      if (event === "SIGNED_OUT") {
+        // User logged out - clear state immediately
+        setUser(null);
+        setProfile(null);
+        setIsAdmin(false);
+        setShouldShowMobileNav(false);
+      } else if (event === "SIGNED_IN" && session?.user) {
+        // User logged in - reload auth
+        checkAuth();
+      } else if (event === "TOKEN_REFRESHED") {
+        // Token refreshed - reload to ensure fresh data
+        checkAuth();
+      }
+    });
+
+    // Listen to route changes - reload auth on every page change
+    const handleRouteChange = () => {
+      checkAuth();
+    };
+
+    router.events.on("routeChangeComplete", handleRouteChange);
+
+    // Cleanup listeners
+    return () => {
+      authListener?.subscription.unsubscribe();
+      router.events.off("routeChangeComplete", handleRouteChange);
+    };
+  }, [router]);
 
   async function checkAuth() {
     try {
@@ -68,11 +100,14 @@ export function Header() {
         return;
       }
 
-      // Success - clear local state
+      // Clear local state immediately
       setUser(null);
       setProfile(null);
       setIsAdmin(false);
       setShouldShowMobileNav(false);
+
+      // Small delay to ensure Supabase session is fully cleared
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       // Hard reload to clear all state and redirect to home
       window.location.href = "/";
@@ -137,64 +172,75 @@ export function Header() {
             )}
 
             {/* User dropdown menu */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
-                  <User className="h-5 w-5" />
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="rounded-full">
+                    <User className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{profile?.nickname || "Uživatel"}</span>
+                      <span className="text-xs text-muted-foreground truncate">{user?.email}</span>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile" className="flex items-center gap-2 cursor-pointer">
+                      <User className="h-4 w-4" />
+                      Profil
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile/add-catch" className="flex items-center gap-2 cursor-pointer">
+                      <Plus className="h-4 w-4" />
+                      Přidat úlovek
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/my-catches" className="flex items-center gap-2 cursor-pointer">
+                      <Fish className="h-4 w-4" />
+                      Moje úlovky
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/competitions" className="flex items-center gap-2 cursor-pointer">
+                      <UserPlus className="h-4 w-4" />
+                      Přidat se k závodu
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/competitions/create" className="flex items-center gap-2 cursor-pointer">
+                      <Trophy className="h-4 w-4" />
+                      Vytvořit závod
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile#statistics" className="flex items-center gap-2 cursor-pointer">
+                      <BarChart3 className="h-4 w-4" />
+                      Statistiky
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Odhlásit se
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/auth/login">Přihlásit se</Link>
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuLabel>
-                  <div className="flex flex-col">
-                    <span className="font-medium">{profile?.nick || "Uživatel"}</span>
-                    <span className="text-xs text-muted-foreground truncate">{user?.email}</span>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/profile" className="flex items-center gap-2 cursor-pointer">
-                    <User className="h-4 w-4" />
-                    Profil
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/profile/add-catch" className="flex items-center gap-2 cursor-pointer">
-                    <Plus className="h-4 w-4" />
-                    Přidat úlovek
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/my-catches" className="flex items-center gap-2 cursor-pointer">
-                    <Fish className="h-4 w-4" />
-                    Moje úlovky
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/competitions" className="flex items-center gap-2 cursor-pointer">
-                    <UserPlus className="h-4 w-4" />
-                    Přidat se k závodu
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/competitions/create" className="flex items-center gap-2 cursor-pointer">
-                    <Trophy className="h-4 w-4" />
-                    Vytvořit závod
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/profile#statistics" className="flex items-center gap-2 cursor-pointer">
-                    <BarChart3 className="h-4 w-4" />
-                    Statistiky
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive">
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Odhlásit se
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                <Button size="sm" asChild>
+                  <Link href="/auth/register">Registrace</Link>
+                </Button>
+              </div>
+            )}
           </nav>
         </div>
       </header>
