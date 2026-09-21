@@ -169,7 +169,7 @@ export function LoginForm() {
             <Alert className="mb-4 bg-primary/5 border-primary/20">
               <AlertCircle className="h-4 w-4 text-primary" />
               <AlertDescription className="text-sm">
-                Po registraci je nutné nejprve <strong>ověřit email</strong> kliknutím na odkaz v e-mailu. Teprve poté se můžete přihlásit.
+                Po registraci obdržíte <strong>4místný ověřovací kód</strong> na email. Zadejte ho pro aktivaci účtu. Teprve poté se můžete přihlásit.
               </AlertDescription>
             </Alert>
 
