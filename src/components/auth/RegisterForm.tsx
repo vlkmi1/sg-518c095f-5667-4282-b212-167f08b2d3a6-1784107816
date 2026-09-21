@@ -4,19 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { authService } from "@/services/authService";
-import { profileService } from "@/services/profileService";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
-import { UserPlus, Mail, CheckCircle2, AlertCircle } from "lucide-react";
+import { UserPlus } from "lucide-react";
 
 export function RegisterForm() {
   const [nickname, setNickname] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
@@ -25,106 +22,47 @@ export function RegisterForm() {
     setLoading(true);
 
     try {
-      // Check if nickname is available
-      const nicknameAvailable = await profileService.isNicknameAvailable(nickname);
-      if (!nicknameAvailable) {
-        toast({
-          title: "Chyba",
-          description: "Tento nick je již obsazený",
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
-      }
-
-      // Sign up
-      const { user, error: signUpError } = await authService.signUp(email, password);
-
-      if (signUpError) {
-        // Handle specific error cases with Czech messages
-        let errorMessage = "Registrace se nezdařila";
-        let errorDescription = signUpError.message;
-
-        if (signUpError.message.includes("rate limit")) {
-          errorMessage = "Příliš mnoho pokusů";
-          errorDescription = "Počkejte prosím několik minut a zkuste to znovu. Supabase omezuje počet registrací za určitý čas.";
-        } else if (signUpError.message.includes("already registered") || signUpError.message.includes("already exists")) {
-          errorMessage = "Email již existuje";
-          errorDescription = "Tento email je již registrován. Zkuste se přihlásit nebo použijte jiný email.";
-        } else if (signUpError.message.includes("invalid email")) {
-          errorMessage = "Neplatný email";
-          errorDescription = "Zadejte prosím platnou emailovou adresu.";
-        } else if (signUpError.message.includes("password")) {
-          errorMessage = "Problém s heslem";
-          errorDescription = "Heslo musí mít alespoň 6 znaků.";
-        }
-
-        toast({
-          title: errorMessage,
-          description: errorDescription,
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
-      }
-
-      if (!user) {
-        toast({
-          title: "Chyba",
-          description: "Nepodařilo se vytvořit účet",
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
-      }
-
-      // Create profile with nickname
-      const { error: profileError } = await profileService.createProfile({
-        id: user.id,
-        email: user.email,
-        nickname: nickname,
+      // Send OTP code
+      const response = await fetch("/api/auth/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, nickname, password }),
       });
 
-      if (profileError) {
+      const data = await response.json();
+
+      if (!response.ok) {
         toast({
-          title: "Chyba při vytváření profilu",
-          description: profileError.message,
+          title: "Chyba registrace",
+          description: data.error || "Nepodařilo se odeslat ověřovací kód",
           variant: "destructive",
         });
         setLoading(false);
         return;
       }
 
-      // Automatically sign in the user
-      const { error: signInError } = await authService.signIn(email, password);
-      
-      if (signInError) {
-        // If sign in fails, show success message but ask to login manually
-        setRegistrationSuccess(true);
-        setLoading(false);
-        return;
-      }
-
-      // Success - user is now signed in
+      // Success - redirect to verification page
       toast({
-        title: "✅ Registrace úspěšná!",
-        description: `Vítejte, ${nickname}! Zkontrolujte prosím email a ověřte svůj účet.`,
-        duration: 6000,
+        title: "✅ Kód odeslán!",
+        description: "Zkontrolujte svůj email a zadejte 4místný kód",
       });
 
-      // Show email verification reminder
-      toast({
-        title: "📧 Ověřte svůj email",
-        description: "Pro přidávání úlovků a vytváření závodů musíte nejprve ověřit email kliknutím na odkaz ve zprávě.",
-        duration: 8000,
-      });
+      // Show code in development
+      if (data.code && process.env.NODE_ENV === "development") {
+        toast({
+          title: "🔑 Vývojový režim",
+          description: `Váš kód: ${data.code}`,
+          duration: 10000,
+        });
+      }
 
-      // Redirect to profile
-      router.push("/profile");
+      // Redirect to verification page
+      router.push(`/auth/verify-code?email=${encodeURIComponent(email)}`);
+
     } catch (err) {
       toast({
         title: "Chyba",
-        description: "Něco se pokazilo",
+        description: "Něco se pokazilo. Zkuste to znovu.",
         variant: "destructive",
       });
       setLoading(false);
@@ -155,74 +93,6 @@ export function RegisterForm() {
       setLoading(false);
     }
   };
-
-  if (registrationSuccess) {
-    return (
-      <Card className="w-full max-w-md border-primary/20 shadow-lg">
-        <CardHeader className="text-center space-y-4 pb-8">
-          <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-            <CheckCircle2 className="h-10 w-10 text-primary" />
-          </div>
-          <CardTitle className="font-serif text-3xl text-primary">
-            Registrace proběhla úspěšně!
-          </CardTitle>
-          <CardDescription className="text-base">
-            Zbývá už jen jeden krok
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <Alert className="bg-primary/5 border-primary/20">
-            <Mail className="h-5 w-5 text-primary" />
-            <AlertDescription className="text-base ml-2">
-              <p className="font-semibold mb-2">Zkontrolujte svou e-mailovou schránku</p>
-              <p className="text-muted-foreground">
-                Poslali jsme vám ověřovací e-mail na adresu <strong className="text-foreground">{email}</strong>
-              </p>
-            </AlertDescription>
-          </Alert>
-
-          <div className="bg-muted/50 p-4 rounded-lg space-y-3">
-            <h3 className="font-semibold flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-primary" />
-              Co dělat dál?
-            </h3>
-            <ol className="space-y-2 text-sm text-muted-foreground ml-7">
-              <li className="flex gap-2">
-                <span className="font-bold text-primary">1.</span>
-                <span>Otevřete svou e-mailovou schránku</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="font-bold text-primary">2.</span>
-                <span>Najděte e-mail s předmětem "Potvrďte svou registraci"</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="font-bold text-primary">3.</span>
-                <span>Klikněte na ověřovací odkaz v e-mailu</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="font-bold text-primary">4.</span>
-                <span>Po ověření se můžete přihlásit</span>
-              </li>
-            </ol>
-          </div>
-
-          <Alert className="bg-accent/5 border-accent/20">
-            <AlertDescription className="text-sm text-muted-foreground">
-              <strong>Tip:</strong> Pokud e-mail nevidíte, zkontrolujte složku spam nebo nevyžádaná pošta.
-            </AlertDescription>
-          </Alert>
-
-          <Button
-            onClick={() => router.push("/auth/login")}
-            className="w-full"
-            size="lg"
-          >
-            Rozumím, přejít na přihlášení
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card className="w-full max-w-md border-accent/20 shadow-lg">
@@ -329,7 +199,7 @@ export function RegisterForm() {
             <p className="text-xs text-muted-foreground">Minimálně 6 znaků</p>
           </div>
           <Button type="submit" className="w-full" disabled={loading} size="lg">
-            {loading ? "Registruji..." : "Zaregistrovat se"}
+            {loading ? "Odesílám kód..." : "Pokračovat"}
           </Button>
           <p className="text-center text-sm text-muted-foreground">
             Již máte účet?{" "}
