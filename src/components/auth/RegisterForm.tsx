@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { authService } from "@/services/authService";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
-import { UserPlus } from "lucide-react";
+import { UserPlus, AlertCircle } from "lucide-react";
 
 export function RegisterForm() {
   const [nickname, setNickname] = useState("");
@@ -104,6 +105,15 @@ export function RegisterForm() {
         <CardDescription>Vytvořte si účet pro sdílení úlovků</CardDescription>
       </CardHeader>
       <CardContent>
+        {/* Info Alert - What happens after registration */}
+        <Alert className="mb-6 bg-primary/5 border-primary/20">
+          <AlertCircle className="h-4 w-4 text-primary" />
+          <AlertDescription className="text-sm">
+            Po kliknutí na <strong>"Pokračovat"</strong> obdržíte <strong>4místný ověřovací kód</strong> na email. 
+            Zadejte ho pro dokončení registrace.
+          </AlertDescription>
+        </Alert>
+
         {/* OAuth Buttons */}
         <div className="space-y-3 mb-6">
           <Button
