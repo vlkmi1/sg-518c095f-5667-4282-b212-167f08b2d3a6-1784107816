@@ -7,9 +7,45 @@ export default function Document() {
       <Head>
         <SEOElements />
         
+        {/* CRITICAL: Inline CSS to prevent FOUC - sets background immediately */}
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            /* Critical CSS - prevents flash of unstyled content */
+            html {
+              background-color: #FAF8F5;
+              -webkit-text-size-adjust: 100%;
+              -webkit-font-smoothing: antialiased;
+            }
+            
+            body {
+              margin: 0;
+              padding: 0;
+              background-color: #FAF8F5;
+              color: #1A3D3E;
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              visibility: hidden; /* Hide until styles load */
+            }
+            
+            body.loaded {
+              visibility: visible;
+            }
+            
+            /* Show content immediately if JavaScript fails */
+            noscript body {
+              visibility: visible !important;
+            }
+          `
+        }} />
+        
         {/* Preconnect to Google Fonts - CRITICAL for performance */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        
+        {/* Load Google Fonts via link tags (non-blocking) instead of @import */}
+        <link 
+          href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=Work+Sans:wght@400;500;600&display=swap" 
+          rel="stylesheet"
+        />
         
         {/* Theme initialization BEFORE hydration to prevent flash */}
         <script
@@ -19,8 +55,22 @@ export default function Document() {
                 const theme = localStorage.getItem('theme') || 'light';
                 if (theme === 'dark') {
                   document.documentElement.classList.add('dark');
+                  // Update background for dark theme
+                  document.documentElement.style.backgroundColor = '#0D1E1F';
                 }
               } catch (e) {}
+              
+              // Show body when DOM is ready and styles are loading
+              document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(function() {
+                  document.body.classList.add('loaded');
+                }, 50);
+              });
+              
+              // Fallback: show body after 500ms even if DOMContentLoaded didn't fire
+              setTimeout(function() {
+                document.body.classList.add('loaded');
+              }, 500);
             `,
           }}
         />

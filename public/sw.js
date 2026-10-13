@@ -1,5 +1,5 @@
 // Service Worker for PWA with smart update strategy
-const CACHE_VERSION = "v" + new Date().getTime(); // Dynamic version based on timestamp
+const CACHE_VERSION = "v2026-10-13"; // Fixed version - update manually on major changes
 const CACHE_NAME = "ukaz-rybu-" + CACHE_VERSION;
 
 // Assets to cache on install
@@ -17,9 +17,7 @@ self.addEventListener("install", (event) => {
       console.log("[SW] Caching static assets");
       return cache.addAll(STATIC_CACHE);
     }).then(() => {
-      // Skip waiting to activate immediately when explicitly told to
-      // (via postMessage from client)
-      console.log("[SW] Installation complete, waiting for activation signal");
+      console.log("[SW] Installation complete");
     })
   );
 });
@@ -39,7 +37,6 @@ self.addEventListener("activate", (event) => {
         })
       );
     }).then(() => {
-      // Take control of all clients immediately
       console.log("[SW] Taking control of all clients");
       return self.clients.claim();
     })
@@ -62,9 +59,6 @@ self.addEventListener("fetch", (event) => {
   }
 
   // NEVER cache these - always fetch fresh from network:
-  // 1. Supabase API calls
-  // 2. Next.js API routes
-  // 3. Dynamic pages with query parameters
   const neverCachePatterns = [
     /supabase\.co/,           // Supabase API
     /\/api\//,                // Next.js API routes
@@ -80,8 +74,52 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // For static assets (JS, CSS, images, fonts) - Cache First strategy
-  // This allows offline functionality for UI
+  // For CSS files - Network First strategy (always get fresh CSS)
+  if (url.pathname.endsWith('.css')) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          // Cache the fresh response for offline use
+          if (response && response.status === 200) {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(request, responseToCache);
+            });
+          }
+          return response;
+        })
+        .catch(() => {
+          // Fallback to cache if network fails
+          return caches.match(request).then((cachedResponse) => {
+            return cachedResponse || new Response("Offline", { status: 503 });
+          });
+        })
+    );
+    return;
+  }
+
+  // For JS files - Stale While Revalidate (serve cached, update in background)
+  if (url.pathname.endsWith('.js')) {
+    event.respondWith(
+      caches.match(request).then((cachedResponse) => {
+        // Always fetch updated version in background
+        const fetchPromise = fetch(request).then((response) => {
+          if (response && response.status === 200) {
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(request, response.clone());
+            });
+          }
+          return response;
+        });
+
+        // Return cached version immediately, or wait for network
+        return cachedResponse || fetchPromise;
+      })
+    );
+    return;
+  }
+
+  // For other static assets (images, fonts) - Cache First
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
       if (cachedResponse) {
