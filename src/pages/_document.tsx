@@ -7,32 +7,48 @@ export default function Document() {
       <Head>
         <SEOElements />
         
-        {/* CRITICAL: Inline CSS to prevent FOUC - sets background immediately */}
+        {/* CRITICAL: Inline CSS to prevent FOUC - MUST be before any external CSS */}
         <style dangerouslySetInnerHTML={{
           __html: `
-            /* Critical CSS - prevents flash of unstyled content */
+            /* ========================================
+               CRITICAL CSS - Prevents Flash of Unstyled Content
+               This renders IMMEDIATELY before any external resources
+               ======================================== */
+            
+            /* Set correct background color instantly */
             html {
-              background-color: #FAF8F5;
+              background-color: #FAF8F5 !important;
               -webkit-text-size-adjust: 100%;
               -webkit-font-smoothing: antialiased;
             }
             
+            /* Hide body until styles are loaded */
             body {
-              margin: 0;
-              padding: 0;
-              background-color: #FAF8F5;
-              color: #1A3D3E;
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-              visibility: hidden; /* Hide until styles load */
+              margin: 0 !important;
+              padding: 0 !important;
+              background-color: #FAF8F5 !important;
+              color: #1A3D3E !important;
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+              
+              /* CRITICAL: Hide unstyled content */
+              opacity: 0 !important;
+              overflow-x: hidden !important;
             }
             
-            body.loaded {
-              visibility: visible;
+            /* Show body when styles are ready */
+            body.styles-ready {
+              opacity: 1 !important;
+              transition: opacity 0.15s ease-in;
             }
             
-            /* Show content immediately if JavaScript fails */
+            /* Fallback: Show content if JavaScript fails completely */
             noscript body {
-              visibility: visible !important;
+              opacity: 1 !important;
+            }
+            
+            /* Prevent layout shift during load */
+            #__next {
+              min-height: 100vh;
             }
           `
         }} />
@@ -41,7 +57,7 @@ export default function Document() {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         
-        {/* Load Google Fonts via link tags (non-blocking) instead of @import */}
+        {/* Load Google Fonts via link tags (non-blocking) */}
         <link 
           href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=Work+Sans:wght@400;500;600&display=swap" 
           rel="stylesheet"
@@ -51,26 +67,66 @@ export default function Document() {
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              try {
-                const theme = localStorage.getItem('theme') || 'light';
-                if (theme === 'dark') {
-                  document.documentElement.classList.add('dark');
-                  // Update background for dark theme
-                  document.documentElement.style.backgroundColor = '#0D1E1F';
-                }
-              } catch (e) {}
-              
-              // Show body when DOM is ready and styles are loading
-              document.addEventListener('DOMContentLoaded', function() {
+              (function() {
+                // Initialize theme immediately to prevent flash
+                try {
+                  var theme = localStorage.getItem('theme') || 'light';
+                  if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                    document.documentElement.style.backgroundColor = '#0D1E1F';
+                    document.body.style.backgroundColor = '#0D1E1F';
+                  }
+                } catch (e) {}
+                
+                // Multiple strategies to show content when styles are ready
+                
+                // Strategy 1: Show on DOMContentLoaded (fastest)
+                var domReady = false;
+                document.addEventListener('DOMContentLoaded', function() {
+                  domReady = true;
+                  showBody();
+                });
+                
+                // Strategy 2: Show on window.load (fallback)
+                window.addEventListener('load', function() {
+                  showBody();
+                });
+                
+                // Strategy 3: Timeout fallback (safety net)
                 setTimeout(function() {
-                  document.body.classList.add('loaded');
-                }, 50);
-              });
-              
-              // Fallback: show body after 500ms even if DOMContentLoaded didn't fire
-              setTimeout(function() {
-                document.body.classList.add('loaded');
-              }, 500);
+                  showBody();
+                }, 300); // Max 300ms wait
+                
+                // Function to reveal body
+                function showBody() {
+                  if (typeof document !== 'undefined' && document.body) {
+                    document.body.classList.add('styles-ready');
+                  }
+                }
+                
+                // Strategy 4: MutationObserver for React hydration
+                if (typeof MutationObserver !== 'undefined') {
+                  var observer = new MutationObserver(function(mutations) {
+                    mutations.forEach(function(mutation) {
+                      if (mutation.target.id === '__next' && mutation.target.childNodes.length > 0) {
+                        showBody();
+                        observer.disconnect();
+                      }
+                    });
+                  });
+                  
+                  // Start observing when DOM is ready
+                  if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', function() {
+                      var nextEl = document.getElementById('__next');
+                      if (nextEl) observer.observe(nextEl, { childList: true });
+                    });
+                  } else {
+                    var nextEl = document.getElementById('__next');
+                    if (nextEl) observer.observe(nextEl, { childList: true });
+                  }
+                }
+              })();
             `,
           }}
         />
@@ -89,24 +145,48 @@ export default function Document() {
         <meta name="apple-mobile-web-app-title" content="Ukaž Rybu" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
         
-        {/* Service Worker Registration */}
+        {/* Service Worker Registration with aggressive update checking */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
+                // Register service worker
+                window.addEventListener('load', function() {
                   navigator.serviceWorker.register('/sw.js', { 
-                    updateViaCache: 'none' 
-                  }).then(
-                    (registration) => {
-                      console.log('SW registered: ', registration);
-                      // Check for updates immediately after registration
+                    scope: '/',
+                    updateViaCache: 'none' // Don't cache the SW script itself
+                  }).then(function(registration) {
+                    console.log('SW registered:', registration.scope);
+                    
+                    // Check for updates EVERY time
+                    registration.update();
+                    
+                    // Also check periodically (every 30 seconds)
+                    setInterval(function() {
                       registration.update();
-                    },
-                    (err) => {
-                      console.log('SW registration failed: ', err);
-                    }
-                  );
+                    }, 30000);
+                    
+                    // When new SW is installed, reload page automatically
+                    registration.addEventListener('updatefound', function() {
+                      var newWorker = registration.installing;
+                      newWorker.addEventListener('statechange', function() {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                          // New SW is waiting, tell user or auto-reload
+                          console.log('New SW available, reloading...');
+                          // Optional: Show "Update available" toast instead of auto-reload
+                          // For now, we'll let user refresh manually or reload on next visit
+                        }
+                      });
+                    });
+                  }).catch(function(error) {
+                    console.log('SW registration failed:', error);
+                  });
+                  
+                  // When new SW takes control, reload page to get fresh assets
+                  navigator.serviceWorker.addEventListener('controllerchange', function() {
+                    console.log('New SW took control, reloading page...');
+                    window.location.reload();
+                  });
                 });
               }
             `,
